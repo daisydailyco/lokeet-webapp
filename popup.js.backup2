@@ -1,0 +1,848 @@
+// popup.js - Complete with Share Functionality
+class LoopLocalPopup {
+  constructor() {
+    this.currentUser = null;
+    this.savedItems = [];
+    this.sortByDate = 'desc';
+    this.filterCategory = null;
+    this.viewMode = 'saves';
+    this.previewItem = null;
+    this.editingItem = null;
+    this.map = null;
+    this.markers = [];
+    this.init();
+  }
+
+  async init() {
+    try {
+      await this.checkAuth();
+      await this.loadSavedItems();
+      this.renderDashboard();
+    } catch (error) {
+      console.error('Popup init failed:', error);
+      this.renderError(error.message);
+    }
+  }
+
+  async checkAuth() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: 'CHECK_AUTH'
+      }, (response) => {
+        this.currentUser = response?.user || null;
+        resolve();
+      });
+    });
+  }
+
+  async loadSavedItems() {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: 'GET_SAVED_ITEMS',
+        filters: {}
+      }, (response) => {
+        this.savedItems = response?.items || [];
+        resolve();
+      });
+    });
+  }
+
+  getCategories() {
+    const categories = new Set();
+    this.savedItems.forEach(item => {
+      if (item.category) {
+        categories.add(item.category);
+      }
+    });
+    return Array.from(categories).sort();
+  }
+
+  getUncategorizedItems() {
+    return this.savedItems.filter(item => !item.category);
+  }
+
+  sortItems(items) {
+    let sorted = [...items];
+    
+    if (this.filterCategory === 'no-category') {
+      sorted = sorted.filter(item => !item.category);
+    } else if (this.filterCategory && this.filterCategory !== 'all') {
+      sorted = sorted.filter(item => item.category === this.filterCategory);
+    }
+    
+    sorted.sort((a, b) => {
+      const dateA = a.event_date ? new Date(a.event_date) : new Date(a.saved_at);
+      const dateB = b.event_date ? new Date(b.event_date) : new Date(b.saved_at);
+      
+      if (this.sortByDate) {
+        return this.sortByDate === 'desc' ? dateB - dateA : dateA - dateB;
+      }
+      
+      return dateB - dateA;
+    });
+    
+    return sorted;
+  }
+
+  getSectionTitle() {
+    if (this.filterCategory === 'no-category') {
+      return 'No Category';
+    } else if (this.filterCategory && this.filterCategory !== 'all') {
+      return this.filterCategory;
+    }
+    return 'Saved Items';
+  }
+
+  showConfirm(message) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'looplocal-confirm-overlay';
+      overlay.innerHTML = `
+        <div class="looplocal-confirm-modal">
+          <div class="looplocal-confirm-title">Confirm</div>
+          <div class="looplocal-confirm-message">${message}</div>
+          <div class="looplocal-confirm-buttons">
+            <button class="looplocal-confirm-btn looplocal-confirm-btn-cancel">Cancel</button>
+            <button class="looplocal-confirm-btn looplocal-confirm-btn-confirm">Remove</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      overlay.querySelector('.looplocal-confirm-btn-cancel').addEventListener('click', () => {
+        overlay.remove();
+        resolve(false);
+      });
+
+      overlay.querySelector('.looplocal-confirm-btn-confirm').addEventListener('click', () => {
+        overlay.remove();
+        resolve(true);
+      });
+
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.remove();
+          resolve(false);
+        }
+      });
+    });
+  }
+
+  renderDashboard() {
+    const content = document.getElementById('app-content');
+    
+    if (this.viewMode === 'edit') {
+      content.innerHTML = this.renderEditView();
+      this.bindDashboardEvents();
+      return;
+    }
+
+    if (this.viewMode === 'preview') {
+      content.innerHTML = this.renderPreviewView();
+      this.bindDashboardEvents();
+      return;
+    }
+
+    if (this.viewMode === 'map') {
+      content.innerHTML = `
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px;">
+          <button class="view-btn" data-view="saves" style="flex: 1; background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+            📋 Saves
+          </button>
+          <button class="view-btn active" data-view="map" style="flex: 1; background: rgba(255,255,255,0.3); border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+            🗺️ Map
+          </button>
+        </div>
+        ${this.renderMapView()}
+      `;
+      this.bindDashboardEvents();
+      return;
+    }
+
+    content.innerHTML = `
+      <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px;">
+        <button class="view-btn active" data-view="saves" style="flex: 1; background: rgba(255,255,255,0.3); border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+          📋 Saves
+        </button>
+        <button class="view-btn" data-view="map" style="flex: 1; background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+          🗺️ Map
+        </button>
+      </div>
+
+      ${this.renderSavesView()}
+    `;
+
+    this.bindDashboardEvents();
+  }
+
+  renderSavesView() {
+    const sortedItems = this.sortItems(this.savedItems);
+    const categories = this.getCategories();
+    const uncategorizedCount = this.getUncategorizedItems().length;
+    const sectionTitle = this.getSectionTitle();
+    
+    // Check if we can share (viewing a specific category)
+    const canShare = this.filterCategory && this.filterCategory !== 'all' && this.filterCategory !== 'no-category';
+    
+    return `
+      <div class="recent-saves">
+        <!-- Category Title with Share Button -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div class="section-title">${sectionTitle}</div>
+          ${canShare ? `
+            <button id="share-category-btn" style="background: rgba(66, 167, 70, 0.3); border: 1px solid rgba(66, 167, 70, 0.5); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 4px;">
+              <span>🔗</span>
+              <span>Share</span>
+            </button>
+          ` : ''}
+        </div>
+        
+        <!-- Filters Row - Category Left, Date Right -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;">
+          <select id="category-filter" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+            <option value="" disabled ${!this.filterCategory ? 'selected' : ''}>Category</option>
+            <option value="all" ${this.filterCategory === 'all' ? 'selected' : ''}>All Saves</option>
+            ${uncategorizedCount > 0 ? `<option value="no-category" ${this.filterCategory === 'no-category' ? 'selected' : ''}>No Category (${uncategorizedCount})</option>` : ''}
+            ${categories.map(cat => `
+              <option value="${cat}" ${this.filterCategory === cat ? 'selected' : ''}>${cat}</option>
+            `).join('')}
+          </select>
+          
+          <select id="date-sort" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+            <option value="" disabled ${!this.sortByDate ? 'selected' : ''}>Date</option>
+            <option value="asc-date" ${this.sortByDate === 'asc-date' ? 'selected' : ''}>Date ↑</option>
+            <option value="desc-date" ${this.sortByDate === 'desc-date' ? 'selected' : ''}>Date ↓</option>
+            <option value="desc" ${this.sortByDate === 'desc' ? 'selected' : ''}>Newest</option>
+            <option value="asc" ${this.sortByDate === 'asc' ? 'selected' : ''}>Oldest</option>
+          </select>
+        </div>
+        
+        <div id="recent-items">
+          ${this.renderRecentItems(sortedItems)}
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="action-button" id="waitlist-btn">Join the App Waitlist!</button>
+      </div>
+    `;
+  }
+
+  renderPreviewView() {
+    if (!this.previewItem) {
+      this.viewMode = 'saves';
+      return this.renderSavesView();
+    }
+
+    const hasCategory = this.previewItem.category;
+
+    return `
+      <div style="height: 100%; display: flex; flex-direction: column;">
+        <!-- Category Title (Full Width) - First Line - Matches section-title style -->
+        ${hasCategory ? `
+          <div style="text-align: center; font-size: 16px; font-weight: 600; margin-bottom: 12px;">
+            ${this.previewItem.category}
+          </div>
+        ` : ''}
+
+        <!-- Header with Back (Left) & Edit (Right) - Second Line -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.2);">
+          <button id="back-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+            ← Back
+          </button>
+          
+          ${hasCategory ? `
+            <div style="display: flex; gap: 8px;">
+              <button id="view-all-category-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+                View All
+              </button>
+              <button id="edit-preview-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+                Edit
+              </button>
+            </div>
+          ` : `
+            <button id="add-category-btn" style="background: rgba(255,255,255,0.25); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+              + Add Category
+            </button>
+          `}
+        </div>
+
+        <!-- Item Details -->
+        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+          <div style="font-weight: 600; margin-bottom: 6px; font-size: 15px;">
+            ${this.formatItemTitle(this.previewItem)}
+          </div>
+          <div style="font-size: 12px; opacity: 0.8; margin-bottom: 12px;">
+            ${this.formatItemDetails(this.previewItem)}
+          </div>
+          ${this.previewItem.content ? `
+            <div style="font-size: 12px; opacity: 0.7; line-height: 1.5; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.15);">
+              ${this.previewItem.content.substring(0, 200)}${this.previewItem.content.length > 200 ? '...' : ''}
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Link Preview Action -->
+        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-size: 13px; font-weight: 600; opacity: 0.9;">Link Preview</div>
+          <button id="open-new-tab-btn" style="background: rgba(255,255,255,0.25); border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+            Open in Tab ↗
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  renderEditView() {
+    if (!this.editingItem) {
+      this.viewMode = 'saves';
+      return this.renderSavesView();
+    }
+
+    return `
+      <div style="height: 100%; display: flex; flex-direction: column;">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.2);">
+          <button id="cancel-edit-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+            Cancel
+          </button>
+          <div style="flex: 1; font-size: 15px; font-weight: 700; text-align: center;">Edit Item</div>
+          <button id="save-edit-btn" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+            Save
+          </button>
+        </div>
+
+        <!-- Edit Form -->
+        <div style="flex: 1; overflow-y: auto;">
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; color: white; font-weight: 600; font-size: 12px; margin-bottom: 6px; opacity: 0.9;">Category</label>
+            <input type="text" id="edit-category" value="${this.editingItem.category || ''}" placeholder="e.g., Restaurants" style="width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.2); color: white; font-size: 13px; box-sizing: border-box;">
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; color: white; font-weight: 600; font-size: 12px; margin-bottom: 6px; opacity: 0.9;">Location</label>
+            <input type="text" id="edit-location" value="${this.editingItem.venue_name || ''}" placeholder="e.g., Downtown St. Pete" style="width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.2); color: white; font-size: 13px; box-sizing: border-box;">
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; color: white; font-weight: 600; font-size: 12px; margin-bottom: 6px; opacity: 0.9;">Date</label>
+            <input type="date" id="edit-date" value="${this.editingItem.event_date || ''}" style="width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.2); color: white; font-size: 13px; box-sizing: border-box;">
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label style="display: block; color: white; font-weight: 600; font-size: 12px; margin-bottom: 6px; opacity: 0.9;">Tags (comma-separated)</label>
+            <input type="text" id="edit-tags" value="${(this.editingItem.tags || []).join(', ')}" placeholder="e.g., brunch, coffee" style="width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; background: rgba(255,255,255,0.2); color: white; font-size: 13px; box-sizing: border-box;">
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderMapView() {
+    const locationsWithCoords = this.savedItems.filter(item => 
+      item.address || item.venue_name
+    );
+
+    return `
+      <div style="text-align: center; padding: 40px 20px; background: rgba(255,255,255,0.1); border-radius: 12px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🗺️</div>
+        <div style="font-weight: 600; margin-bottom: 8px; font-size: 16px;">Map View</div>
+        <div style="font-size: 13px; opacity: 0.8; margin-bottom: 16px;">Coming soon!</div>
+        <div style="font-size: 12px; opacity: 0.7;">
+          ${locationsWithCoords.length} location${locationsWithCoords.length !== 1 ? 's' : ''} saved with addresses
+        </div>
+      </div>
+    `;
+  }
+
+  renderRecentItems(items) {
+    if (items.length === 0) {
+      let message = 'No saves yet!';
+      let subMessage = 'Visit Instagram and click Save to LoopLocal on posts';
+      
+      if (this.filterCategory === 'no-category') {
+        message = 'No uncategorized items';
+        subMessage = 'All your saves have categories! 🎉';
+      } else if (this.filterCategory && this.filterCategory !== 'all') {
+        message = `No items in "${this.filterCategory}"`;
+        subMessage = 'Try selecting a different category';
+      }
+      
+      return `
+        <div class="empty-state">
+          <div class="empty-state-icon">📍</div>
+          <div>${message}</div>
+          <div style="font-size: 12px; margin-top: 8px;">
+            ${subMessage}
+          </div>
+        </div>
+      `;
+    }
+
+    return items.map(item => {
+      const displayTitle = this.formatItemTitle(item);
+      const displayDetails = this.formatItemDetails(item);
+      
+      return `
+        <div class="save-item" data-item-id="${item.id}" style="position: relative;">
+          <div class="save-item-content">
+            <div class="save-item-title">${displayTitle}</div>
+            <div class="save-item-details">${displayDetails}</div>
+          </div>
+          <button class="remove-btn" data-item-id="${item.id}" style="
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(237, 73, 86, 0.2);
+            border: 1px solid rgba(237, 73, 86, 0.4);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            min-width: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">−</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  formatItemTitle(item) {
+    const date = this.formatEventDate(item.event_date);
+    const location = item.venue_name || item.address || item.event_name || 'Saved Item';
+    
+    if (date && location) {
+      return `${date} - ${location}`;
+    } else if (date) {
+      return date;
+    } else {
+      return location;
+    }
+  }
+
+  formatItemDetails(item) {
+    const parts = [];
+    
+    if (item.platform) {
+      parts.push(item.platform);
+    }
+    
+    if (item.author) {
+      const handle = item.author.startsWith('@') ? item.author : `@${item.author}`;
+      parts.push(handle);
+    }
+    
+    if (item.event_name && item.event_name !== item.venue_name) {
+      parts.push(item.event_name);
+    }
+    
+    if (parts.length === 0) {
+      parts.push(this.formatDate(item.saved_at));
+    }
+    
+    return parts.join(' • ');
+  }
+
+  formatEventDate(dateString) {
+    if (!dateString) return null;
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const itemDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      
+      const diffTime = itemDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Tomorrow';
+      if (diffDays > 1 && diffDays <= 7) {
+        return date.toLocaleDateString('en-US', { weekday: 'long' });
+      }
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  async shareCategory() {
+    try {
+      // Get items in current category
+      const categoryItems = this.savedItems.filter(item => 
+        item.category === this.filterCategory
+      );
+
+      if (categoryItems.length === 0) {
+        alert('No items to share in this category!');
+        return;
+      }
+
+      // Show loading state
+      const shareBtn = document.getElementById('share-category-btn');
+      if (shareBtn) {
+        shareBtn.innerHTML = '<span>⏳</span><span>Sharing...</span>';
+        shareBtn.style.pointerEvents = 'none';
+      }
+
+      // Send to backend
+      const response = await fetch('https://web-production-5630.up.railway.app/v1/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category: this.filterCategory,
+          items: categoryItems
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create share link: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(result.share_url);
+
+      // Show success modal
+      this.showShareSuccess(result.share_url);
+
+    } catch (error) {
+      console.error('Share failed:', error);
+      alert('Failed to create share link. Make sure the backend is running at https://web-production-5630.up.railway.app');
+      
+      // Reset button
+      const shareBtn = document.getElementById('share-category-btn');
+      if (shareBtn) {
+        shareBtn.innerHTML = '<span>🔗</span><span>Share</span>';
+        shareBtn.style.pointerEvents = 'auto';
+      }
+    }
+  }
+
+  showShareSuccess(shareUrl) {
+    const overlay = document.createElement('div');
+    overlay.className = 'looplocal-confirm-overlay';
+    overlay.innerHTML = `
+      <div class="looplocal-confirm-modal">
+        <div class="looplocal-confirm-title">🎉 Share Link Created!</div>
+        <div class="looplocal-confirm-message" style="margin-bottom: 16px;">
+          Link copied to clipboard!
+        </div>
+        <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 16px; word-break: break-all; font-size: 12px;">
+          ${shareUrl}
+        </div>
+        <div class="looplocal-confirm-buttons">
+          <button class="looplocal-confirm-btn looplocal-confirm-btn-cancel" id="close-share-modal">Close</button>
+          <button class="looplocal-confirm-btn looplocal-confirm-btn-confirm" id="open-share-link">Open Link</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#close-share-modal').addEventListener('click', () => {
+      overlay.remove();
+      this.renderDashboard();
+    });
+
+    overlay.querySelector('#open-share-link').addEventListener('click', () => {
+      chrome.tabs.create({ url: shareUrl });
+      overlay.remove();
+      this.renderDashboard();
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        this.renderDashboard();
+      }
+    });
+  }
+
+  bindDashboardEvents() {
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.viewMode = btn.dataset.view;
+        this.renderDashboard();
+      });
+      
+      btn.addEventListener('mouseenter', (e) => {
+        if (!btn.classList.contains('active')) {
+          e.target.style.background = 'rgba(255,255,255,0.2)';
+        }
+      });
+      btn.addEventListener('mouseleave', (e) => {
+        if (!btn.classList.contains('active')) {
+          e.target.style.background = 'rgba(255,255,255,0.1)';
+        }
+      });
+    });
+
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+      const itemId = btn.dataset.itemId;
+      
+      btn.addEventListener('mouseenter', (e) => {
+        e.stopPropagation();
+        e.target.textContent = 'Remove';
+        e.target.style.background = 'rgba(237, 73, 86, 0.4)';
+        e.target.style.padding = '4px 10px';
+        e.target.style.fontSize = '11px';
+      });
+      
+      btn.addEventListener('mouseleave', (e) => {
+        e.target.textContent = '−';
+        e.target.style.background = 'rgba(237, 73, 86, 0.2)';
+        e.target.style.padding = '4px 8px';
+        e.target.style.fontSize = '16px';
+      });
+      
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const confirmed = await this.showConfirm('Are you sure you want to remove this saved item?');
+        if (confirmed) {
+          await this.removeItem(itemId);
+        }
+      });
+    });
+
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        this.viewMode = 'saves';
+        this.previewItem = null;
+        this.renderDashboard();
+      });
+      backBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.3)';
+      });
+      backBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.2)';
+      });
+    }
+
+    const editPreviewBtn = document.getElementById('edit-preview-btn');
+    if (editPreviewBtn) {
+      editPreviewBtn.addEventListener('click', () => {
+        this.editingItem = this.previewItem;
+        this.viewMode = 'edit';
+        this.renderDashboard();
+      });
+      editPreviewBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.3)';
+      });
+      editPreviewBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.2)';
+      });
+    }
+
+    const viewAllCategoryBtn = document.getElementById("view-all-category-btn");
+    if (viewAllCategoryBtn) {
+      viewAllCategoryBtn.addEventListener("click", () => {
+        // Set filter to the current item's category
+        this.filterCategory = this.previewItem.category;
+        this.viewMode = "saves";
+        this.previewItem = null;
+        this.renderDashboard();
+      });
+      viewAllCategoryBtn.addEventListener("mouseenter", (e) => {
+        e.target.style.background = "rgba(66, 167, 70, 0.4)";
+      });
+      viewAllCategoryBtn.addEventListener("mouseleave", (e) => {
+        e.target.style.background = "rgba(66, 167, 70, 0.3)";
+      });
+    }
+
+    const addCategoryBtn = document.getElementById('add-category-btn');
+    if (addCategoryBtn) {
+      addCategoryBtn.addEventListener('click', () => {
+        this.editingItem = this.previewItem;
+        this.viewMode = 'edit';
+        this.renderDashboard();
+      });
+      addCategoryBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.35)';
+      });
+      addCategoryBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.25)';
+      });
+    }
+
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    if (cancelEditBtn) {
+      cancelEditBtn.addEventListener('click', () => {
+        this.viewMode = 'preview';
+        this.editingItem = null;
+        this.renderDashboard();
+      });
+      cancelEditBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.3)';
+      });
+      cancelEditBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.2)';
+      });
+    }
+
+    const saveEditBtn = document.getElementById('save-edit-btn');
+    if (saveEditBtn) {
+      saveEditBtn.addEventListener('click', async () => {
+        await this.saveItemEdit();
+      });
+      saveEditBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.4)';
+      });
+      saveEditBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.3)';
+      });
+    }
+
+    const openNewTabBtn = document.getElementById('open-new-tab-btn');
+    if (openNewTabBtn && this.previewItem) {
+      openNewTabBtn.addEventListener('click', () => {
+        chrome.tabs.create({ url: this.previewItem.url });
+      });
+      openNewTabBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.35)';
+      });
+      openNewTabBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'rgba(255,255,255,0.25)';
+      });
+    }
+
+    const dateSort = document.getElementById('date-sort');
+    if (dateSort) {
+      dateSort.addEventListener('change', (e) => {
+        this.sortByDate = e.target.value || null;
+        this.renderDashboard();
+      });
+    }
+
+    const categoryFilter = document.getElementById('category-filter');
+    if (categoryFilter) {
+      categoryFilter.addEventListener('change', (e) => {
+        const value = e.target.value;
+        if (value === '' || value === 'all') {
+          this.filterCategory = null;
+        } else {
+          this.filterCategory = value;
+        }
+        this.renderDashboard();
+      });
+    }
+
+    const waitlistBtn = document.getElementById('waitlist-btn');
+    if (waitlistBtn) {
+      waitlistBtn.addEventListener('click', () => {
+        chrome.tabs.create({ url: 'https://looplocal.app' });
+      });
+    }
+
+    // SHARE BUTTON EVENT LISTENER
+    const shareCategoryBtn = document.getElementById('share-category-btn');
+    if (shareCategoryBtn) {
+      shareCategoryBtn.addEventListener('click', async () => {
+        await this.shareCategory();
+      });
+      
+      shareCategoryBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.background = 'rgba(66, 167, 70, 0.5)';
+      });
+      
+      shareCategoryBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.background = 'rgba(66, 167, 70, 0.3)';
+      });
+    }
+
+    document.querySelectorAll('.save-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-btn')) return;
+        
+        const itemId = item.dataset.itemId;
+        const savedItem = this.savedItems.find(i => i.id === itemId);
+        if (savedItem && savedItem.url) {
+          this.previewItem = savedItem;
+          this.viewMode = 'preview';
+          this.renderDashboard();
+        }
+      });
+    });
+  }
+
+  async removeItem(itemId) {
+    const storage = await chrome.storage.local.get(['savedItems']);
+    const savedItems = storage.savedItems || [];
+    
+    const updatedItems = savedItems.filter(item => item.id !== itemId);
+    
+    await chrome.storage.local.set({ savedItems: updatedItems });
+    this.savedItems = updatedItems;
+    this.renderDashboard();
+  }
+
+  async saveItemEdit() {
+    const category = document.getElementById('edit-category').value.trim();
+    const location = document.getElementById('edit-location').value.trim();
+    const date = document.getElementById('edit-date').value;
+    const tagsInput = document.getElementById('edit-tags').value;
+    const tags = tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(t => t);
+
+    const storage = await chrome.storage.local.get(['savedItems']);
+    const savedItems = storage.savedItems || [];
+    
+    const itemIndex = savedItems.findIndex(i => i.id === this.editingItem.id);
+    if (itemIndex !== -1) {
+      savedItems[itemIndex] = {
+        ...savedItems[itemIndex],
+        category: category,
+        event_name: category,
+        venue_name: location,
+        address: location,
+        event_date: date,
+        tags: tags
+      };
+      
+      await chrome.storage.local.set({ savedItems });
+      this.savedItems = savedItems;
+      this.previewItem = savedItems[itemIndex];
+      this.editingItem = null;
+      this.viewMode = 'preview';
+      this.renderDashboard();
+    }
+  }
+
+  renderError(message) {
+    const content = document.getElementById('app-content');
+    content.innerHTML = `
+      <div style="text-align: center; padding: 40px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+        <div style="font-weight: 600; margin-bottom: 8px;">Something went wrong</div>
+        <div style="opacity: 0.8; font-size: 14px;">${message}</div>
+      </div>
+    `;
+  }
+}
+
+new LoopLocalPopup();
