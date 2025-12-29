@@ -781,14 +781,14 @@ class LoopLocalPopup {
     return items.map(item => {
       const displayTitle = this.formatItemTitle(item);
       const displayDetails = this.formatItemDetails(item);
-      
+
       return `
         <div class="save-item" data-item-id="${item.id}" style="position: relative;">
           <div class="save-item-content">
             <div class="save-item-title">${displayTitle}</div>
             <div class="save-item-details">${displayDetails}</div>
           </div>
-          <button class="remove-btn" data-item-id="${item.id}" style="
+          <button class="edit-btn" data-item-id="${item.id}" style="
             position: absolute;
             top: 8px;
             right: 8px;
@@ -805,7 +805,7 @@ class LoopLocalPopup {
             display: flex;
             align-items: center;
             justify-content: center;
-          ">−</button>
+          ">+</button>
         </div>
       `;
     }).join('');
@@ -1009,29 +1009,32 @@ class LoopLocalPopup {
       });
     });
 
-    document.querySelectorAll('.remove-btn').forEach(btn => {
+    document.querySelectorAll('.edit-btn').forEach(btn => {
       const itemId = btn.dataset.itemId;
-      
+
       btn.addEventListener('mouseenter', (e) => {
         e.stopPropagation();
-        e.target.textContent = 'Remove';
+        e.target.textContent = 'Edit';
         e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
         e.target.style.padding = '4px 10px';
         e.target.style.fontSize = '11px';
       });
 
       btn.addEventListener('mouseleave', (e) => {
-        e.target.textContent = '−';
+        e.target.textContent = '+';
         e.target.style.boxShadow = 'none';
         e.target.style.padding = '4px 8px';
         e.target.style.fontSize = '16px';
       });
-      
+
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const confirmed = await this.showConfirm('Are you sure you want to remove this saved item?');
-        if (confirmed) {
-          await this.removeItem(itemId);
+        const savedItem = this.savedItems.find(i => i.id === itemId);
+        if (savedItem) {
+          this.previousView = this.viewMode;
+          this.editingItem = savedItem;
+          this.viewMode = 'edit';
+          this.renderDashboard();
         }
       });
     });
@@ -1356,13 +1359,17 @@ class LoopLocalPopup {
 
     document.querySelectorAll('.save-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-btn')) return;
-        
+        if (e.target.classList.contains('edit-btn')) return;
+
         const itemId = item.dataset.itemId;
         const savedItem = this.savedItems.find(i => i.id === itemId);
-        if (savedItem && savedItem.url) {
-          this.previewItem = savedItem;
-          this.viewMode = 'preview';
+        if (savedItem) {
+          // Filter by the item's category
+          if (savedItem.category) {
+            this.filterCategory = savedItem.category;
+          } else {
+            this.filterCategory = 'no-category';
+          }
           this.renderDashboard();
         }
       });
