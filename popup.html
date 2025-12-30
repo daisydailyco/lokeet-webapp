@@ -7,19 +7,22 @@
   <style>
     body {
       width: 350px;
-      min-height: 400px;
+      height: 640px;
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #f0f0f0 0%, #f9f8e5 100%);
       color: #000000;
       border-radius: 16px;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .header {
       padding: 20px;
       text-align: center;
       border-bottom: 1px solid rgba(0,0,0,0.1);
+      flex-shrink: 0;
     }
 
     .logo {
@@ -38,7 +41,7 @@
 
     .content {
       padding: 20px;
-      max-height: 500px;
+      flex: 1;
       overflow-y: auto;
     }
 
