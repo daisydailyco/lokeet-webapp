@@ -413,8 +413,13 @@ class LoopLocalPopup {
             ${sectionTitle}
           </div>
 
+          <!-- Share message above the white line -->
+          <div style="text-align: center; font-size: 12px; opacity: 0.7; margin-bottom: 8px; line-height: 1.4;">
+            Share your saves to see your list in map view
+          </div>
+
           <!-- Back Button (Left) & Share Button (Right) -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 12px; border-bottom: 1px solid white;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid white;">
             <button id="back-to-all-btn" style="background: white; border: none; color: #000000; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
               ← Back
             </button>
@@ -422,11 +427,6 @@ class LoopLocalPopup {
               <span>🔗</span>
               <span>Share</span>
             </button>
-          </div>
-
-          <!-- Share message directly under Back/Share buttons -->
-          <div style="text-align: center; font-size: 12px; opacity: 0.7; margin-bottom: 12px; line-height: 1.4;">
-            Share your saves to see your list in map view
           </div>
         ` : `
           <!-- Section Title (No Category Selected) -->
@@ -462,6 +462,12 @@ class LoopLocalPopup {
           <div style="font-size: 12px; font-weight: 600; margin-bottom: 12px; opacity: 0.9; text-align: center;">
             ${sortedItems.length - itemsNeedingLocation.length} location${sortedItems.length - itemsNeedingLocation.length !== 1 ? 's' : ''} saved
             ${itemsNeedingLocation.length > 0 ? `<span style="color: #FF6B6B; margin-left: 8px;">• ${itemsNeedingLocation.length} need${itemsNeedingLocation.length === 1 ? 's' : ''} location</span>` : ''}
+          </div>
+        ` : ''}
+
+        ${canShare && itemsNeedingLocation.length > 0 ? `
+          <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.1);">
+            ${this.renderMissingLocationCards(itemsNeedingLocation)}
           </div>
         ` : ''}
 
@@ -678,6 +684,11 @@ class LoopLocalPopup {
           ${sectionTitle}
         </div>
 
+        <!-- Share message above the white line -->
+        <div style="text-align: center; font-size: 12px; opacity: 0.7; margin-bottom: 8px; line-height: 1.4;">
+          Share your saves to see your list in map view
+        </div>
+
         <!-- Back Button (Left) & Share Button (Right) -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid white;">
           <button id="back-to-all-btn" style="background: white; border: none; color: #000000; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
@@ -690,10 +701,6 @@ class LoopLocalPopup {
         </div>
       ` : ''}
 
-      <div style="text-align: center; font-size: 12px; opacity: 0.7; margin-bottom: 8px; line-height: 1.4;">
-        Share your saves to see your list in map view
-      </div>
-
       <div style="margin-bottom: 12px;">
         <button id="open-all-maps-btn" style="width: 100%; background: white; border: none; color: #000000; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s;">
           Open in Google Maps
@@ -704,6 +711,12 @@ class LoopLocalPopup {
         ${locationsWithCoords.length} location${locationsWithCoords.length !== 1 ? 's' : ''} saved
         ${itemsNeedingLocation.length > 0 ? `<span style="color: #FF6B6B; margin-left: 8px;">• ${itemsNeedingLocation.length} need${itemsNeedingLocation.length === 1 ? 's' : ''} location</span>` : ''}
       </div>
+
+      ${itemsNeedingLocation.length > 0 ? `
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.1);">
+          ${this.renderMissingLocationCards(itemsNeedingLocation)}
+        </div>
+      ` : ''}
 
       <div id="location-list">
         ${this.renderLocationCards(locationsWithCoords)}
