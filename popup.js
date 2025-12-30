@@ -953,6 +953,7 @@ class LoopLocalPopup {
 
       console.log('🚀 Sharing category:', this.filterCategory);
       console.log('📦 Items to share:', formattedItems.length);
+      console.log('📍 First item being sent:', formattedItems[0]);
 
       // Send to backend
       const response = await fetch('https://web-production-5630.up.railway.app/v1/share', {
