@@ -451,11 +451,11 @@ class LoopLocalPopup {
           <div class="section-title" style="margin-bottom: 12px;">${sectionTitle}</div>
         `}
 
-        <!-- Add from Link Button -->
+        <!-- Add Save Button -->
         <div style="margin-bottom: 12px;">
           <button id="add-from-link-btn" style="width: 100%; background: white; border: none; color: #000000; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-            <span>🔗</span>
-            <span>Add from Link</span>
+            <span>+</span>
+            <span>Add Save</span>
           </button>
         </div>
 
@@ -1558,14 +1558,34 @@ class LoopLocalPopup {
           width: 90%;
           max-width: 320px;
           padding: 24px;
+          position: relative;
         ">
-          <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: #000000;">Add from Link</h3>
+          <!-- Close X Button -->
+          <button id="cancel-link-btn" style="
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: white;
+            border: none;
+            color: #000000;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          ">×</button>
+
+          <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #000000;">Add from Link</h3>
           <p style="margin: 0 0 16px 0; font-size: 13px; opacity: 0.8; color: #000000;">Paste an Instagram or TikTok link</p>
 
-          <textarea id="link-input" placeholder="https://www.instagram.com/p/...
-https://www.tiktok.com/@user/video/..." style="
+          <input type="text" id="link-input" placeholder="https://www.instagram.com/p/..." style="
             width: 100%;
-            min-height: 80px;
             padding: 10px;
             border: 1px solid rgba(0,0,0,0.1);
             border-radius: 8px;
@@ -1573,37 +1593,36 @@ https://www.tiktok.com/@user/video/..." style="
             color: #000000;
             font-size: 13px;
             font-family: inherit;
-            resize: vertical;
             box-sizing: border-box;
-            margin-bottom: 16px;
-          "></textarea>
+            margin-bottom: 12px;
+          " />
 
-          <div style="display: flex; gap: 12px;">
-            <button id="cancel-link-btn" style="
-              flex: 1;
-              padding: 12px;
-              background: white;
+          <div style="text-align: center; margin-bottom: 16px;">
+            <button id="skip-link-btn" style="
+              background: transparent;
               border: none;
               color: #000000;
-              border-radius: 8px;
-              font-size: 14px;
+              font-size: 13px;
               font-weight: 600;
               cursor: pointer;
-              transition: all 0.2s;
-            ">Cancel</button>
-            <button id="add-link-btn" style="
-              flex: 1;
-              padding: 12px;
-              background: #42a746;
-              border: none;
-              color: white;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.2s;
-            ">Add</button>
+              opacity: 0.7;
+              text-decoration: underline;
+              padding: 4px;
+            ">Skip Add Link</button>
           </div>
+
+          <button id="add-link-btn" style="
+            width: 100%;
+            padding: 12px;
+            background: #42a746;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+          ">Add</button>
         </div>
       </div>
     `;
@@ -1612,10 +1631,32 @@ https://www.tiktok.com/@user/video/..." style="
 
     const cancelBtn = modal.querySelector('#cancel-link-btn');
     const addBtn = modal.querySelector('#add-link-btn');
+    const skipBtn = modal.querySelector('#skip-link-btn');
     const input = modal.querySelector('#link-input');
 
     cancelBtn.addEventListener('click', () => {
       modal.remove();
+    });
+
+    skipBtn.addEventListener('click', () => {
+      modal.remove();
+      // Open edit view with blank item for manual entry
+      this.viewMode = 'edit';
+      this.editingItem = {
+        id: Date.now().toString(),
+        platform: 'instagram',
+        url: '',
+        content: '',
+        images: [],
+        author: '',
+        event_name: '',
+        venue_name: '',
+        address: '',
+        coordinates: null,
+        category: this.filterCategory === 'All' ? '' : this.filterCategory,
+        saved_at: new Date().toISOString()
+      };
+      this.renderDashboard();
     });
 
     addBtn.addEventListener('click', () => {
