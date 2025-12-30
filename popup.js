@@ -447,8 +447,30 @@ class LoopLocalPopup {
             </button>
           </div>
         ` : `
-          <!-- Section Title (No Category Selected) -->
-          <div class="section-title" style="margin-bottom: 12px;">${sectionTitle}</div>
+          <!-- Section Title with Dropdown (All Items View) -->
+          <div style="text-align: center; margin-bottom: 12px; position: relative;">
+            <select id="all-category-dropdown" style="
+              appearance: none;
+              -webkit-appearance: none;
+              -moz-appearance: none;
+              background: transparent;
+              border: none;
+              font-size: 16px;
+              font-weight: 600;
+              color: #000000;
+              cursor: pointer;
+              padding: 4px 24px 4px 4px;
+              text-align: center;
+              outline: none;
+            ">
+              <option value="all" ${!this.filterCategory || this.filterCategory === 'all' ? 'selected' : ''}>Saved Items</option>
+              ${categories.map(cat => `
+                <option value="${cat}">${cat}</option>
+              `).join('')}
+              ${uncategorizedCount > 0 ? `<option value="no-category">No Category</option>` : ''}
+            </select>
+            <span style="position: absolute; right: 50%; transform: translateX(calc(50% + ${sectionTitle.length * 4}px)); pointer-events: none; font-size: 12px;">▼</span>
+          </div>
         `}
 
         <!-- Add Save Button -->
@@ -1259,6 +1281,19 @@ class LoopLocalPopup {
     const categoryDropdown = document.getElementById('category-dropdown');
     if (categoryDropdown) {
       categoryDropdown.addEventListener('change', (e) => {
+        const value = e.target.value;
+        if (value === '' || value === 'all') {
+          this.filterCategory = null;
+        } else {
+          this.filterCategory = value;
+        }
+        this.renderDashboard();
+      });
+    }
+
+    const allCategoryDropdown = document.getElementById('all-category-dropdown');
+    if (allCategoryDropdown) {
+      allCategoryDropdown.addEventListener('change', (e) => {
         const value = e.target.value;
         if (value === '' || value === 'all') {
           this.filterCategory = null;
