@@ -453,18 +453,28 @@ class LoopLocalPopup {
           </button>
         </div>
 
-        <div id="recent-items">
-          ${this.renderRecentItems(sortedItems)}
-        </div>
+        ${canShare ? `
+          <div style="text-align: center; font-size: 12px; opacity: 0.7; margin-bottom: 12px; line-height: 1.4;">
+            Share your saves to see your list in map view
+          </div>
+          <div style="font-size: 12px; font-weight: 600; margin-bottom: 12px; opacity: 0.9; text-align: center;">
+            ${sortedItems.length - itemsNeedingLocation.length} location${sortedItems.length - itemsNeedingLocation.length !== 1 ? 's' : ''} saved
+            ${itemsNeedingLocation.length > 0 ? `<span style="color: #FF6B6B; margin-left: 8px;">• ${itemsNeedingLocation.length} need${itemsNeedingLocation.length === 1 ? 's' : ''} location</span>` : ''}
+          </div>
+        ` : ''}
 
         ${canShare && itemsNeedingLocation.length > 0 ? `
-          <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.1);">
+          <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.1);">
             <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: #FF6B6B; text-align: center;">
               Items Missing Location
             </div>
             ${this.renderMissingLocationCards(itemsNeedingLocation)}
           </div>
         ` : ''}
+
+        <div id="recent-items">
+          ${this.renderRecentItems(sortedItems)}
+        </div>
       </div>
 
       <div class="actions">
@@ -701,18 +711,19 @@ class LoopLocalPopup {
         ${locationsWithCoords.length} location${locationsWithCoords.length !== 1 ? 's' : ''} saved
         ${itemsNeedingLocation.length > 0 ? `<span style="color: #FF6B6B; margin-left: 8px;">• ${itemsNeedingLocation.length} need${itemsNeedingLocation.length === 1 ? 's' : ''} location</span>` : ''}
       </div>
-      <div id="location-list">
-        ${this.renderLocationCards(locationsWithCoords)}
-      </div>
 
       ${itemsNeedingLocation.length > 0 ? `
-        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.1);">
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.1);">
           <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: #FF6B6B; text-align: center;">
             Items Missing Location
           </div>
           ${this.renderMissingLocationCards(itemsNeedingLocation)}
         </div>
       ` : ''}
+
+      <div id="location-list">
+        ${this.renderLocationCards(locationsWithCoords)}
+      </div>
     `;
   }
 
