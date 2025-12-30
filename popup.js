@@ -492,7 +492,7 @@ class LoopLocalPopup {
     const hasCategory = this.previewItem.category;
 
     return `
-      <div style="height: 100%; display: flex; flex-direction: column;">
+      <div style="display: flex; flex-direction: column;">
         <!-- Category Title - First Line -->
         ${hasCategory ? `
           <div style="text-align: center; font-size: 16px; font-weight: 600; margin-bottom: 12px;">
@@ -570,7 +570,7 @@ class LoopLocalPopup {
     }
 
     return `
-      <div style="height: 100%; display: flex; flex-direction: column;">
+      <div style="display: flex; flex-direction: column;">
         <!-- Header -->
         <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid white;">
           <div style="font-size: 15px; font-weight: 700; text-align: center; margin-bottom: 12px;">Edit Item</div>
@@ -580,7 +580,7 @@ class LoopLocalPopup {
         </div>
 
         <!-- Edit Form -->
-        <div style="flex: 1;">
+        <div>
           <div style="margin-bottom: 14px;">
             <label style="display: block; color: #000000; font-weight: 600; font-size: 12px; margin-bottom: 6px; opacity: 0.9;">Category</label>
             <select id="edit-category" style="width: 100%; padding: 10px; border: 1px solid #F0F0F0; border-radius: 6px; background: white; color: #000000; font-size: 13px; box-sizing: border-box; cursor: pointer;">
