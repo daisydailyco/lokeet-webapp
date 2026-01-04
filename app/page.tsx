@@ -8,8 +8,8 @@ export default function Home() {
       <header className="border-b border-black/10">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
-            <h1 className="text-5xl font-bold tracking-wider mb-2">LoopLocal</h1>
-            <p className="text-lg opacity-90 tracking-wide">Your Loop. Your Local.</p>
+            <h1 className="text-5xl font-bold tracking-wider mb-2">ParaSosh</h1>
+            <p className="text-lg opacity-90 tracking-wide">What Locals Are Talking About</p>
           </div>
         </div>
       </header>
@@ -20,7 +20,7 @@ export default function Home() {
           <div className="bg-white border-2 border-[#42a746] rounded-3xl p-12 text-center shadow-lg">
             <h2 className="text-3xl font-bold mb-3">Start Creating Your List Now!</h2>
             <p className="text-base opacity-90 mb-6 max-w-2xl mx-auto">
-              Try LoopLocal instantly - no login required. Log in to save your lists permanently.
+              Try ParaSosh instantly - no login required. Log in to save your lists permanently.
             </p>
             <Link
               href="/login.html"
