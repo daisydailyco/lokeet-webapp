@@ -137,7 +137,7 @@ async function handleLogout() {
   logoutBtn.textContent = 'Logging out...';
 
   await logout();
-  window.location.href = '/index.html';
+  window.location.href = '/';
 }
 
 // Switch tabs
