@@ -13,14 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ParaSosh - What Locals Are Talking About",
+  title: "Lokeet - What Locals Are Talking About",
   description: "Save local spots from Instagram and TikTok, organize into custom categories, and share curated lists with interactive maps.",
   manifest: "/manifest.json",
   themeColor: "#e7ac6d",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ParaSosh",
+    title: "Lokeet",
   },
 };
 
