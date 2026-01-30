@@ -1,6 +1,9 @@
 // LoopLocal Dashboard JavaScript
 // Handles user saves management, map view, categories, and all dashboard functionality
 
+// Configuration
+const RADAR_API_KEY = 'prj_live_pk_8c9d4c6a85d8b9e0aacb1b2f6f7ec0ead4cb799a';
+
 // Global state
 let allSaves = [];
 let filteredSaves = [];
@@ -336,13 +339,20 @@ function initMap() {
     return;
   }
 
-  // Initialize map
+  // Calculate center from all coordinates
+  const avgLat = savesWithCoords.reduce((sum, save) => sum + save.coordinates.lat, 0) / savesWithCoords.length;
+  const avgLng = savesWithCoords.reduce((sum, save) => sum + save.coordinates.lng, 0) / savesWithCoords.length;
+
+  // Initialize map with Radar tiles
   map = new maplibregl.Map({
     container: 'map',
-    style: 'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_key', // You'll need to get a MapTiler API key
-    center: [savesWithCoords[0].coordinates.lng, savesWithCoords[0].coordinates.lat],
+    style: `https://api.radar.io/maps/styles/radar-default-v1?publishableKey=${RADAR_API_KEY}`,
+    center: [avgLng, avgLat],
     zoom: 12
   });
+
+  // Add navigation controls
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
   // Add markers
   savesWithCoords.forEach((save, index) => {
