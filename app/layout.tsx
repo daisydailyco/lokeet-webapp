@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lokeet - What Locals Are Talking About",
+  title: "Lokeet - Locate Your Community",
   description: "Save local spots from Instagram and TikTok, organize into custom categories, and share curated lists with interactive maps.",
   manifest: "/manifest.json",
   themeColor: "#e7ac6d",
