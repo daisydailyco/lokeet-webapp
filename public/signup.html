@@ -63,6 +63,12 @@
       color: #000000;
     }
 
+    .typing-text {
+      display: inline-block;
+      min-width: 90px;
+      font-weight: 600;
+    }
+
     .auth-card {
       background: white;
       border-radius: 16px;
@@ -263,7 +269,7 @@
   <div class="auth-container">
     <div class="header">
       <div class="logo">Lokeet</div>
-      <div class="tagline">Save & Share</div>
+      <div class="tagline">Locate Your <span id="typing-text" class="typing-text">Community</span></div>
     </div>
 
     <div class="auth-card">
@@ -328,6 +334,45 @@
 
   <script src="/auth.js"></script>
   <script>
+    // Typing animation
+    const typingWords = ['Community', 'Saves', 'Events', 'Calendar', 'Posts'];
+    let typingWordIndex = 0;
+    let typingCharIndex = 0;
+    let isDeleting = false;
+
+    function typeWriter() {
+      const typingElement = document.getElementById('typing-text');
+      if (!typingElement) return;
+
+      const currentWord = typingWords[typingWordIndex];
+
+      if (isDeleting) {
+        typingElement.textContent = currentWord.substring(0, typingCharIndex - 1);
+        typingCharIndex--;
+
+        if (typingCharIndex === 0) {
+          isDeleting = false;
+          typingWordIndex = (typingWordIndex + 1) % typingWords.length;
+          setTimeout(typeWriter, 500);
+        } else {
+          setTimeout(typeWriter, 50);
+        }
+      } else {
+        typingElement.textContent = currentWord.substring(0, typingCharIndex + 1);
+        typingCharIndex++;
+
+        if (typingCharIndex === currentWord.length) {
+          isDeleting = true;
+          setTimeout(typeWriter, 2000);
+        } else {
+          setTimeout(typeWriter, 100);
+        }
+      }
+    }
+
+    // Start typing animation
+    typeWriter();
+
     const form = document.getElementById('signup-form');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');

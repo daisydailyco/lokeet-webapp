@@ -56,8 +56,8 @@
 
     .logo-container {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: baseline;
+      gap: 8px;
     }
 
     .logo {
@@ -68,14 +68,15 @@
     }
 
     .tagline {
-      font-size: 12px;
+      font-size: 14px;
       color: #666;
       letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
     .typing-text {
       display: inline-block;
-      min-width: 80px;
+      min-width: 90px;
       color: #000;
       font-weight: 600;
     }
@@ -855,6 +856,13 @@
 
       .nav-left {
         justify-content: flex-start;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .logo-container {
+        flex-wrap: wrap;
+        gap: 4px;
       }
 
       .logo {
@@ -863,6 +871,10 @@
 
       .tagline {
         font-size: 11px;
+      }
+
+      .typing-text {
+        min-width: 70px;
       }
 
       .nav-right {
@@ -995,7 +1007,7 @@
       <div class="nav-left">
         <div class="logo-container">
           <div class="logo">Lokeet</div>
-          <div class="tagline">Locate Your <span id="typing-text" class="typing-text">Community</span></div>
+          <div class="tagline">- Locate Your <span id="typing-text" class="typing-text">Community</span></div>
         </div>
       </div>
       <div class="nav-right">

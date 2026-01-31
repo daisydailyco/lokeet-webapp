@@ -1,4 +1,5 @@
 import { LandingAccordionItem } from "@/components/ui/interactive-image-accordion";
+import { TypingText } from "@/components/typing-text";
 import Link from "next/link";
 
 export default function Home() {
@@ -9,7 +10,9 @@ export default function Home() {
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
             <h1 className="text-5xl font-bold tracking-wider mb-2">Lokeet</h1>
-            <p className="text-lg opacity-90 tracking-wide">Locate Your Community</p>
+            <p className="text-lg opacity-90 tracking-wide">
+              Locate Your <TypingText />
+            </p>
           </div>
         </div>
       </header>
