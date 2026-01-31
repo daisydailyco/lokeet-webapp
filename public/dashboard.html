@@ -115,8 +115,9 @@
     }
 
     .settings-btn {
-      padding: 8px 16px;
-      border: 1px solid #e0e0e0;
+      width: 40px;
+      height: 40px;
+      border: 2px solid #000;
       border-radius: 8px;
       background: white;
       cursor: pointer;
@@ -124,15 +125,19 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: #000000;
     }
 
     .settings-btn:hover {
       background: #f0f0f0;
-      border-color: #000;
+      transform: scale(1.05);
+    }
+
+    .settings-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+      stroke: #000;
+      stroke-width: 2;
     }
 
     .settings-dropdown {
@@ -890,8 +895,13 @@
       }
 
       .settings-btn {
-        padding: 6px 12px;
-        font-size: 16px;
+        width: 36px;
+        height: 36px;
+      }
+
+      .settings-btn svg {
+        width: 18px;
+        height: 18px;
       }
 
       .tabs {
@@ -1020,7 +1030,14 @@
       </div>
       <div class="nav-right">
         <div class="settings-container">
-          <button id="settings-btn" class="settings-btn">Lokeet</button>
+          <button id="settings-btn" class="settings-btn">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6"></path>
+              <path d="M17.2 6.8l-4.2 4.2m0 0l-4.2 4.2m4.2-4.2l4.2 4.2m-8.4 0l4.2-4.2"></path>
+              <path d="M23 12h-6m-6 0H1"></path>
+            </svg>
+          </button>
           <div id="settings-dropdown" class="settings-dropdown">
             <div class="settings-dropdown-item">
               <div class="settings-dropdown-email" id="user-email">user@example.com</div>
