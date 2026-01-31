@@ -35,5 +35,5 @@ export function TypingText() {
     return () => clearTimeout(timeout);
   }, [text, isDeleting, wordIndex]);
 
-  return <span className="inline-block min-w-[90px] font-semibold">{text}</span>;
+  return <span className="inline-block w-[90px] text-left">{text}</span>;
 }
