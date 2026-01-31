@@ -22,6 +22,9 @@
   <!-- MapLibre GL CSS -->
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 
+  <!-- Radar SDK CSS -->
+  <link href="https://js.radar.com/v4.4.8/radar.css" rel="stylesheet" />
+
   <style>
     * {
       margin: 0;
@@ -1150,7 +1153,7 @@
 
         <div class="form-group">
           <label>Location</label>
-          <input type="text" id="add-location" placeholder="123 Main St, City, State">
+          <div id="add-location-autocomplete"></div>
         </div>
 
         <div class="form-row">
@@ -1203,7 +1206,7 @@
 
         <div class="form-group">
           <label>Location</label>
-          <input type="text" id="edit-address">
+          <div id="edit-location-autocomplete"></div>
         </div>
 
         <div class="form-group">
@@ -1213,7 +1216,7 @@
 
         <div class="modal-actions">
           <button type="button" class="modal-btn secondary" onclick="deleteSave(document.getElementById('edit-item-id').value); closeEditModal();">Remove</button>
-          <button type="submit" class="modal-btn primary" id="update-btn">Save</button>
+          <button type="submit" class="modal-btn primary" id="edit-save-btn">Save</button>
         </div>
       </form>
     </div>
@@ -1240,6 +1243,7 @@
   <!-- Scripts -->
   <script src="/auth.js"></script>
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <script src="https://js.radar.com/v4.4.8/radar.min.js"></script>
   <script src="/dashboard.js"></script>
 
   <!-- Service Worker Registration with Update Detection -->

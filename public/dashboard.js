@@ -12,6 +12,10 @@ let map = null;
 let mapInitialized = false;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
+let addAutocompleteInstance = null;
+let editAutocompleteInstance = null;
+let selectedAddAddress = null;
+let selectedEditAddress = null;
 
 // DOM elements
 const loadingDiv = document.getElementById('loading');
@@ -47,6 +51,47 @@ const logoutBtn = document.getElementById('logout-btn');
 const settingsBtn = document.getElementById('settings-btn');
 const settingsDropdown = document.getElementById('settings-dropdown');
 const settingsUpdateBtn = document.getElementById('settings-update-btn');
+
+// Initialize Radar SDK
+function initializeRadar() {
+  if (window.Radar) {
+    try {
+      Radar.initialize(RADAR_API_KEY);
+      console.log('Radar SDK initialized');
+    } catch (error) {
+      console.error('Failed to initialize Radar:', error);
+    }
+  }
+}
+
+// Geocode address using Radar API
+async function geocodeAddress(address) {
+  if (!window.Radar) {
+    console.error('Radar SDK not loaded');
+    return null;
+  }
+
+  try {
+    console.log('Geocoding address:', address);
+    const response = await Radar.geocode.forward({ query: address });
+
+    if (response && response.addresses && response.addresses.length > 0) {
+      const result = response.addresses[0];
+      return {
+        lat: result.latitude,
+        lng: result.longitude,
+        formattedAddress: result.formattedAddress,
+        city: result.city,
+        state: result.stateCode,
+        postalCode: result.postalCode
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
+  }
+}
 
 // Typing animation for tagline
 const typingWords = ['Community', 'Saves', 'Events', 'Calendar', 'Posts'];
@@ -90,6 +135,9 @@ function typeWriter() {
 // Initialize dashboard
 async function init() {
   try {
+    // Initialize Radar SDK
+    initializeRadar();
+
     // Verify authentication
     const verification = await verifySession();
 
@@ -780,9 +828,70 @@ function closeViewModal() {
   viewModal.classList.remove('active');
 }
 
+// Initialize autocomplete for add modal
+function initializeAddAutocomplete() {
+  if (!window.Radar) {
+    console.error('Radar SDK not loaded');
+    return;
+  }
+
+  const container = document.getElementById('add-location-autocomplete');
+  if (!container) {
+    console.error('Add location autocomplete container not found');
+    return;
+  }
+
+  try {
+    // Clean up previous instance if exists
+    if (addAutocompleteInstance) {
+      try {
+        addAutocompleteInstance.remove();
+      } catch (e) {
+        console.log('Previous add autocomplete already removed');
+      }
+    }
+
+    // Reset selected address
+    selectedAddAddress = null;
+
+    // Initialize autocomplete
+    addAutocompleteInstance = Radar.ui.autocomplete({
+      container: 'add-location-autocomplete',
+      width: '100%',
+      responsive: true,
+      placeholder: 'Search for address...',
+      near: '27.7676,-82.6403',
+      layers: ['place', 'address'],
+      limit: 8,
+      debounceMS: 300,
+      minCharacters: 3,
+      showMarkers: false,
+      onSelection: (address) => {
+        selectedAddAddress = {
+          lat: address.latitude,
+          lng: address.longitude,
+          formattedAddress: address.formattedAddress,
+          city: address.city,
+          state: address.stateCode,
+          postalCode: address.postalCode
+        };
+        console.log('Add location selected:', selectedAddAddress);
+      },
+      onError: (error) => {
+        console.error('Add autocomplete error:', error);
+      }
+    });
+
+    console.log('Add autocomplete initialized');
+  } catch (error) {
+    console.error('Failed to initialize add autocomplete:', error);
+  }
+}
+
 // Open add modal
 function openAddModal() {
   addForm.reset();
+  selectedAddAddress = null;
 
   // Populate category suggestions with user's existing categories
   const categorySuggestions = document.getElementById('category-suggestions');
@@ -805,10 +914,26 @@ function openAddModal() {
   }
 
   addModal.classList.add('active');
+
+  // Initialize autocomplete after modal is shown
+  setTimeout(() => {
+    initializeAddAutocomplete();
+  }, 100);
 }
 
 // Close add modal
 function closeAddModal() {
+  // Clean up autocomplete
+  if (addAutocompleteInstance) {
+    try {
+      addAutocompleteInstance.remove();
+    } catch (e) {
+      console.log('Autocomplete already removed');
+    }
+  }
+  addAutocompleteInstance = null;
+  selectedAddAddress = null;
+
   addModal.classList.remove('active');
 }
 
@@ -827,7 +952,6 @@ async function handleAddSave(e) {
     // Get form data
     const url = document.getElementById('add-url').value.trim();
     const name = document.getElementById('add-name').value.trim();
-    const location = document.getElementById('add-location').value.trim();
     const date = document.getElementById('add-date').value;
     const time = document.getElementById('add-time').value;
     const category = document.getElementById('add-category').value;
@@ -865,18 +989,61 @@ async function handleAddSave(e) {
       throw new Error('Save failed');
     }
 
-    // Update the item with user-provided data
-    if (name || location || date || time || category) {
-      const updateData = {};
-      if (name) {
-        updateData.event_name = name;
-        updateData.venue_name = name;
+    // Prepare location data from autocomplete or manual entry
+    let locationData = null;
+    if (selectedAddAddress) {
+      // Use address from autocomplete
+      locationData = {
+        address: selectedAddAddress.formattedAddress,
+        latitude: selectedAddAddress.lat,
+        longitude: selectedAddAddress.lng,
+        city: selectedAddAddress.city,
+        state: selectedAddAddress.state,
+        postalCode: selectedAddAddress.postalCode
+      };
+      console.log('Using autocomplete address:', locationData);
+    } else {
+      // Try to get manual text input (if autocomplete wasn't used)
+      const manualInput = document.querySelector('#add-location-autocomplete input');
+      if (manualInput && manualInput.value.trim()) {
+        const manualAddress = manualInput.value.trim();
+        console.log('Geocoding manual address:', manualAddress);
+        const geocoded = await geocodeAddress(manualAddress);
+        if (geocoded) {
+          locationData = {
+            address: geocoded.formattedAddress,
+            latitude: geocoded.lat,
+            longitude: geocoded.lng,
+            city: geocoded.city,
+            state: geocoded.state,
+            postalCode: geocoded.postalCode
+          };
+          console.log('Geocoded manual address:', locationData);
+        }
       }
-      if (location) updateData.address = location;
-      if (date) updateData.event_date = date;
-      if (time) updateData.start_time = time;
-      if (category) updateData.category = category;
+    }
 
+    // Update the item with user-provided data
+    const updateData = {};
+    if (name) {
+      updateData.event_name = name;
+      updateData.venue_name = name;
+    }
+    if (locationData) {
+      updateData.address = locationData.address;
+      updateData.coordinates = {
+        lat: locationData.latitude,
+        lng: locationData.longitude
+      };
+      if (locationData.city) updateData.city = locationData.city;
+      if (locationData.state) updateData.state = locationData.state;
+      if (locationData.postalCode) updateData.postalCode = locationData.postalCode;
+    }
+    if (date) updateData.event_date = date;
+    if (time) updateData.start_time = time;
+    if (category) updateData.category = category;
+
+    if (Object.keys(updateData).length > 0) {
       await fetch(`${API_BASE}/v1/user/saves/${data.item.id}`, {
         method: 'PATCH',
         headers: {
@@ -886,6 +1053,17 @@ async function handleAddSave(e) {
         body: JSON.stringify(updateData)
       });
     }
+
+    // Clean up autocomplete
+    if (addAutocompleteInstance) {
+      try {
+        addAutocompleteInstance.remove();
+      } catch (e) {
+        console.log('Autocomplete already removed');
+      }
+    }
+    addAutocompleteInstance = null;
+    selectedAddAddress = null;
 
     // Refresh saves
     await fetchSaves();
@@ -905,24 +1083,101 @@ async function handleAddSave(e) {
   }
 }
 
+// Initialize autocomplete for edit modal
+function initializeEditAutocomplete(currentAddress) {
+  if (!window.Radar) {
+    console.error('Radar SDK not loaded');
+    return;
+  }
+
+  const container = document.getElementById('edit-location-autocomplete');
+  if (!container) {
+    console.error('Edit location autocomplete container not found');
+    return;
+  }
+
+  try {
+    // Clean up previous instance if exists
+    if (editAutocompleteInstance) {
+      try {
+        editAutocompleteInstance.remove();
+      } catch (e) {
+        console.log('Previous edit autocomplete already removed');
+      }
+    }
+
+    // Reset selected address
+    selectedEditAddress = null;
+
+    // Initialize autocomplete
+    editAutocompleteInstance = Radar.ui.autocomplete({
+      container: 'edit-location-autocomplete',
+      width: '100%',
+      responsive: true,
+      placeholder: currentAddress || 'Search for address...',
+      near: '27.7676,-82.6403',
+      layers: ['place', 'address'],
+      limit: 8,
+      debounceMS: 300,
+      minCharacters: 3,
+      showMarkers: false,
+      onSelection: (address) => {
+        selectedEditAddress = {
+          lat: address.latitude,
+          lng: address.longitude,
+          formattedAddress: address.formattedAddress,
+          city: address.city,
+          state: address.stateCode,
+          postalCode: address.postalCode
+        };
+        console.log('Edit location selected:', selectedEditAddress);
+      },
+      onError: (error) => {
+        console.error('Edit autocomplete error:', error);
+      }
+    });
+
+    console.log('Edit autocomplete initialized');
+  } catch (error) {
+    console.error('Failed to initialize edit autocomplete:', error);
+  }
+}
+
 // Edit save
 function editSave(itemId) {
   const save = allSaves.find(s => s.id === itemId);
   if (!save) return;
 
+  selectedEditAddress = null;
+
   // Fill edit form
   document.getElementById('edit-item-id').value = save.id;
   document.getElementById('edit-category').value = save.category || '';
   document.getElementById('edit-event-name').value = save.event_name || save.venue_name || '';
-  document.getElementById('edit-address').value = save.address || '';
   document.getElementById('edit-date').value = save.event_date || '';
 
   // Open modal
   editModal.classList.add('active');
+
+  // Initialize autocomplete after modal is shown
+  setTimeout(() => {
+    initializeEditAutocomplete(save.address || '');
+  }, 100);
 }
 
 // Close edit modal
 function closeEditModal() {
+  // Clean up autocomplete
+  if (editAutocompleteInstance) {
+    try {
+      editAutocompleteInstance.remove();
+    } catch (e) {
+      console.log('Autocomplete already removed');
+    }
+  }
+  editAutocompleteInstance = null;
+  selectedEditAddress = null;
+
   editModal.classList.remove('active');
 }
 
@@ -930,9 +1185,9 @@ function closeEditModal() {
 async function handleEditSave(e) {
   e.preventDefault();
 
-  const updateBtn = document.getElementById('update-btn');
-  updateBtn.disabled = true;
-  updateBtn.textContent = 'Saving...';
+  const editSaveBtn = document.getElementById('edit-save-btn');
+  editSaveBtn.disabled = true;
+  editSaveBtn.textContent = 'Saving...';
 
   try {
     const session = getSession();
@@ -941,8 +1196,67 @@ async function handleEditSave(e) {
     const itemId = document.getElementById('edit-item-id').value;
     const category = document.getElementById('edit-category').value;
     const eventName = document.getElementById('edit-event-name').value.trim();
-    const address = document.getElementById('edit-address').value.trim();
     const date = document.getElementById('edit-date').value;
+
+    // Get current save to preserve existing location if not changed
+    const currentSave = allSaves.find(s => s.id === itemId);
+
+    // Prepare location data
+    let locationData = null;
+    if (selectedEditAddress) {
+      // Use address from autocomplete
+      locationData = {
+        address: selectedEditAddress.formattedAddress,
+        coordinates: {
+          lat: selectedEditAddress.lat,
+          lng: selectedEditAddress.lng
+        },
+        city: selectedEditAddress.city,
+        state: selectedEditAddress.state,
+        postalCode: selectedEditAddress.postalCode
+      };
+      console.log('Using autocomplete address:', locationData);
+    } else {
+      // Try to get manual text input (if autocomplete wasn't used)
+      const manualInput = document.querySelector('#edit-location-autocomplete input');
+      if (manualInput && manualInput.value.trim()) {
+        const manualAddress = manualInput.value.trim();
+        // Only geocode if address is different from current
+        if (manualAddress !== currentSave.address) {
+          console.log('Geocoding manual address:', manualAddress);
+          const geocoded = await geocodeAddress(manualAddress);
+          if (geocoded) {
+            locationData = {
+              address: geocoded.formattedAddress,
+              coordinates: {
+                lat: geocoded.lat,
+                lng: geocoded.lng
+              },
+              city: geocoded.city,
+              state: geocoded.state,
+              postalCode: geocoded.postalCode
+            };
+            console.log('Geocoded manual address:', locationData);
+          }
+        }
+      }
+    }
+
+    // Build update data
+    const updateData = {
+      category: category || null,
+      event_name: eventName || null,
+      event_date: date || null
+    };
+
+    // Add location data if provided
+    if (locationData) {
+      updateData.address = locationData.address;
+      updateData.coordinates = locationData.coordinates;
+      if (locationData.city) updateData.city = locationData.city;
+      if (locationData.state) updateData.state = locationData.state;
+      if (locationData.postalCode) updateData.postalCode = locationData.postalCode;
+    }
 
     // Call backend PATCH /v1/user/saves/{id}
     const response = await fetch(`${API_BASE}/v1/user/saves/${itemId}`, {
@@ -951,17 +1265,23 @@ async function handleEditSave(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({
-        category: category || null,
-        event_name: eventName || null,
-        address: address || null,
-        event_date: date || null
-      })
+      body: JSON.stringify(updateData)
     });
 
     if (!response.ok) {
       throw new Error('Failed to update');
     }
+
+    // Clean up autocomplete
+    if (editAutocompleteInstance) {
+      try {
+        editAutocompleteInstance.remove();
+      } catch (e) {
+        console.log('Autocomplete already removed');
+      }
+    }
+    editAutocompleteInstance = null;
+    selectedEditAddress = null;
 
     // Refresh saves
     await fetchSaves();
@@ -982,8 +1302,8 @@ async function handleEditSave(e) {
     console.error('Update save error:', error);
     alert('Failed to update save. Please try again.');
   } finally {
-    updateBtn.disabled = false;
-    updateBtn.textContent = 'Save';
+    editSaveBtn.disabled = false;
+    editSaveBtn.textContent = 'Save';
   }
 }
 
