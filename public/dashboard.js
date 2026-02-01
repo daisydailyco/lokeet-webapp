@@ -613,11 +613,14 @@ async function handleShare() {
     const data = await response.json();
 
     if (data.share_url) {
-      // Copy to clipboard
+      // Open in new tab
+      window.open(data.share_url, '_blank');
+
+      // Also copy to clipboard
       await navigator.clipboard.writeText(data.share_url);
 
       // Show success message
-      shareBtn.innerHTML = '<span>✓</span><span>Copied!</span>';
+      shareBtn.innerHTML = '<span>✓</span><span>Opened!</span>';
       setTimeout(() => {
         shareBtn.innerHTML = originalHTML;
         shareBtn.disabled = false;
