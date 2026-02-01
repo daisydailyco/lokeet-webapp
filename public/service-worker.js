@@ -1,5 +1,5 @@
 // LoopLocal Service Worker
-const CACHE_NAME = 'lokeet-v20';
+const CACHE_NAME = 'lokeet-v21';
 const urlsToCache = [
   '/',
   '/style.css',

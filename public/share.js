@@ -48,7 +48,6 @@ async function loadSharedList() {
     renderCategoryHeader(data);
     renderLocationCards(data.items);
     initializeRadarMap(data.items);
-    initializeEditButtons();
 
   } catch (error) {
     console.error('Error loading shared list:', error);
