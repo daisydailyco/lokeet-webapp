@@ -71,6 +71,7 @@
 
     .category-header {
       margin-bottom: 24px;
+      position: relative;
     }
 
     .category-header h1 {
@@ -78,39 +79,38 @@
       font-weight: 700;
       margin-bottom: 12px;
       color: #000;
-    }
-
-    .category-actions {
       display: flex;
-      gap: 12px;
-      justify-content: center;
       align-items: center;
-      position: relative;
+      justify-content: center;
+      gap: 12px;
     }
 
-    .category-action-btn {
-      padding: 8px 16px;
-      border: 2px solid #000;
-      border-radius: 8px;
-      background: white;
-      color: #000;
-      font-size: 14px;
-      font-weight: 600;
+    .category-icon-btn {
+      font-size: 24px;
       cursor: pointer;
+      opacity: 0.6;
       transition: all 0.2s;
+      user-select: none;
     }
 
-    .category-action-btn:hover {
-      background: #f0f0f0;
+    .category-icon-btn:hover {
+      opacity: 1;
     }
 
-    .category-action-btn.clear-btn {
-      border-color: #ff3b30;
-      color: #ff3b30;
+    .category-icon-btn.left {
+      font-size: 20px;
     }
 
-    .category-action-btn.clear-btn:hover {
-      background: rgba(255, 59, 48, 0.1);
+    .category-icon-btn.right {
+      font-size: 32px;
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .category-meta {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 8px;
     }
 
     .category-dropdown {
@@ -1018,10 +1018,15 @@
 
       .category-header h1 {
         font-size: 28px;
+        gap: 8px;
       }
 
-      .category-actions {
-        flex-direction: column;
+      .category-icon-btn.left {
+        font-size: 18px;
+      }
+
+      .category-icon-btn.right {
+        font-size: 28px;
       }
 
       .share-btn-large {
@@ -1193,13 +1198,16 @@
     <!-- Category Header (like share page) -->
     <div id="category-header-section" class="category-header-section" style="display: none;">
       <div class="category-header">
-        <h1 id="category-name-display">Category Name</h1>
-        <div class="category-actions">
-          <button id="change-category-btn" class="category-action-btn">Change Category</button>
-          <button id="clear-category-btn" class="category-action-btn clear-btn">Clear Filter</button>
-          <div id="category-dropdown" class="category-dropdown">
-            <!-- Categories will be populated here -->
-          </div>
+        <h1 id="category-name-display">
+          <span id="change-category-btn" class="category-icon-btn left">▼</span>
+          <span id="category-name-text">Category Name</span>
+          <span id="clear-category-btn" class="category-icon-btn right">×</span>
+        </h1>
+        <div class="category-meta">
+          <span id="category-item-count">0 places</span>
+        </div>
+        <div id="category-dropdown" class="category-dropdown">
+          <!-- Categories will be populated here -->
         </div>
       </div>
       <button id="share-btn" class="share-btn-large">

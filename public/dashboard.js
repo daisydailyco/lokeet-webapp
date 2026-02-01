@@ -23,7 +23,8 @@ const loadingDiv = document.getElementById('loading');
 const dashboardDiv = document.getElementById('dashboard');
 const userEmailSpan = document.getElementById('user-email');
 const categoryHeaderSection = document.getElementById('category-header-section');
-const categoryNameDisplay = document.getElementById('category-name-display');
+const categoryNameText = document.getElementById('category-name-text');
+const categoryItemCount = document.getElementById('category-item-count');
 const changeCategoryBtn = document.getElementById('change-category-btn');
 const clearCategoryBtn = document.getElementById('clear-category-btn');
 const categoryDropdown = document.getElementById('category-dropdown');
@@ -237,7 +238,12 @@ function populateCategoryDropdown() {
 // Set category filter
 function setCategory(category) {
   selectedCategory = category;
-  categoryNameDisplay.textContent = category;
+  categoryNameText.textContent = category;
+
+  // Count items in this category
+  const itemCount = allSaves.filter(save => save.category === category).length;
+  categoryItemCount.textContent = `${itemCount} place${itemCount !== 1 ? 's' : ''}`;
+
   categoryHeaderSection.style.display = 'block';
 
   // Update category filter dropdown to match
