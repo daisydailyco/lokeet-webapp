@@ -55,12 +55,52 @@
       display: flex;
       align-items: center;
       gap: 16px;
+      flex: 1;
     }
 
     .logo-container {
       display: flex;
       align-items: baseline;
       gap: 8px;
+    }
+
+    .nav-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .category-badge {
+      background: #000;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .category-badge.active {
+      display: flex;
+    }
+
+    .category-badge:hover {
+      background: #333;
+    }
+
+    .category-badge-close {
+      font-size: 16px;
+      font-weight: 700;
+      opacity: 0.8;
+    }
+
+    .category-badge-close:hover {
+      opacity: 1;
     }
 
     .logo {
@@ -435,6 +475,16 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 12px;
+      cursor: pointer;
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .card-category:hover {
+      background: #f0f0f0;
+      color: #000;
     }
 
     .card-link-preview {
@@ -863,20 +913,20 @@
     /* Responsive */
     @media (max-width: 768px) {
       .top-nav {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
       }
 
       .nav-left {
-        justify-content: flex-start;
-        flex: 1;
-        overflow: hidden;
+        justify-content: center;
+        flex: none;
       }
 
       .logo-container {
         flex-wrap: wrap;
         gap: 4px;
+        justify-content: center;
       }
 
       .logo {
@@ -891,8 +941,18 @@
         width: 70px;
       }
 
+      .nav-center {
+        flex: none;
+      }
+
+      .category-badge {
+        font-size: 13px;
+        padding: 6px 12px;
+      }
+
       .nav-right {
-        justify-content: flex-end;
+        justify-content: center;
+        flex: none;
       }
 
       .settings-btn {
@@ -1027,6 +1087,12 @@
         <div class="logo-container">
           <div class="logo">Lokeet</div>
           <div class="tagline">Locate Your <span id="typing-text" class="typing-text">Community</span></div>
+        </div>
+      </div>
+      <div class="nav-center">
+        <div id="category-badge" class="category-badge">
+          <span id="category-badge-text"></span>
+          <span class="category-badge-close">×</span>
         </div>
       </div>
       <div class="nav-right">

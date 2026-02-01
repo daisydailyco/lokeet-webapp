@@ -16,11 +16,14 @@ let addAutocompleteInstance = null;
 let editAutocompleteInstance = null;
 let selectedAddAddress = null;
 let selectedEditAddress = null;
+let selectedCategory = null;
 
 // DOM elements
 const loadingDiv = document.getElementById('loading');
 const dashboardDiv = document.getElementById('dashboard');
 const userEmailSpan = document.getElementById('user-email');
+const categoryBadge = document.getElementById('category-badge');
+const categoryBadgeText = document.getElementById('category-badge-text');
 
 // Tab elements
 const tabs = document.querySelectorAll('.tab');
@@ -201,6 +204,31 @@ async function fetchSaves() {
   }
 }
 
+// Set category filter
+function setCategory(category) {
+  selectedCategory = category;
+  categoryBadgeText.textContent = category;
+  categoryBadge.classList.add('active');
+
+  // Update category filter dropdown to match
+  categoryFilter.value = category;
+
+  // Apply filters
+  applyFilters();
+}
+
+// Clear category filter
+function clearCategory() {
+  selectedCategory = null;
+  categoryBadge.classList.remove('active');
+
+  // Reset category filter dropdown
+  categoryFilter.value = '';
+
+  // Apply filters
+  applyFilters();
+}
+
 // Initialize event listeners
 function initEventListeners() {
   // Settings dropdown toggle
@@ -225,6 +253,9 @@ function initEventListeners() {
   // Add save button
   addSaveBtn.addEventListener('click', openAddModal);
 
+  // Category badge close button
+  categoryBadge.addEventListener('click', clearCategory);
+
   // Tab switching
   tabs.forEach(tab => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
@@ -232,7 +263,13 @@ function initEventListeners() {
 
   // Filters
   sortSelect.addEventListener('change', applyFilters);
-  categoryFilter.addEventListener('change', applyFilters);
+  categoryFilter.addEventListener('change', (e) => {
+    if (e.target.value) {
+      setCategory(e.target.value);
+    } else {
+      clearCategory();
+    }
+  });
 
   // Add form submission
   addForm.addEventListener('submit', handleAddSave);
@@ -355,7 +392,7 @@ function createSaveCard(save) {
     <div class="card-title">${save.event_name || save.venue_name || 'Untitled'}</div>
     ${save.address ? `<div class="card-address">📍 ${save.address}</div>` : ''}
     ${dateStr ? `<div class="card-date">📅 ${dateStr}</div>` : ''}
-    ${save.category ? `<div class="card-category">${save.category}</div>` : ''}
+    ${save.category ? `<div class="card-category" data-category="${save.category}">${save.category}</div>` : ''}
     ${save.tags && save.tags.length > 0 ? `<div class="card-tags">${tagsHTML}</div>` : ''}
     <div class="card-link-preview">
       <button class="card-link-btn" data-url="${save.url || ''}">Link Preview - Open in Tab</button>
@@ -368,6 +405,16 @@ function createSaveCard(save) {
     e.stopPropagation();
     editSave(save.id);
   });
+
+  // Category click handler
+  const categoryEl = card.querySelector('.card-category');
+  if (categoryEl) {
+    categoryEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const category = e.target.dataset.category;
+      setCategory(category);
+    });
+  }
 
   // Link button click handler
   const linkBtn = card.querySelector('.card-link-btn');
@@ -404,11 +451,10 @@ function updateCategoryFilter() {
 // Apply filters and sorting
 function applyFilters() {
   const sortValue = sortSelect.value;
-  const categoryValue = categoryFilter.value;
 
-  // Filter by category
+  // Filter by category (use global selectedCategory)
   filteredSaves = allSaves.filter(save => {
-    if (categoryValue && save.category !== categoryValue) {
+    if (selectedCategory && save.category !== selectedCategory) {
       return false;
     }
     return true;
