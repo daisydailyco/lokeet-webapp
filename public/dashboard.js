@@ -24,6 +24,9 @@ const dashboardDiv = document.getElementById('dashboard');
 const userEmailSpan = document.getElementById('user-email');
 const categoryBadge = document.getElementById('category-badge');
 const categoryBadgeText = document.getElementById('category-badge-text');
+const categoryBadgeClose = document.getElementById('category-badge-close');
+const categoryDropdown = document.getElementById('category-dropdown');
+const shareBtn = document.getElementById('share-btn');
 
 // Tab elements
 const tabs = document.querySelectorAll('.tab');
@@ -32,7 +35,6 @@ const tabContents = document.querySelectorAll('.tab-content');
 // My Saves tab elements
 const savesGrid = document.getElementById('saves-grid');
 const emptyState = document.getElementById('empty-state');
-const sortSelect = document.getElementById('sort-select');
 const categoryFilter = document.getElementById('category-filter');
 
 // Map elements
@@ -204,14 +206,45 @@ async function fetchSaves() {
   }
 }
 
+// Populate category dropdown
+function populateCategoryDropdown() {
+  const categories = new Set();
+  allSaves.forEach(save => {
+    if (save.category) {
+      categories.add(save.category);
+    }
+  });
+
+  categoryDropdown.innerHTML = '';
+
+  categories.forEach(category => {
+    const item = document.createElement('div');
+    item.className = 'category-dropdown-item';
+    if (category === selectedCategory) {
+      item.classList.add('active');
+    }
+    item.textContent = category;
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setCategory(category);
+      categoryDropdown.classList.remove('show');
+    });
+    categoryDropdown.appendChild(item);
+  });
+}
+
 // Set category filter
 function setCategory(category) {
   selectedCategory = category;
   categoryBadgeText.textContent = category;
   categoryBadge.classList.add('active');
+  shareBtn.classList.add('active');
 
   // Update category filter dropdown to match
   categoryFilter.value = category;
+
+  // Populate category dropdown
+  populateCategoryDropdown();
 
   // Apply filters
   applyFilters();
@@ -221,6 +254,8 @@ function setCategory(category) {
 function clearCategory() {
   selectedCategory = null;
   categoryBadge.classList.remove('active');
+  shareBtn.classList.remove('active');
+  categoryDropdown.classList.remove('show');
 
   // Reset category filter dropdown
   categoryFilter.value = '';
@@ -253,8 +288,32 @@ function initEventListeners() {
   // Add save button
   addSaveBtn.addEventListener('click', openAddModal);
 
+  // Category badge dropdown toggle
+  categoryBadge.addEventListener('click', (e) => {
+    // Don't toggle if clicking the close button
+    if (e.target.id === 'category-badge-close') {
+      return;
+    }
+    e.stopPropagation();
+    categoryDropdown.classList.toggle('show');
+    populateCategoryDropdown();
+  });
+
   // Category badge close button
-  categoryBadge.addEventListener('click', clearCategory);
+  categoryBadgeClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    clearCategory();
+  });
+
+  // Close category dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!categoryBadge.contains(e.target)) {
+      categoryDropdown.classList.remove('show');
+    }
+  });
+
+  // Share button
+  shareBtn.addEventListener('click', handleShare);
 
   // Tab switching
   tabs.forEach(tab => {
@@ -262,7 +321,6 @@ function initEventListeners() {
   });
 
   // Filters
-  sortSelect.addEventListener('change', applyFilters);
   categoryFilter.addEventListener('change', (e) => {
     if (e.target.value) {
       setCategory(e.target.value);
@@ -448,10 +506,8 @@ function updateCategoryFilter() {
   });
 }
 
-// Apply filters and sorting
+// Apply filters
 function applyFilters() {
-  const sortValue = sortSelect.value;
-
   // Filter by category (use global selectedCategory)
   filteredSaves = allSaves.filter(save => {
     if (selectedCategory && save.category !== selectedCategory) {
@@ -460,24 +516,9 @@ function applyFilters() {
     return true;
   });
 
-  // Sort
+  // Sort by newest first (default)
   filteredSaves.sort((a, b) => {
-    switch (sortValue) {
-      case 'newest':
-        return new Date(b.saved_at) - new Date(a.saved_at);
-      case 'oldest':
-        return new Date(a.saved_at) - new Date(b.saved_at);
-      case 'name-asc':
-        const nameA = (a.event_name || a.venue_name || '').toLowerCase();
-        const nameB = (b.event_name || b.venue_name || '').toLowerCase();
-        return nameA.localeCompare(nameB);
-      case 'name-desc':
-        const nameA2 = (a.event_name || a.venue_name || '').toLowerCase();
-        const nameB2 = (b.event_name || b.venue_name || '').toLowerCase();
-        return nameB2.localeCompare(nameA2);
-      default:
-        return 0;
-    }
+    return new Date(b.saved_at) - new Date(a.saved_at);
   });
 
   // Render appropriate view based on active tab
@@ -493,6 +534,59 @@ function applyFilters() {
   }
   if (activeCalendarTab.classList.contains('active')) {
     renderCalendar();
+  }
+}
+
+// Handle share button
+async function handleShare() {
+  if (!selectedCategory) return;
+
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    // Get saves for the selected category
+    const categorySaves = allSaves.filter(save => save.category === selectedCategory);
+
+    if (categorySaves.length === 0) {
+      alert('No saves in this category to share');
+      return;
+    }
+
+    // Create a share link by calling backend API
+    const response = await fetch(`${API_BASE}/v1/user/share`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        category: selectedCategory,
+        saves: categorySaves.map(save => save.id)
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create share link');
+    }
+
+    const data = await response.json();
+
+    if (data.share_url) {
+      // Copy to clipboard
+      await navigator.clipboard.writeText(data.share_url);
+
+      // Show success message
+      const originalText = shareBtn.innerHTML;
+      shareBtn.innerHTML = '<span>✓</span><span>Copied!</span>';
+      setTimeout(() => {
+        shareBtn.innerHTML = originalText;
+      }, 2000);
+    }
+
+  } catch (error) {
+    console.error('Share error:', error);
+    alert('Failed to create share link. Please try again.');
   }
 }
 
