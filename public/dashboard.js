@@ -22,10 +22,10 @@ let selectedCategory = null;
 const loadingDiv = document.getElementById('loading');
 const dashboardDiv = document.getElementById('dashboard');
 const userEmailSpan = document.getElementById('user-email');
-const categoryFilterRow = document.getElementById('category-filter-row');
-const categoryBadge = document.getElementById('category-badge');
-const categoryBadgeText = document.getElementById('category-badge-text');
-const categoryBadgeClose = document.getElementById('category-badge-close');
+const categoryHeaderSection = document.getElementById('category-header-section');
+const categoryNameDisplay = document.getElementById('category-name-display');
+const changeCategoryBtn = document.getElementById('change-category-btn');
+const clearCategoryBtn = document.getElementById('clear-category-btn');
 const categoryDropdown = document.getElementById('category-dropdown');
 const shareBtn = document.getElementById('share-btn');
 
@@ -237,10 +237,8 @@ function populateCategoryDropdown() {
 // Set category filter
 function setCategory(category) {
   selectedCategory = category;
-  categoryBadgeText.textContent = category;
-  categoryBadge.classList.add('active');
-  shareBtn.classList.add('active');
-  categoryFilterRow.style.display = 'flex';
+  categoryNameDisplay.textContent = category;
+  categoryHeaderSection.style.display = 'block';
 
   // Update category filter dropdown to match
   categoryFilter.value = category;
@@ -255,10 +253,8 @@ function setCategory(category) {
 // Clear category filter
 function clearCategory() {
   selectedCategory = null;
-  categoryBadge.classList.remove('active');
-  shareBtn.classList.remove('active');
   categoryDropdown.classList.remove('show');
-  categoryFilterRow.style.display = 'none';
+  categoryHeaderSection.style.display = 'none';
 
   // Reset category filter dropdown
   categoryFilter.value = '';
@@ -291,26 +287,22 @@ function initEventListeners() {
   // Add save button
   addSaveBtn.addEventListener('click', openAddModal);
 
-  // Category badge dropdown toggle
-  categoryBadge.addEventListener('click', (e) => {
-    // Don't toggle if clicking the close button
-    if (e.target.id === 'category-badge-close') {
-      return;
-    }
+  // Change category button
+  changeCategoryBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     categoryDropdown.classList.toggle('show');
     populateCategoryDropdown();
   });
 
-  // Category badge close button
-  categoryBadgeClose.addEventListener('click', (e) => {
+  // Clear category button
+  clearCategoryBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     clearCategory();
   });
 
   // Close category dropdown when clicking outside
   document.addEventListener('click', (e) => {
-    if (!categoryBadge.contains(e.target)) {
+    if (!changeCategoryBtn.contains(e.target) && !categoryDropdown.contains(e.target)) {
       categoryDropdown.classList.remove('show');
     }
   });

@@ -63,66 +63,61 @@
       gap: 8px;
     }
 
-    .category-filter-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 24px;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 0;
+    /* Category Header Section (like share page) */
+    .category-header-section {
+      padding: 32px 24px;
+      text-align: center;
     }
 
-    .category-badge {
-      background: white;
+    .category-header {
+      margin-bottom: 24px;
+    }
+
+    .category-header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 12px;
       color: #000;
-      border: 2px solid #000;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      display: none;
+    }
+
+    .category-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
       align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
       position: relative;
     }
 
-    .category-badge.active {
-      display: flex;
+    .category-action-btn {
+      padding: 8px 16px;
+      border: 2px solid #000;
+      border-radius: 8px;
+      background: white;
+      color: #000;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .category-badge:hover {
+    .category-action-btn:hover {
       background: #f0f0f0;
     }
 
-    .category-badge-text {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .category-action-btn.clear-btn {
+      border-color: #ff3b30;
+      color: #ff3b30;
     }
 
-    .category-badge-arrow {
-      font-size: 12px;
-      opacity: 0.8;
-    }
-
-    .category-badge-close {
-      font-size: 16px;
-      font-weight: 700;
-      opacity: 0.8;
-      margin-left: 4px;
-    }
-
-    .category-badge-close:hover {
-      opacity: 1;
+    .category-action-btn.clear-btn:hover {
+      background: rgba(255, 59, 48, 0.1);
     }
 
     .category-dropdown {
       position: absolute;
       top: 100%;
-      left: 0;
+      left: 50%;
+      transform: translateX(-50%);
       margin-top: 8px;
       background: white;
       border: 1px solid #e0e0e0;
@@ -161,27 +156,24 @@
       color: white;
     }
 
-    .share-btn {
+    .share-btn-large {
       background: rgba(66, 167, 70, 0.3);
       border: 1px solid rgba(66, 167, 70, 0.5);
       color: #000;
-      padding: 8px 16px;
+      padding: 12px 32px;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
-      display: none;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
-    .share-btn.active {
-      display: flex;
-    }
-
-    .share-btn:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    .share-btn-large:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transform: translateY(-2px);
     }
 
     .logo {
@@ -1020,22 +1012,21 @@
         width: 70px;
       }
 
-      .category-filter-row {
+      .category-header-section {
+        padding: 24px 16px;
+      }
+
+      .category-header h1 {
+        font-size: 28px;
+      }
+
+      .category-actions {
         flex-direction: column;
-        gap: 12px;
-        align-items: stretch;
       }
 
-      .category-badge {
-        font-size: 13px;
-        padding: 8px 12px;
-        justify-content: center;
-      }
-
-      .share-btn {
-        font-size: 13px;
-        padding: 8px 12px;
-        justify-content: center;
+      .share-btn-large {
+        font-size: 14px;
+        padding: 10px 24px;
       }
 
       .settings-btn {
@@ -1199,19 +1190,19 @@
       </div>
     </div>
 
-    <!-- Category Filter Row -->
-    <div id="category-filter-row" class="category-filter-row" style="display: none;">
-      <div id="category-badge" class="category-badge">
-        <div class="category-badge-text">
-          <span id="category-badge-text"></span>
-          <span class="category-badge-arrow">▼</span>
-        </div>
-        <span class="category-badge-close" id="category-badge-close">×</span>
-        <div id="category-dropdown" class="category-dropdown">
-          <!-- Categories will be populated here -->
+    <!-- Category Header (like share page) -->
+    <div id="category-header-section" class="category-header-section" style="display: none;">
+      <div class="category-header">
+        <h1 id="category-name-display">Category Name</h1>
+        <div class="category-actions">
+          <button id="change-category-btn" class="category-action-btn">Change Category</button>
+          <button id="clear-category-btn" class="category-action-btn clear-btn">Clear Filter</button>
+          <div id="category-dropdown" class="category-dropdown">
+            <!-- Categories will be populated here -->
+          </div>
         </div>
       </div>
-      <button id="share-btn" class="share-btn">
+      <button id="share-btn" class="share-btn-large">
         <span>🔗</span>
         <span>Share</span>
       </button>
