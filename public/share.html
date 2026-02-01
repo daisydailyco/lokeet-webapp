@@ -58,30 +58,49 @@
         </div>
       </div>
 
-      <!-- Map Container -->
-      <div id="map-container" class="map-container">
-        <div id="radar-map"></div>
-      </div>
-
-      <!-- Edit Order Button -->
-      <div style="text-align: center; margin: 30px 0 20px;">
-        <button id="edit-order-btn" class="edit-button">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="saves">Saves</button>
+        <button class="tab" data-tab="map">Map</button>
+        <button class="tab" data-tab="calendar">Calendar</button>
+        <button id="edit-order-btn" class="edit-button-tab">
           Edit Order
         </button>
-        <div id="edit-mode-controls" style="display: none;">
-          <p style="font-size: 14px; opacity: 0.8; margin-bottom: 12px;">Drag and drop to reorder</p>
-          <button id="save-order-btn" class="edit-button" style="background: #42A746; color: white;">
-            Save Order
-          </button>
-          <button id="cancel-order-btn" class="edit-button" style="margin-left: 10px;">
-            Cancel
-          </button>
+      </div>
+
+      <!-- Edit Mode Controls -->
+      <div id="edit-mode-controls" style="display: none; text-align: center; margin: 16px 0;">
+        <p style="font-size: 14px; opacity: 0.8; margin-bottom: 12px;">Drag and drop to reorder</p>
+        <button id="save-order-btn" class="edit-button" style="background: #42A746; color: white;">
+          Save Order
+        </button>
+        <button id="cancel-order-btn" class="edit-button" style="margin-left: 10px;">
+          Cancel
+        </button>
+      </div>
+
+      <!-- Saves Tab -->
+      <div id="saves-tab" class="tab-content active">
+        <!-- Location Cards -->
+        <div id="location-list" class="location-list">
+          <!-- Cards will be inserted here by JavaScript -->
         </div>
       </div>
 
-      <!-- Location Cards -->
-      <div id="location-list" class="location-list">
-        <!-- Cards will be inserted here by JavaScript -->
+      <!-- Map Tab -->
+      <div id="map-tab" class="tab-content">
+        <div id="map-container" class="map-container">
+          <div id="radar-map"></div>
+        </div>
+      </div>
+
+      <!-- Calendar Tab -->
+      <div id="calendar-tab" class="tab-content">
+        <div id="calendar-view" style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+          <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #000;">Calendar View</h2>
+          <p style="color: #666; font-size: 16px;">Event dates will appear here</p>
+        </div>
       </div>
 
       <!-- CTA Section -->

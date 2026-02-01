@@ -476,9 +476,33 @@ async function saveNewOrder() {
   }
 }
 
+// Tab Switching
+function initializeTabs() {
+  const tabs = document.querySelectorAll('.tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.dataset.tab;
+
+      // Remove active class from all tabs
+      tabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(tc => tc.classList.remove('active'));
+
+      // Add active class to clicked tab
+      tab.classList.add('active');
+      document.getElementById(`${targetTab}-tab`).classList.add('active');
+    });
+  });
+}
+
 // Load when page is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadSharedList);
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSharedList();
+    initializeTabs();
+  });
 } else {
   loadSharedList();
+  initializeTabs();
 }
