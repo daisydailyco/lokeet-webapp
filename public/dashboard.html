@@ -53,9 +53,8 @@
 
     .nav-left {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 16px;
     }
 
     .logo-container {
@@ -64,12 +63,22 @@
       gap: 8px;
     }
 
+    .category-filter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 0;
+    }
+
     .category-badge {
       background: #000;
       color: white;
       padding: 8px 16px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       display: none;
       align-items: center;
@@ -152,19 +161,18 @@
     }
 
     .share-btn {
-      background: #42a746;
-      color: white;
+      background: rgba(66, 167, 70, 0.3);
+      border: 1px solid rgba(66, 167, 70, 0.5);
+      color: #000;
       padding: 8px 16px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
-      border: none;
       cursor: pointer;
       transition: all 0.2s;
       display: none;
       align-items: center;
       gap: 6px;
-      margin-left: 12px;
     }
 
     .share-btn.active {
@@ -172,8 +180,7 @@
     }
 
     .share-btn:hover {
-      background: #3a9340;
-      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     .logo {
@@ -986,19 +993,18 @@
     /* Responsive */
     @media (max-width: 768px) {
       .top-nav {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
-        gap: 12px;
       }
 
       .nav-left {
-        align-items: center;
+        flex: 1;
       }
 
       .logo-container {
         flex-wrap: wrap;
         gap: 4px;
-        justify-content: center;
       }
 
       .logo {
@@ -1013,21 +1019,22 @@
         width: 70px;
       }
 
-      .category-badge {
-        font-size: 12px;
-        padding: 6px 12px;
+      .category-filter-row {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
       }
 
-      .nav-right {
+      .category-badge {
+        font-size: 13px;
+        padding: 8px 12px;
         justify-content: center;
-        display: flex;
-        align-items: center;
-        gap: 12px;
       }
 
       .share-btn {
-        font-size: 12px;
-        padding: 6px 12px;
+        font-size: 13px;
+        padding: 8px 12px;
+        justify-content: center;
       }
 
       .settings-btn {
@@ -1163,22 +1170,8 @@
           <div class="logo">Lokeet</div>
           <div class="tagline">Locate Your <span id="typing-text" class="typing-text">Community</span></div>
         </div>
-        <div id="category-badge" class="category-badge">
-          <div class="category-badge-text">
-            <span id="category-badge-text"></span>
-            <span class="category-badge-arrow">▼</span>
-          </div>
-          <span class="category-badge-close" id="category-badge-close">×</span>
-          <div id="category-dropdown" class="category-dropdown">
-            <!-- Categories will be populated here -->
-          </div>
-        </div>
       </div>
       <div class="nav-right">
-        <button id="share-btn" class="share-btn">
-          <span>🔗</span>
-          <span>Share</span>
-        </button>
         <div class="settings-container">
           <button id="settings-btn" class="settings-btn">
             <svg viewBox="0 0 24 24">
@@ -1203,6 +1196,24 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Category Filter Row -->
+    <div id="category-filter-row" class="category-filter-row" style="display: none;">
+      <div id="category-badge" class="category-badge">
+        <div class="category-badge-text">
+          <span id="category-badge-text"></span>
+          <span class="category-badge-arrow">▼</span>
+        </div>
+        <span class="category-badge-close" id="category-badge-close">×</span>
+        <div id="category-dropdown" class="category-dropdown">
+          <!-- Categories will be populated here -->
+        </div>
+      </div>
+      <button id="share-btn" class="share-btn">
+        <span>🔗</span>
+        <span>Share</span>
+      </button>
     </div>
 
     <!-- Main Container -->

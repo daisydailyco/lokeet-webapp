@@ -22,6 +22,7 @@ let selectedCategory = null;
 const loadingDiv = document.getElementById('loading');
 const dashboardDiv = document.getElementById('dashboard');
 const userEmailSpan = document.getElementById('user-email');
+const categoryFilterRow = document.getElementById('category-filter-row');
 const categoryBadge = document.getElementById('category-badge');
 const categoryBadgeText = document.getElementById('category-badge-text');
 const categoryBadgeClose = document.getElementById('category-badge-close');
@@ -239,6 +240,7 @@ function setCategory(category) {
   categoryBadgeText.textContent = category;
   categoryBadge.classList.add('active');
   shareBtn.classList.add('active');
+  categoryFilterRow.style.display = 'flex';
 
   // Update category filter dropdown to match
   categoryFilter.value = category;
@@ -256,6 +258,7 @@ function clearCategory() {
   categoryBadge.classList.remove('active');
   shareBtn.classList.remove('active');
   categoryDropdown.classList.remove('show');
+  categoryFilterRow.style.display = 'none';
 
   // Reset category filter dropdown
   categoryFilter.value = '';
@@ -553,21 +556,58 @@ async function handleShare() {
       return;
     }
 
+    // Show loading state
+    const originalHTML = shareBtn.innerHTML;
+    shareBtn.innerHTML = '<span>⏳</span><span>Sharing...</span>';
+    shareBtn.disabled = true;
+
+    // Format items to match backend SavedItem model
+    const formattedItems = categorySaves.map(save => ({
+      id: save.id,
+      user_id: currentUser?.id || save.user_id,
+      platform: save.platform || 'instagram',
+      url: save.url || '',
+      content: save.content || '',
+      images: save.images || [],
+      author: save.author || 'unknown',
+      event_name: save.event_name || null,
+      venue_name: save.venue_name || null,
+      address: save.address || null,
+      latitude: save.coordinates?.lat || null,
+      longitude: save.coordinates?.lng || null,
+      coordinates: save.coordinates || null,
+      city: save.city || null,
+      state: save.state || null,
+      event_date: save.event_date || null,
+      start_time: save.start_time || null,
+      end_time: save.end_time || null,
+      event_type: save.event_type || save.category || null,
+      tags: save.tags || [],
+      category: save.category || null,
+      ai_processed: save.ai_processed || false,
+      confidence_score: save.confidence_score || 0.0,
+      saved_at: save.saved_at || new Date().toISOString()
+    }));
+
+    console.log('Sharing category:', selectedCategory);
+    console.log('Items to share:', formattedItems.length);
+
     // Create a share link by calling backend API
-    const response = await fetch(`${API_BASE}/v1/user/share`, {
+    const response = await fetch(`${API_BASE}/v1/share`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         category: selectedCategory,
-        saves: categorySaves.map(save => save.id)
+        items: formattedItems
       })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create share link');
+      const errorText = await response.text();
+      console.error('Backend error:', errorText);
+      throw new Error(`Failed to create share link: ${response.status}`);
     }
 
     const data = await response.json();
@@ -577,16 +617,20 @@ async function handleShare() {
       await navigator.clipboard.writeText(data.share_url);
 
       // Show success message
-      const originalText = shareBtn.innerHTML;
       shareBtn.innerHTML = '<span>✓</span><span>Copied!</span>';
       setTimeout(() => {
-        shareBtn.innerHTML = originalText;
+        shareBtn.innerHTML = originalHTML;
+        shareBtn.disabled = false;
       }, 2000);
     }
 
   } catch (error) {
     console.error('Share error:', error);
-    alert('Failed to create share link. Please try again.');
+    alert(`Failed to create share link: ${error.message}`);
+
+    // Reset button
+    shareBtn.innerHTML = '<span>🔗</span><span>Share</span>';
+    shareBtn.disabled = false;
   }
 }
 
