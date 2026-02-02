@@ -112,22 +112,65 @@ function renderLocationCards(items) {
     const card = document.createElement('div');
     card.className = 'location-card';
 
-    const venue = item.venue_name || item.address || item.event_name || 'Saved Location';
-    const platform = item.platform || '';
-    const author = item.author || '';
-    const eventDate = formatEventDate(item.event_date);
+    const venue = item.venue_name || item.event_name || 'Saved Location';
+    const address = item.address || '';
+
+    // Format date and time like dashboard
+    let dateTimeStr = '';
+    if (item.event_date) {
+      const date = new Date(item.event_date + 'T00:00:00');
+      dateTimeStr = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      // Add time if available
+      if (item.start_time) {
+        const [hours, minutes] = item.start_time.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        let timeStr = `${displayHour}:${minutes} ${ampm}`;
+
+        // Add end time if available
+        if (item.end_time) {
+          const [endHours, endMinutes] = item.end_time.split(':');
+          const endHour = parseInt(endHours);
+          const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+          const endDisplayHour = endHour % 12 || 12;
+          timeStr += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+        }
+
+        // Add timezone abbreviation if available
+        if (item.timezone) {
+          const tzMap = {
+            'Pacific/Midway': 'SST', 'Pacific/Honolulu': 'HST', 'America/Anchorage': 'AKST',
+            'America/Los_Angeles': 'PST', 'America/Denver': 'MST', 'America/Phoenix': 'MST',
+            'America/Chicago': 'CST', 'America/New_York': 'EST', 'America/Caracas': 'VET',
+            'America/Halifax': 'AST', 'America/St_Johns': 'NST', 'America/Argentina/Buenos_Aires': 'ART',
+            'America/Sao_Paulo': 'BRT', 'Atlantic/Azores': 'AZOT', 'Atlantic/Cape_Verde': 'CVT',
+            'Europe/London': 'GMT', 'Europe/Paris': 'CET', 'Europe/Berlin': 'CET',
+            'Europe/Athens': 'EET', 'Africa/Cairo': 'EET', 'Africa/Johannesburg': 'SAST',
+            'Europe/Moscow': 'MSK', 'Asia/Dubai': 'GST', 'Asia/Karachi': 'PKT',
+            'Asia/Kolkata': 'IST', 'Asia/Dhaka': 'BST', 'Asia/Bangkok': 'ICT',
+            'Asia/Singapore': 'SGT', 'Asia/Hong_Kong': 'HKT', 'Asia/Shanghai': 'CST',
+            'Asia/Tokyo': 'JST', 'Asia/Seoul': 'KST', 'Australia/Sydney': 'AEDT',
+            'Australia/Adelaide': 'ACDT', 'Pacific/Auckland': 'NZDT', 'Pacific/Fiji': 'FJT'
+          };
+          const tzAbbr = tzMap[item.timezone];
+          if (tzAbbr) timeStr += ` ${tzAbbr}`;
+        }
+
+        dateTimeStr += ` • ${timeStr}`;
+      }
+    }
 
     card.innerHTML = `
       <div class="location-number">${index + 1}</div>
       <h3>${venue}</h3>
-      ${platform || author ? `
-        <div class="location-details">
-          ${platform ? platform : ''}
-          ${platform && author ? ' • ' : ''}
-          ${author ? (author.startsWith('@') ? author : '@' + author) : ''}
-        </div>
-      ` : ''}
-      ${eventDate ? `<div class="location-date">${eventDate}</div>` : ''}
+      ${address ? `<div class="location-details">📍 ${address}</div>` : ''}
+      ${dateTimeStr ? `<div class="location-date">📅 ${dateTimeStr}</div>` : ''}
     `;
 
     // Click to focus on map marker and show popup
@@ -351,6 +394,116 @@ function formatEventDate(dateString) {
 
 // Removed edit order functionality
 
+// Calendar rendering
+let currentCalendarMonth = new Date().getMonth();
+let currentCalendarYear = new Date().getFullYear();
+
+function renderCalendar() {
+  const calendarView = document.getElementById('calendar-view');
+
+  // Filter items with dates
+  const itemsWithDates = currentItems.filter(item => item.event_date);
+
+  if (itemsWithDates.length === 0) {
+    calendarView.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+      <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #000;">No Events Scheduled</h2>
+      <p style="color: #666; font-size: 16px;">Events with dates will appear here</p>
+    `;
+    return;
+  }
+
+  // Group items by date
+  const itemsByDate = {};
+  itemsWithDates.forEach(item => {
+    const dateKey = item.event_date.split('T')[0];
+    if (!itemsByDate[dateKey]) {
+      itemsByDate[dateKey] = [];
+    }
+    itemsByDate[dateKey].push(item);
+  });
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
+  const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+  const prevLastDay = new Date(currentCalendarYear, currentCalendarMonth, 0);
+  const firstDayIndex = firstDay.getDay();
+  const lastDateOfMonth = lastDay.getDate();
+  const prevLastDate = prevLastDay.getDate();
+
+  let calendarHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <button onclick="changeCalendarMonth(-1)" style="background: #f5f5f5; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">‹ Prev</button>
+      <h2 style="margin: 0; font-size: 20px;">${monthNames[currentCalendarMonth]} ${currentCalendarYear}</h2>
+      <button onclick="changeCalendarMonth(1)" style="background: #f5f5f5; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">Next ›</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+      <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Sun</div>
+      <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Mon</div>
+      <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Tue</div>
+      <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Wed</div>
+      <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Thu</div>
+      <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Fri</div>
+      <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Sat</div>
+  `;
+
+  // Previous month trailing days
+  for (let i = firstDayIndex; i > 0; i--) {
+    calendarHTML += `
+      <div style="padding: 12px; text-align: center; opacity: 0.3; background: #f9f9f9; border-radius: 8px;">
+        <div style="font-weight: 600;">${prevLastDate - i + 1}</div>
+      </div>
+    `;
+  }
+
+  // Current month days
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  for (let day = 1; day <= lastDateOfMonth; day++) {
+    const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const isToday = dateStr === todayStr;
+    const hasItems = itemsByDate[dateStr];
+
+    const itemName = hasItems && hasItems.length === 1
+      ? (hasItems[0].event_name || hasItems[0].venue_name || 'Event')
+      : (hasItems ? `${hasItems.length} events` : '');
+
+    const bgColor = isToday ? '#e8f5e9' : (hasItems ? '#f5f5f5' : 'white');
+    const border = isToday ? '2px solid #4caf50' : '1px solid #e0e0e0';
+
+    calendarHTML += `
+      <div style="padding: 12px; text-align: center; background: ${bgColor}; border: ${border}; border-radius: 8px; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-weight: 600; margin-bottom: 4px;">${day}</div>
+        ${hasItems ? `<div style="font-size: 11px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">${itemName}</div>` : ''}
+      </div>
+    `;
+  }
+
+  calendarHTML += '</div>';
+  calendarView.innerHTML = calendarHTML;
+}
+
+function changeCalendarMonth(direction) {
+  currentCalendarMonth += direction;
+
+  if (currentCalendarMonth > 11) {
+    currentCalendarMonth = 0;
+    currentCalendarYear++;
+  } else if (currentCalendarMonth < 0) {
+    currentCalendarMonth = 11;
+    currentCalendarYear--;
+  }
+
+  renderCalendar();
+}
+
+// Make function globally accessible
+window.changeCalendarMonth = changeCalendarMonth;
+
 // Tab Switching
 function initializeTabs() {
   const tabs = document.querySelectorAll('.tab');
@@ -367,6 +520,11 @@ function initializeTabs() {
       // Add active class to clicked tab
       tab.classList.add('active');
       document.getElementById(`${targetTab}-tab`).classList.add('active');
+
+      // Render calendar when calendar tab is clicked
+      if (targetTab === 'calendar') {
+        renderCalendar();
+      }
     });
   });
 }
