@@ -501,6 +501,26 @@
       color: white;
     }
 
+    .filter-edit-icon {
+      width: 20px;
+      height: 20px;
+      background: #f0f0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: bold;
+      color: #666;
+    }
+
+    .filter-edit-icon:hover {
+      background: #000000;
+      color: white;
+    }
+
     .card-edit-icon:hover::after {
       content: 'Edit';
       position: absolute;
@@ -923,6 +943,49 @@
       margin-top: 24px;
     }
 
+    .category-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .category-edit-input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      color: #000;
+    }
+
+    .category-edit-input:focus {
+      outline: none;
+      border-color: #000;
+    }
+
+    .category-delete-btn {
+      width: 32px;
+      height: 32px;
+      background: #ff3b30;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .category-delete-btn:hover {
+      background: #d32f2f;
+      transform: scale(1.1);
+    }
+
     .modal-btn {
       flex: 1;
       padding: 14px;
@@ -1248,7 +1311,10 @@
           <!-- Filters -->
           <div class="filters">
             <div class="filter-group">
-              <label>Category</label>
+              <label style="display: flex; align-items: center; gap: 8px;">
+                Category
+                <span id="edit-categories-btn" class="filter-edit-icon" title="Edit Categories">+</span>
+              </label>
               <select id="category-filter">
                 <option value="">All Categories</option>
               </select>
@@ -1418,6 +1484,24 @@
 
       <div class="modal-actions">
         <button type="button" class="modal-btn primary" id="view-modal-edit-btn" style="width: 100%;">Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Categories Modal -->
+  <div id="edit-categories-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Categories</h2>
+        <button class="close-btn" onclick="closeEditCategoriesModal()">&times;</button>
+      </div>
+
+      <div id="categories-list" style="margin-bottom: 24px; max-height: 400px; overflow-y: auto;">
+        <!-- Category inputs will be inserted here -->
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-btn primary" id="save-categories-btn" style="width: 100%;">Done</button>
       </div>
     </div>
   </div>
