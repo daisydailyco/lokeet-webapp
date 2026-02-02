@@ -440,7 +440,7 @@ function renderCalendar() {
       <button onclick="changeCalendarMonth(1)" style="background: #f5f5f5; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">Next ›</button>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+    <div class="calendar-grid">
       <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Sun</div>
       <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Mon</div>
       <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Tue</div>
@@ -453,8 +453,8 @@ function renderCalendar() {
   // Previous month trailing days
   for (let i = firstDayIndex; i > 0; i--) {
     calendarHTML += `
-      <div style="padding: 12px; text-align: center; opacity: 0.3; background: #f9f9f9; border-radius: 8px;">
-        <div style="font-weight: 600;">${prevLastDate - i + 1}</div>
+      <div class="calendar-day-cell other-month">
+        <div class="calendar-day-number">${prevLastDate - i + 1}</div>
       </div>
     `;
   }
@@ -472,13 +472,14 @@ function renderCalendar() {
       ? (hasItems[0].event_name || hasItems[0].venue_name || 'Event')
       : (hasItems ? `${hasItems.length} events` : '');
 
-    const bgColor = isToday ? '#e8f5e9' : (hasItems ? '#f5f5f5' : 'white');
-    const border = isToday ? '2px solid #4caf50' : '1px solid #e0e0e0';
+    let classes = 'calendar-day-cell';
+    if (isToday) classes += ' today';
+    if (hasItems) classes += ' has-events';
 
     calendarHTML += `
-      <div style="padding: 12px; text-align: center; background: ${bgColor}; border: ${border}; border-radius: 8px; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="font-weight: 600; margin-bottom: 4px;">${day}</div>
-        ${hasItems ? `<div style="font-size: 11px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">${itemName}</div>` : ''}
+      <div class="${classes}">
+        <div class="calendar-day-number">${day}</div>
+        ${hasItems ? `<div class="calendar-day-events">${itemName}</div>` : ''}
       </div>
     `;
   }

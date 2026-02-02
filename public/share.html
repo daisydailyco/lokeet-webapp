@@ -24,23 +24,22 @@
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 </head>
 <body>
-  <div class="share-container">
-    <!-- Loading State -->
-    <div id="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading shared list...</p>
-    </div>
+  <!-- Loading State -->
+  <div id="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading shared list...</p>
+  </div>
 
-    <!-- Error State -->
-    <div id="error" class="error-state" style="display: none;">
-      <div class="error-icon">⚠️</div>
-      <h2>List Not Found</h2>
-      <p>This shared list doesn't exist or has been removed.</p>
-      <a href="/" class="cta-button">Go to Lokeet</a>
-    </div>
+  <!-- Error State -->
+  <div id="error" class="error-state" style="display: none;">
+    <div class="error-icon">⚠️</div>
+    <h2>List Not Found</h2>
+    <p>This shared list doesn't exist or has been removed.</p>
+    <a href="/" class="cta-button">Go to Lokeet</a>
+  </div>
 
-    <!-- Content (Hidden Until Loaded) -->
-    <div id="content" style="display: none;">
+  <!-- Content (Hidden Until Loaded) -->
+  <div id="content" style="display: none;">
       <!-- Top Navigation -->
       <div class="share-top-nav">
         <div class="share-nav-left">
@@ -85,34 +84,36 @@
         </div>
       </div>
 
-      <!-- Saves Tab -->
-      <div id="saves-tab" class="tab-content active">
-        <!-- Location Cards -->
-        <div id="location-list" class="location-list">
-          <!-- Cards will be inserted here by JavaScript -->
+      <!-- Main Content Container -->
+      <div class="share-content-container">
+        <!-- Saves Tab -->
+        <div id="saves-tab" class="tab-content active">
+          <!-- Location Cards -->
+          <div id="location-list" class="location-list">
+            <!-- Cards will be inserted here by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Map Tab -->
+        <div id="map-tab" class="tab-content">
+          <div id="map-container" class="map-container">
+            <div id="radar-map"></div>
+          </div>
+        </div>
+
+        <!-- Calendar Tab -->
+        <div id="calendar-tab" class="tab-content">
+          <div id="calendar-view" style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+            <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #000;">Calendar View</h2>
+            <p style="color: #666; font-size: 16px;">Event dates will appear here</p>
+          </div>
         </div>
       </div>
 
-      <!-- Map Tab -->
-      <div id="map-tab" class="tab-content">
-        <div id="map-container" class="map-container">
-          <div id="radar-map"></div>
-        </div>
-      </div>
-
-      <!-- Calendar Tab -->
-      <div id="calendar-tab" class="tab-content">
-        <div id="calendar-view" style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;">
-          <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
-          <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #000;">Calendar View</h2>
-          <p style="color: #666; font-size: 16px;">Event dates will appear here</p>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="share-footer">
-        <p>Made with ❤️ for Locals</p>
-      </div>
+    <!-- Footer -->
+    <div class="share-footer">
+      <p>Made with ❤️ for Locals</p>
     </div>
   </div>
 
