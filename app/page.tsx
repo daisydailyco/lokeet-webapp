@@ -41,7 +41,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-black/10 py-12">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm opacity-70">Made with ❤️ for local explorers</p>
+          <p className="text-sm opacity-70">Made with ❤️ for Locals</p>
         </div>
       </footer>
     </div>
