@@ -752,8 +752,7 @@ function createSaveCard(save) {
     ${save.address ? `<div class="card-address">📍 ${save.address}</div>` : ''}
     ${dateStr ? `<div class="card-date">📅 ${dateStr}</div>` : ''}
     ${save.tags && save.tags.length > 0 ? `<div class="card-tags">${tagsHTML}</div>` : ''}
-    ${save.url ? `<div class="card-link-preview" style="margin-top: 8px;">
-      <div style="font-size: 12px; font-weight: 600; color: #666; margin-bottom: 4px;">Link</div>
+    ${save.url ? `<div class="card-link-preview">
       <a href="${save.url}" target="_blank" class="card-link-text" style="font-size: 14px; color: #000; text-decoration: underline; cursor: pointer;">🔗 Open in new tab</a>
     </div>` : ''}
   `;
@@ -1181,13 +1180,6 @@ function renderCalendar() {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
 
-  const firstDay = new Date(currentYear, currentMonth, 1);
-  const lastDay = new Date(currentYear, currentMonth + 1, 0);
-  const prevLastDay = new Date(currentYear, currentMonth, 0);
-  const firstDayIndex = firstDay.getDay();
-  const lastDateOfMonth = lastDay.getDate();
-  const prevLastDate = prevLastDay.getDate();
-
   // Group saves by date
   const savesByDate = {};
   savesWithDates.forEach(save => {
@@ -1197,6 +1189,73 @@ function renderCalendar() {
     }
     savesByDate[dateKey].push(save);
   });
+
+  // Count unique dates
+  const uniqueDates = Object.keys(savesByDate);
+  const isWeekView = selectedCategory && uniqueDates.length > 0 && uniqueDates.length <= 7;
+
+  if (isWeekView) {
+    // Week view: show the week containing the events
+    const eventDates = uniqueDates.map(d => new Date(d + 'T00:00:00')).sort((a, b) => a - b);
+    const earliestDate = eventDates[0];
+
+    // Find the Sunday of the week containing the earliest event
+    const weekStart = new Date(earliestDate);
+    weekStart.setDate(earliestDate.getDate() - earliestDate.getDay()); // Go back to Sunday
+
+    let calendarHTML = `
+      <div class="calendar-header">
+        <button onclick="changeMonth(-1)" style="background: #f5f5f5; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">‹ Prev</button>
+        <h2 style="margin: 0; font-size: 20px;">Week of ${monthNames[weekStart.getMonth()]} ${weekStart.getDate()}, ${weekStart.getFullYear()}</h2>
+        <button onclick="changeMonth(1)" style="background: #f5f5f5; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">Next ›</button>
+      </div>
+
+      <div class="calendar-grid">
+        <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Sun</div>
+        <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Mon</div>
+        <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Tue</div>
+        <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Wed</div>
+        <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Thu</div>
+        <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Fri</div>
+        <div style="text-align: center; font-weight: 700; padding: 8px; color: #666;">Sat</div>
+    `;
+
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    // Show 7 days starting from Sunday
+    for (let i = 0; i < 7; i++) {
+      const currentDay = new Date(weekStart);
+      currentDay.setDate(weekStart.getDate() + i);
+      const dateStr = currentDay.toISOString().split('T')[0];
+      const isToday = dateStr === todayStr;
+      const hasSaves = savesByDate[dateStr];
+
+      const saveName = hasSaves && hasSaves.length === 1
+        ? (hasSaves[0].event_name || hasSaves[0].venue_name || 'Untitled')
+        : (hasSaves ? `${hasSaves.length} saves` : '');
+
+      calendarHTML += `
+        <div class="calendar-day ${isToday ? 'today' : ''}" ${hasSaves ? `onclick="showSavesForDate('${dateStr}')"` : ''}>
+          <div style="font-weight: 600;">${currentDay.getDate()}</div>
+          ${hasSaves ? `<div class="calendar-day-dot"></div>` : ''}
+          ${hasSaves ? `<div style="font-size: 11px; color: #666; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${saveName}</div>` : ''}
+        </div>
+      `;
+    }
+
+    calendarHTML += '</div>';
+    calendarView.innerHTML = calendarHTML;
+    return;
+  }
+
+  // Month view (default)
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const prevLastDay = new Date(currentYear, currentMonth, 0);
+  const firstDayIndex = firstDay.getDay();
+  const lastDateOfMonth = lastDay.getDate();
+  const prevLastDate = prevLastDay.getDate();
 
   let calendarHTML = `
     <div class="calendar-header">
