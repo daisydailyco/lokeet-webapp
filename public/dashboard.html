@@ -1388,10 +1388,14 @@
 
         <div class="form-group">
           <label>Category</label>
-          <input type="text" id="add-category" list="category-suggestions" placeholder="e.g., Free Workout Classes, Date Night Spots, Brunch">
-          <datalist id="category-suggestions">
-            <!-- User's existing categories will be populated here -->
-          </datalist>
+          <select id="add-category">
+            <!-- Options populated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group" id="add-custom-category-group" style="display: none;">
+          <label>Custom Category</label>
+          <input type="text" id="add-custom-category" placeholder="Enter category name">
         </div>
 
         <div class="form-group">

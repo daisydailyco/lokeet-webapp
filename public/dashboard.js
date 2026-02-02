@@ -49,6 +49,9 @@ const addModal = document.getElementById('add-modal');
 const editModal = document.getElementById('edit-modal');
 const addForm = document.getElementById('add-form');
 const editForm = document.getElementById('edit-form');
+const addCategorySelect = document.getElementById('add-category');
+const addCustomCategoryGroup = document.getElementById('add-custom-category-group');
+const addCustomCategoryInput = document.getElementById('add-custom-category');
 const editCategorySelect = document.getElementById('edit-category');
 
 // Buttons
@@ -352,20 +355,28 @@ async function saveCategoryChanges() {
     saveCategoriesBtn.disabled = true;
     saveCategoriesBtn.textContent = 'Saving...';
 
+    // Collect all update promises
+    const updatePromises = [];
+
     // Handle deletions
     for (const categoryToDelete of categoriesToDelete) {
       const savesToUpdate = allSaves.filter(save => save.category === categoryToDelete);
       for (const save of savesToUpdate) {
-        await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            category: null
+        updatePromises.push(
+          fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              category: null
+            })
+          }).then(response => {
+            if (!response.ok) throw new Error(`Failed to update save ${save.id}`);
+            return response;
           })
-        });
+        );
       }
     }
 
@@ -375,18 +386,26 @@ async function saveCategoryChanges() {
 
       const savesToUpdate = allSaves.filter(save => save.category === oldName);
       for (const save of savesToUpdate) {
-        await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            category: newName
+        updatePromises.push(
+          fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              category: newName
+            })
+          }).then(response => {
+            if (!response.ok) throw new Error(`Failed to update save ${save.id}`);
+            return response;
           })
-        });
+        );
       }
     }
+
+    // Wait for all updates to complete
+    await Promise.all(updatePromises);
 
     // Refresh saves
     await fetchSaves();
@@ -482,6 +501,20 @@ function initEventListeners() {
       setCategory(value);
     } else {
       clearCategory();
+    }
+  });
+
+  // Add category dropdown change handler
+  addCategorySelect.addEventListener('change', (e) => {
+    const value = e.target.value;
+    if (value === '__create_new__') {
+      // Show custom category input
+      addCustomCategoryGroup.style.display = 'block';
+      addCustomCategoryInput.focus();
+    } else {
+      // Hide custom category input
+      addCustomCategoryGroup.style.display = 'none';
+      addCustomCategoryInput.value = '';
     }
   });
 
@@ -694,6 +727,39 @@ function updateCategoryFilter() {
   otherOption.value = '__other_new__';
   otherOption.textContent = 'Other (Enter New)';
   categoryFilter.appendChild(otherOption);
+}
+
+// Populate add modal category dropdown
+function populateAddCategoryDropdown() {
+  const categories = new Set();
+  allSaves.forEach(save => {
+    if (save.category) {
+      categories.add(save.category);
+    }
+  });
+
+  // Build dropdown options
+  addCategorySelect.innerHTML = '<option value="">Select a category...</option>';
+
+  // Add existing categories
+  Array.from(categories).sort().forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    addCategorySelect.appendChild(option);
+  });
+
+  // Add separator
+  const separator = document.createElement('option');
+  separator.disabled = true;
+  separator.textContent = '──────────';
+  addCategorySelect.appendChild(separator);
+
+  // Add "Other (Create New)" option at bottom
+  const otherOption = document.createElement('option');
+  otherOption.value = '__create_new__';
+  otherOption.textContent = 'Other (Create New)';
+  addCategorySelect.appendChild(otherOption);
 }
 
 // Populate edit modal category dropdown
@@ -1350,25 +1416,12 @@ function openAddModal() {
   addForm.reset();
   selectedAddAddress = null;
 
-  // Populate category suggestions with user's existing categories
-  const categorySuggestions = document.getElementById('category-suggestions');
-  if (categorySuggestions) {
-    // Get unique categories from all saves
-    const categories = new Set();
-    allSaves.forEach(save => {
-      if (save.category) {
-        categories.add(save.category);
-      }
-    });
+  // Populate category dropdown
+  populateAddCategoryDropdown();
 
-    // Clear and populate datalist
-    categorySuggestions.innerHTML = '';
-    categories.forEach(category => {
-      const option = document.createElement('option');
-      option.value = category;
-      categorySuggestions.appendChild(option);
-    });
-  }
+  // Hide custom category input
+  addCustomCategoryGroup.style.display = 'none';
+  addCustomCategoryInput.value = '';
 
   addModal.classList.add('active');
 
@@ -1412,7 +1465,19 @@ async function handleAddSave(e) {
     const date = document.getElementById('add-date').value;
     const time = document.getElementById('add-time').value;
     const endTime = document.getElementById('add-end-time').value;
-    const category = document.getElementById('add-category').value;
+    let category = document.getElementById('add-category').value;
+
+    // Handle custom category
+    if (category === '__create_new__') {
+      const customCategory = addCustomCategoryInput.value.trim();
+      if (!customCategory) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        alert('Please enter a category name');
+        return;
+      }
+      category = customCategory;
+    }
 
     // Auto-detect platform from URL
     let platform = 'instagram';
