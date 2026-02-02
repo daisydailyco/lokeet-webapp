@@ -65,12 +65,13 @@
 
     /* Category Header Section (like share page) */
     .category-header-section {
-      padding: 32px 24px;
+      padding: 20px 24px 16px;
       text-align: center;
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
     .category-header {
-      margin-bottom: 24px;
       position: relative;
     }
 
@@ -120,8 +121,10 @@
 
     .share-link {
       cursor: pointer;
+      color: #42A746;
       opacity: 0.9;
       transition: opacity 0.2s;
+      font-weight: 600;
     }
 
     .share-link:hover {
@@ -317,22 +320,32 @@
       color: #ff3b30;
     }
 
-    /* Main Container */
-    .dashboard-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 24px;
+    /* Tabs Fixed Container */
+    .tabs-fixed {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(135deg, #f0f0f0 0%, #f9f8e5 100%);
+      padding: 16px 24px 0;
     }
 
     /* Tabs */
     .tabs {
       display: flex;
       gap: 8px;
-      margin-bottom: 24px;
       background: white;
       padding: 8px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Main Container */
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px 24px;
     }
 
     .tab {
@@ -1009,17 +1022,17 @@
         width: 70px;
       }
 
+      .tabs-fixed {
+        padding: 12px 16px 0;
+      }
+
       .category-header-section {
-        padding: 24px 16px;
+        padding: 16px;
       }
 
       .category-header h1 {
         font-size: 28px;
         gap: 8px;
-      }
-
-      .category-icon-btn.left {
-        font-size: 18px;
       }
 
       .category-icon-btn.right {
@@ -1039,6 +1052,10 @@
       .tabs {
         overflow-x: auto;
         flex-wrap: nowrap;
+      }
+
+      .dashboard-container {
+        padding: 0 16px 24px;
       }
 
       .tab-action-btn {
@@ -1187,6 +1204,16 @@
       </div>
     </div>
 
+    <!-- Tabs (Fixed) -->
+    <div class="tabs-fixed">
+      <div class="tabs">
+        <button class="tab active" data-tab="saves">Saves</button>
+        <button class="tab" data-tab="map">Map</button>
+        <button class="tab" data-tab="calendar">Calendar</button>
+        <button id="add-save-btn" class="tab-action-btn">+ New Save</button>
+      </div>
+    </div>
+
     <!-- Category Header (like share page) -->
     <div id="category-header-section" class="category-header-section" style="display: none;">
       <div class="category-header">
@@ -1204,13 +1231,6 @@
 
     <!-- Main Container -->
     <div class="dashboard-container">
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab active" data-tab="saves">Saves</button>
-        <button class="tab" data-tab="map">Map</button>
-        <button class="tab" data-tab="calendar">Calendar</button>
-        <button id="add-save-btn" class="tab-action-btn">+ New Save</button>
-      </div>
 
       <!-- My Saves Tab -->
       <div id="saves-tab" class="tab-content active">
