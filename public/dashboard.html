@@ -379,6 +379,30 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
+    .share-btn-tab {
+      padding: 12px 24px;
+      border: 1px solid rgba(66, 167, 70, 0.5);
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      background: rgba(66, 167, 70, 0.3);
+      color: #000;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .share-btn-tab.active {
+      display: inline-flex;
+    }
+
+    .share-btn-tab:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+
     /* Tab Content */
     .tab-content {
       display: none;
@@ -1049,7 +1073,8 @@
         flex-wrap: nowrap;
       }
 
-      .tab-action-btn {
+      .tab-action-btn,
+      .share-btn-tab {
         white-space: nowrap;
       }
 
@@ -1199,21 +1224,13 @@
     <div id="category-header-section" class="category-header-section" style="display: none;">
       <div class="category-header">
         <h1 id="category-name-display">
-          <span id="change-category-btn" class="category-icon-btn left">▼</span>
           <span id="category-name-text">Category Name</span>
           <span id="clear-category-btn" class="category-icon-btn right">×</span>
         </h1>
         <div class="category-meta">
           <span id="category-item-count">0 places</span>
         </div>
-        <div id="category-dropdown" class="category-dropdown">
-          <!-- Categories will be populated here -->
-        </div>
       </div>
-      <button id="share-btn" class="share-btn-large">
-        <span>🔗</span>
-        <span>Share</span>
-      </button>
     </div>
 
     <!-- Main Container -->
@@ -1224,6 +1241,10 @@
         <button class="tab" data-tab="map">Map</button>
         <button class="tab" data-tab="calendar">Calendar</button>
         <button id="add-save-btn" class="tab-action-btn">+ New Save</button>
+        <button id="share-btn" class="share-btn-tab" style="display: none;">
+          <span>🔗</span>
+          <span>Share</span>
+        </button>
       </div>
 
       <!-- My Saves Tab -->

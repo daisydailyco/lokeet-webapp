@@ -25,9 +25,7 @@ const userEmailSpan = document.getElementById('user-email');
 const categoryHeaderSection = document.getElementById('category-header-section');
 const categoryNameText = document.getElementById('category-name-text');
 const categoryItemCount = document.getElementById('category-item-count');
-const changeCategoryBtn = document.getElementById('change-category-btn');
 const clearCategoryBtn = document.getElementById('clear-category-btn');
-const categoryDropdown = document.getElementById('category-dropdown');
 const shareBtn = document.getElementById('share-btn');
 
 // Tab elements
@@ -244,13 +242,12 @@ function setCategory(category) {
   const itemCount = allSaves.filter(save => save.category === category).length;
   categoryItemCount.textContent = `${itemCount} place${itemCount !== 1 ? 's' : ''}`;
 
+  // Show category header and share button
   categoryHeaderSection.style.display = 'block';
+  shareBtn.classList.add('active');
 
   // Update category filter dropdown to match
   categoryFilter.value = category;
-
-  // Populate category dropdown
-  populateCategoryDropdown();
 
   // Apply filters
   applyFilters();
@@ -259,8 +256,8 @@ function setCategory(category) {
 // Clear category filter
 function clearCategory() {
   selectedCategory = null;
-  categoryDropdown.classList.remove('show');
   categoryHeaderSection.style.display = 'none';
+  shareBtn.classList.remove('active');
 
   // Reset category filter dropdown
   categoryFilter.value = '';
@@ -293,24 +290,10 @@ function initEventListeners() {
   // Add save button
   addSaveBtn.addEventListener('click', openAddModal);
 
-  // Change category button
-  changeCategoryBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    categoryDropdown.classList.toggle('show');
-    populateCategoryDropdown();
-  });
-
   // Clear category button
   clearCategoryBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     clearCategory();
-  });
-
-  // Close category dropdown when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!changeCategoryBtn.contains(e.target) && !categoryDropdown.contains(e.target)) {
-      categoryDropdown.classList.remove('show');
-    }
   });
 
   // Share button
