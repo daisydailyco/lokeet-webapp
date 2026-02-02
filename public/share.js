@@ -78,11 +78,28 @@ function renderLocationCards(items) {
   const container = document.getElementById('location-list');
   container.innerHTML = '';
 
+  // Sort items by date and time (earliest first)
+  const sortedItems = [...items].sort((a, b) => {
+    // Items with dates come before items without dates
+    if (!a.event_date && b.event_date) return 1;
+    if (a.event_date && !b.event_date) return -1;
+    if (!a.event_date && !b.event_date) return 0;
+
+    // Compare dates
+    const dateCompare = a.event_date.localeCompare(b.event_date);
+    if (dateCompare !== 0) return dateCompare;
+
+    // If same date, compare times
+    const timeA = a.start_time || '23:59';
+    const timeB = b.start_time || '23:59';
+    return timeA.localeCompare(timeB);
+  });
+
   // Separate items with and without coordinates
   const itemsWithCoords = [];
   const itemsWithoutCoords = [];
 
-  items.forEach(item => {
+  sortedItems.forEach(item => {
     if (item.latitude && item.longitude) {
       itemsWithCoords.push(item);
     } else {

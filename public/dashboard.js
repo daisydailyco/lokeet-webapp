@@ -673,7 +673,24 @@ function renderSaves() {
   // Update category filter options
   updateCategoryFilter();
 
-  filteredSaves.forEach(save => {
+  // Sort by date and time (earliest first)
+  const sortedSaves = [...filteredSaves].sort((a, b) => {
+    // Items with dates come before items without dates
+    if (!a.event_date && b.event_date) return 1;
+    if (a.event_date && !b.event_date) return -1;
+    if (!a.event_date && !b.event_date) return 0;
+
+    // Compare dates
+    const dateCompare = a.event_date.localeCompare(b.event_date);
+    if (dateCompare !== 0) return dateCompare;
+
+    // If same date, compare times
+    const timeA = a.start_time || '23:59';
+    const timeB = b.start_time || '23:59';
+    return timeA.localeCompare(timeB);
+  });
+
+  sortedSaves.forEach(save => {
     const card = createSaveCard(save);
     savesGrid.appendChild(card);
   });
@@ -735,9 +752,10 @@ function createSaveCard(save) {
     ${save.address ? `<div class="card-address">📍 ${save.address}</div>` : ''}
     ${dateStr ? `<div class="card-date">📅 ${dateStr}</div>` : ''}
     ${save.tags && save.tags.length > 0 ? `<div class="card-tags">${tagsHTML}</div>` : ''}
-    <div class="card-link-preview">
-      <button class="card-link-btn" data-url="${save.url || ''}">Link Preview - Open in Tab</button>
-    </div>
+    ${save.url ? `<div class="card-link-preview" style="margin-top: 8px;">
+      <div style="font-size: 12px; font-weight: 600; color: #666; margin-bottom: 4px;">Link</div>
+      <a href="${save.url}" target="_blank" class="card-link-text" style="font-size: 14px; color: #000; text-decoration: underline; cursor: pointer;">🔗 Open in new tab</a>
+    </div>` : ''}
   `;
 
   // Edit icon click handler
@@ -756,15 +774,6 @@ function createSaveCard(save) {
       setCategory(category);
     });
   }
-
-  // Link button click handler
-  const linkBtn = card.querySelector('.card-link-btn');
-  linkBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (save.url) {
-      window.open(save.url, '_blank');
-    }
-  });
 
   return card;
 }
@@ -1224,11 +1233,15 @@ function renderCalendar() {
     const isToday = dateStr === todayStr;
     const hasSaves = savesByDate[dateStr];
 
+    const saveName = hasSaves && hasSaves.length === 1
+      ? (hasSaves[0].event_name || hasSaves[0].venue_name || 'Untitled')
+      : (hasSaves ? `${hasSaves.length} saves` : '');
+
     calendarHTML += `
       <div class="calendar-day ${isToday ? 'today' : ''}" ${hasSaves ? `onclick="showSavesForDate('${dateStr}')"` : ''}>
         <div style="font-weight: 600;">${day}</div>
         ${hasSaves ? `<div class="calendar-day-dot"></div>` : ''}
-        ${hasSaves ? `<div style="font-size: 11px; color: #666; margin-top: 4px;">${hasSaves.length} save${hasSaves.length > 1 ? 's' : ''}</div>` : ''}
+        ${hasSaves ? `<div style="font-size: 11px; color: #666; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${saveName}</div>` : ''}
       </div>
     `;
   }
