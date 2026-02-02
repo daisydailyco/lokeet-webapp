@@ -529,13 +529,36 @@ function initializeTabs() {
   });
 }
 
+// Initialize menu dropdown
+function initializeMenuDropdown() {
+  const menuBtn = document.getElementById('share-menu-btn');
+  const menuDropdown = document.getElementById('share-menu-dropdown');
+
+  if (!menuBtn || !menuDropdown) return;
+
+  // Toggle dropdown on button click
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuDropdown.classList.toggle('show');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) {
+      menuDropdown.classList.remove('show');
+    }
+  });
+}
+
 // Load when page is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     loadSharedList();
     initializeTabs();
+    initializeMenuDropdown();
   });
 } else {
   loadSharedList();
   initializeTabs();
+  initializeMenuDropdown();
 }

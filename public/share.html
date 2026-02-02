@@ -41,19 +41,28 @@
 
     <!-- Content (Hidden Until Loaded) -->
     <div id="content" style="display: none;">
-      <!-- Header -->
-      <div class="share-header">
-        <div class="logo-small">
-          <a href="/">Lokeet</a>
+      <!-- Top Navigation -->
+      <div class="share-top-nav">
+        <div class="share-nav-left">
+          <div class="share-logo">Lokeet</div>
         </div>
-      </div>
-
-      <!-- Tabs (Fixed) -->
-      <div class="tabs-fixed">
-        <div class="tabs">
-          <button class="tab active" data-tab="saves">Saves</button>
-          <button class="tab" data-tab="map">Map</button>
-          <button class="tab" data-tab="calendar">Calendar</button>
+        <div class="share-nav-right">
+          <div class="share-menu-container">
+            <button id="share-menu-btn" class="share-menu-btn">
+              <svg viewBox="0 0 24 24">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <div id="share-menu-dropdown" class="share-menu-dropdown">
+              <div class="share-menu-item">
+                <a href="/login.html" class="share-menu-link">Create Your Own List</a>
+              </div>
+              <div class="share-menu-item">
+                <a href="/" class="share-menu-link">Learn More</a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -64,6 +73,15 @@
           <span id="item-count">0 places</span>
           <span class="separator">•</span>
           <span id="view-count">0 views</span>
+        </div>
+      </div>
+
+      <!-- Tabs (Fixed) -->
+      <div class="tabs-fixed">
+        <div class="tabs">
+          <button class="tab active" data-tab="saves">Saves</button>
+          <button class="tab" data-tab="map">Map</button>
+          <button class="tab" data-tab="calendar">Calendar</button>
         </div>
       </div>
 
@@ -89,15 +107,6 @@
           <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #000;">Calendar View</h2>
           <p style="color: #666; font-size: 16px;">Event dates will appear here</p>
         </div>
-      </div>
-
-      <!-- CTA Section -->
-      <div class="cta-section">
-        <h2>Save & Share</h2>
-        <p>Discover amazing places on Instagram/TikTok and organize them into shareable lists</p>
-        <a href="/login.html" class="cta-button" style="box-shadow: 0 8px 16px rgba(0,0,0,0.3); border: 2px solid rgba(0,0,0,0.15);">
-          Create Your Own List
-        </a>
       </div>
 
       <!-- Footer -->
