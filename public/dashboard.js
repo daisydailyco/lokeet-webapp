@@ -264,6 +264,84 @@ function clearCategory() {
   applyFilters();
 }
 
+// Handle editing category names
+async function handleEditCategories() {
+  const categories = new Set();
+  allSaves.forEach(save => {
+    if (save.category) {
+      categories.add(save.category);
+    }
+  });
+
+  if (categories.size === 0) {
+    alert('No categories to edit.');
+    return;
+  }
+
+  // Show list of categories
+  const categoryList = Array.from(categories).map((cat, idx) => `${idx + 1}. ${cat}`).join('\n');
+  const oldCategory = prompt(`Select a category to rename:\n\n${categoryList}\n\nEnter the category name:`);
+
+  if (!oldCategory || !oldCategory.trim()) {
+    return;
+  }
+
+  // Check if category exists
+  if (!categories.has(oldCategory.trim())) {
+    alert('Category not found.');
+    return;
+  }
+
+  // Prompt for new name
+  const newCategory = prompt(`Rename "${oldCategory.trim()}" to:`);
+
+  if (!newCategory || !newCategory.trim()) {
+    return;
+  }
+
+  if (newCategory.trim() === oldCategory.trim()) {
+    return; // No change
+  }
+
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    // Update all saves with this category
+    const savesToUpdate = allSaves.filter(save => save.category === oldCategory.trim());
+
+    for (const save of savesToUpdate) {
+      await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...save,
+          category: newCategory.trim()
+        })
+      });
+    }
+
+    // Refresh saves
+    await fetchSaves();
+
+    // If the renamed category was selected, update selection
+    if (selectedCategory === oldCategory.trim()) {
+      setCategory(newCategory.trim());
+    } else {
+      renderSaves();
+    }
+
+    alert(`Successfully renamed "${oldCategory.trim()}" to "${newCategory.trim()}"`);
+
+  } catch (error) {
+    console.error('Error renaming category:', error);
+    alert('Failed to rename category. Please try again.');
+  }
+}
+
 // Initialize event listeners
 function initEventListeners() {
   // Settings dropdown toggle
@@ -303,9 +381,33 @@ function initEventListeners() {
   });
 
   // Filters
-  categoryFilter.addEventListener('change', (e) => {
-    if (e.target.value) {
-      setCategory(e.target.value);
+  categoryFilter.addEventListener('change', async (e) => {
+    const value = e.target.value;
+
+    // Handle special options
+    if (value === '__other_new__') {
+      // Prompt for new category name
+      const newCategory = prompt('Enter new category name:');
+      if (newCategory && newCategory.trim()) {
+        setCategory(newCategory.trim());
+      } else {
+        // Reset to previous selection
+        categoryFilter.value = selectedCategory || '';
+      }
+      return;
+    }
+
+    if (value === '__edit_categories__') {
+      // Show edit categories interface
+      await handleEditCategories();
+      // Reset to previous selection
+      categoryFilter.value = selectedCategory || '';
+      return;
+    }
+
+    // Handle normal category selection
+    if (value) {
+      setCategory(value);
     } else {
       clearCategory();
     }
@@ -477,15 +579,40 @@ function updateCategoryFilter() {
     }
   });
 
-  // Keep "All Categories" option
+  // Build dropdown options
   categoryFilter.innerHTML = '<option value="">All Categories</option>';
 
+  // Add "Edit Category Names" option at top
+  const editOption = document.createElement('option');
+  editOption.value = '__edit_categories__';
+  editOption.textContent = 'Edit Category Names';
+  categoryFilter.appendChild(editOption);
+
+  // Add separator
+  const separator1 = document.createElement('option');
+  separator1.disabled = true;
+  separator1.textContent = '──────────';
+  categoryFilter.appendChild(separator1);
+
+  // Add existing categories
   categories.forEach(category => {
     const option = document.createElement('option');
     option.value = category;
     option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
     categoryFilter.appendChild(option);
   });
+
+  // Add separator
+  const separator2 = document.createElement('option');
+  separator2.disabled = true;
+  separator2.textContent = '──────────';
+  categoryFilter.appendChild(separator2);
+
+  // Add "Other (Enter New)" option at bottom
+  const otherOption = document.createElement('option');
+  otherOption.value = '__other_new__';
+  otherOption.textContent = 'Other (Enter New)';
+  categoryFilter.appendChild(otherOption);
 }
 
 // Apply filters
