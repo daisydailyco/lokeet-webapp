@@ -52,7 +52,9 @@ const editForm = document.getElementById('edit-form');
 const addCategorySelect = document.getElementById('add-category');
 const addCustomCategoryGroup = document.getElementById('add-custom-category-group');
 const addCustomCategoryInput = document.getElementById('add-custom-category');
+const addTimezoneSelect = document.getElementById('add-timezone');
 const editCategorySelect = document.getElementById('edit-category');
+const editTimezoneSelect = document.getElementById('edit-timezone');
 
 // Buttons
 const addSaveBtn = document.getElementById('add-save-btn');
@@ -139,6 +141,24 @@ function typeWriter() {
       typingTimeout = setTimeout(typeWriter, 100); // Type speed
     }
   }
+}
+
+// Timezone management functions
+function getDefaultTimezone() {
+  // Try to get from localStorage
+  const saved = localStorage.getItem('lokeet_default_timezone');
+  if (saved) return saved;
+
+  // Otherwise detect from browser
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (e) {
+    return 'America/New_York'; // Fallback to Eastern
+  }
+}
+
+function setDefaultTimezone(timezone) {
+  localStorage.setItem('lokeet_default_timezone', timezone);
 }
 
 // Initialize dashboard
@@ -621,7 +641,8 @@ function createSaveCard(save) {
   // Format date and time
   let dateStr = '';
   if (save.event_date) {
-    const date = new Date(save.event_date);
+    // Fix timezone issue by appending time to force local interpretation
+    const date = new Date(save.event_date + 'T00:00:00');
     dateStr = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -1297,7 +1318,8 @@ function showSaveDetails(saveId) {
   }
 
   if (save.event_date) {
-    const date = new Date(save.event_date);
+    // Fix timezone issue by appending time to force local interpretation
+    const date = new Date(save.event_date + 'T00:00:00');
     let dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     // Add time if available
@@ -1423,6 +1445,9 @@ function openAddModal() {
   addCustomCategoryGroup.style.display = 'none';
   addCustomCategoryInput.value = '';
 
+  // Set default timezone
+  addTimezoneSelect.value = getDefaultTimezone();
+
   addModal.classList.add('active');
 
   // Initialize autocomplete after modal is shown
@@ -1465,7 +1490,13 @@ async function handleAddSave(e) {
     const date = document.getElementById('add-date').value;
     const time = document.getElementById('add-time').value;
     const endTime = document.getElementById('add-end-time').value;
+    const timezone = document.getElementById('add-timezone').value;
     let category = document.getElementById('add-category').value;
+
+    // Save timezone as new default
+    if (timezone) {
+      setDefaultTimezone(timezone);
+    }
 
     // Handle custom category
     if (category === '__create_new__') {
@@ -1565,6 +1596,7 @@ async function handleAddSave(e) {
     if (date) updateData.event_date = date;
     if (time) updateData.start_time = time;
     if (endTime) updateData.end_time = endTime;
+    if (timezone) updateData.timezone = timezone;
     if (category) updateData.category = category;
 
     if (Object.keys(updateData).length > 0) {
@@ -1684,6 +1716,7 @@ function editSave(itemId) {
   document.getElementById('edit-date').value = save.event_date || '';
   document.getElementById('edit-time').value = save.start_time || '';
   document.getElementById('edit-end-time').value = save.end_time || '';
+  document.getElementById('edit-timezone').value = save.timezone || getDefaultTimezone();
 
   // Open modal
   editModal.classList.add('active');
@@ -1741,6 +1774,12 @@ async function handleEditSave(e) {
     const date = document.getElementById('edit-date').value;
     const time = document.getElementById('edit-time').value;
     const endTime = document.getElementById('edit-end-time').value;
+    const timezone = document.getElementById('edit-timezone').value;
+
+    // Save timezone as new default
+    if (timezone) {
+      setDefaultTimezone(timezone);
+    }
 
     // Get current save to preserve existing location if not changed
     const currentSave = allSaves.find(s => s.id === itemId);
@@ -1792,7 +1831,8 @@ async function handleEditSave(e) {
       event_name: eventName || null,
       event_date: date || null,
       start_time: time || null,
-      end_time: endTime || null
+      end_time: endTime || null,
+      timezone: timezone || null
     };
 
     // Add location data if provided
