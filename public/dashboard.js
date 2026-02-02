@@ -49,6 +49,7 @@ const addModal = document.getElementById('add-modal');
 const editModal = document.getElementById('edit-modal');
 const addForm = document.getElementById('add-form');
 const editForm = document.getElementById('edit-form');
+const editCategorySelect = document.getElementById('edit-category');
 
 // Buttons
 const addSaveBtn = document.getElementById('add-save-btn');
@@ -672,6 +673,39 @@ function updateCategoryFilter() {
   otherOption.value = '__other_new__';
   otherOption.textContent = 'Other (Enter New)';
   categoryFilter.appendChild(otherOption);
+}
+
+// Populate edit modal category dropdown
+function populateEditCategoryDropdown() {
+  const categories = new Set();
+  allSaves.forEach(save => {
+    if (save.category) {
+      categories.add(save.category);
+    }
+  });
+
+  // Build dropdown options
+  editCategorySelect.innerHTML = '<option value="">Select category</option>';
+
+  // Add existing categories
+  categories.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    editCategorySelect.appendChild(option);
+  });
+
+  // Add separator
+  const separator = document.createElement('option');
+  separator.disabled = true;
+  separator.textContent = '──────────';
+  editCategorySelect.appendChild(separator);
+
+  // Add "Other (Enter New)" option at bottom
+  const otherOption = document.createElement('option');
+  otherOption.value = '__other_new__';
+  otherOption.textContent = 'Other (Enter New)';
+  editCategorySelect.appendChild(otherOption);
 }
 
 // Apply filters
@@ -1502,6 +1536,9 @@ function editSave(itemId) {
 
   selectedEditAddress = null;
 
+  // Populate category dropdown with current categories
+  populateEditCategoryDropdown();
+
   // Fill edit form
   document.getElementById('edit-item-id').value = save.id;
   document.getElementById('edit-category').value = save.category || '';
@@ -1546,7 +1583,20 @@ async function handleEditSave(e) {
     if (!session) throw new Error('No session found');
 
     const itemId = document.getElementById('edit-item-id').value;
-    const category = document.getElementById('edit-category').value;
+    let category = document.getElementById('edit-category').value;
+
+    // Handle "Other (Enter New)" option
+    if (category === '__other_new__') {
+      const newCategory = prompt('Enter new category name:');
+      if (newCategory && newCategory.trim()) {
+        category = newCategory.trim();
+      } else {
+        editSaveBtn.disabled = false;
+        editSaveBtn.textContent = 'Save';
+        return;
+      }
+    }
+
     const eventName = document.getElementById('edit-event-name').value.trim();
     const date = document.getElementById('edit-date').value;
 
