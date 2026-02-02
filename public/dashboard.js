@@ -602,7 +602,18 @@ function createSaveCard(save) {
       const hour = parseInt(hours);
       const ampm = hour >= 12 ? 'PM' : 'AM';
       const displayHour = hour % 12 || 12;
-      dateStr += ` • ${displayHour}:${minutes} ${ampm}`;
+      let timeStr = `${displayHour}:${minutes} ${ampm}`;
+
+      // Add end time if available
+      if (save.end_time) {
+        const [endHours, endMinutes] = save.end_time.split(':');
+        const endHour = parseInt(endHours);
+        const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+        const endDisplayHour = endHour % 12 || 12;
+        timeStr += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+      }
+
+      dateStr += ` • ${timeStr}`;
     }
   }
 
@@ -1162,7 +1173,18 @@ function showSavesForDate(dateStr) {
       const hour = parseInt(hours);
       const ampm = hour >= 12 ? 'PM' : 'AM';
       const displayHour = hour % 12 || 12;
-      timeStr = `<div style="font-size: 14px; color: #666; margin-bottom: 4px;">🕐 ${displayHour}:${minutes} ${ampm}</div>`;
+      let formattedTime = `${displayHour}:${minutes} ${ampm}`;
+
+      // Add end time if available
+      if (save.end_time) {
+        const [endHours, endMinutes] = save.end_time.split(':');
+        const endHour = parseInt(endHours);
+        const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+        const endDisplayHour = endHour % 12 || 12;
+        formattedTime += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+      }
+
+      timeStr = `<div style="font-size: 14px; color: #666; margin-bottom: 4px;">🕐 ${formattedTime}</div>`;
     }
 
     html += `
@@ -1218,7 +1240,18 @@ function showSaveDetails(saveId) {
       const hour = parseInt(hours);
       const ampm = hour >= 12 ? 'PM' : 'AM';
       const displayHour = hour % 12 || 12;
-      dateStr += ` • ${displayHour}:${minutes} ${ampm}`;
+      let timeStr = `${displayHour}:${minutes} ${ampm}`;
+
+      // Add end time if available
+      if (save.end_time) {
+        const [endHours, endMinutes] = save.end_time.split(':');
+        const endHour = parseInt(endHours);
+        const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+        const endDisplayHour = endHour % 12 || 12;
+        timeStr += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+      }
+
+      dateStr += ` • ${timeStr}`;
     }
 
     html += `<div>
@@ -1378,6 +1411,7 @@ async function handleAddSave(e) {
     const name = document.getElementById('add-name').value.trim();
     const date = document.getElementById('add-date').value;
     const time = document.getElementById('add-time').value;
+    const endTime = document.getElementById('add-end-time').value;
     const category = document.getElementById('add-category').value;
 
     // Auto-detect platform from URL
@@ -1465,6 +1499,7 @@ async function handleAddSave(e) {
     }
     if (date) updateData.event_date = date;
     if (time) updateData.start_time = time;
+    if (endTime) updateData.end_time = endTime;
     if (category) updateData.category = category;
 
     if (Object.keys(updateData).length > 0) {
@@ -1583,6 +1618,7 @@ function editSave(itemId) {
   document.getElementById('edit-event-name').value = save.event_name || save.venue_name || '';
   document.getElementById('edit-date').value = save.event_date || '';
   document.getElementById('edit-time').value = save.start_time || '';
+  document.getElementById('edit-end-time').value = save.end_time || '';
 
   // Open modal
   editModal.classList.add('active');
@@ -1639,6 +1675,7 @@ async function handleEditSave(e) {
     const eventName = document.getElementById('edit-event-name').value.trim();
     const date = document.getElementById('edit-date').value;
     const time = document.getElementById('edit-time').value;
+    const endTime = document.getElementById('edit-end-time').value;
 
     // Get current save to preserve existing location if not changed
     const currentSave = allSaves.find(s => s.id === itemId);
@@ -1689,7 +1726,8 @@ async function handleEditSave(e) {
       category: category || null,
       event_name: eventName || null,
       event_date: date || null,
-      start_time: time || null
+      start_time: time || null,
+      end_time: endTime || null
     };
 
     // Add location data if provided
