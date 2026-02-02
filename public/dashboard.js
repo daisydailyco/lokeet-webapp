@@ -356,13 +356,12 @@ async function saveCategoryChanges() {
       const savesToUpdate = allSaves.filter(save => save.category === categoryToDelete);
       for (const save of savesToUpdate) {
         await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            ...save,
             category: null
           })
         });
@@ -376,13 +375,12 @@ async function saveCategoryChanges() {
       const savesToUpdate = allSaves.filter(save => save.category === oldName);
       for (const save of savesToUpdate) {
         await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            ...save,
             category: newName
           })
         });
