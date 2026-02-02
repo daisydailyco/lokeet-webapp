@@ -245,11 +245,11 @@ function setCategory(category) {
   // Show category header
   categoryHeaderSection.style.display = 'block';
 
-  // Update category filter dropdown to match
-  categoryFilter.value = category;
-
   // Apply filters
   applyFilters();
+
+  // Update category filter dropdown to match (after applyFilters to ensure dropdown is populated)
+  categoryFilter.value = category;
 }
 
 // Clear category filter
