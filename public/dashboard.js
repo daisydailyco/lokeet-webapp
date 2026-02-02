@@ -264,8 +264,17 @@ function clearCategory() {
   applyFilters();
 }
 
-// Handle editing category names
-async function handleEditCategories() {
+// Edit Categories Modal
+const editCategoriesModal = document.getElementById('edit-categories-modal');
+const editCategoriesBtn = document.getElementById('edit-categories-btn');
+const saveCategoriesBtn = document.getElementById('save-categories-btn');
+const categoriesList = document.getElementById('categories-list');
+
+let categoryChanges = new Map(); // Map of original name -> new name
+let categoriesToDelete = new Set(); // Set of categories to delete
+
+// Open edit categories modal
+function openEditCategoriesModal() {
   const categories = new Set();
   allSaves.forEach(save => {
     if (save.category) {
@@ -278,67 +287,133 @@ async function handleEditCategories() {
     return;
   }
 
-  // Show list of categories
-  const categoryList = Array.from(categories).map((cat, idx) => `${idx + 1}. ${cat}`).join('\n');
-  const oldCategory = prompt(`Select a category to rename:\n\n${categoryList}\n\nEnter the category name:`);
+  // Reset tracking
+  categoryChanges.clear();
+  categoriesToDelete.clear();
 
-  if (!oldCategory || !oldCategory.trim()) {
+  // Populate modal with category inputs
+  categoriesList.innerHTML = '';
+  Array.from(categories).sort().forEach(category => {
+    const row = document.createElement('div');
+    row.className = 'category-edit-row';
+    row.dataset.originalName = category;
+
+    row.innerHTML = `
+      <input type="text" class="category-edit-input" value="${category}" data-original="${category}">
+      <button class="category-delete-btn" title="Delete category">×</button>
+    `;
+
+    // Track input changes
+    const input = row.querySelector('.category-edit-input');
+    input.addEventListener('input', () => {
+      const original = input.dataset.original;
+      const newValue = input.value.trim();
+      if (newValue && newValue !== original) {
+        categoryChanges.set(original, newValue);
+      } else {
+        categoryChanges.delete(original);
+      }
+    });
+
+    // Delete button
+    const deleteBtn = row.querySelector('.category-delete-btn');
+    deleteBtn.addEventListener('click', () => {
+      if (confirm(`Delete category "${category}"? This will remove the category from all saves.`)) {
+        categoriesToDelete.add(category);
+        row.remove();
+      }
+    });
+
+    categoriesList.appendChild(row);
+  });
+
+  editCategoriesModal.style.display = 'flex';
+}
+
+// Close edit categories modal
+function closeEditCategoriesModal() {
+  editCategoriesModal.style.display = 'none';
+  categoryChanges.clear();
+  categoriesToDelete.clear();
+}
+
+// Save category changes
+async function saveCategoryChanges() {
+  if (categoryChanges.size === 0 && categoriesToDelete.size === 0) {
+    closeEditCategoriesModal();
     return;
-  }
-
-  // Check if category exists
-  if (!categories.has(oldCategory.trim())) {
-    alert('Category not found.');
-    return;
-  }
-
-  // Prompt for new name
-  const newCategory = prompt(`Rename "${oldCategory.trim()}" to:`);
-
-  if (!newCategory || !newCategory.trim()) {
-    return;
-  }
-
-  if (newCategory.trim() === oldCategory.trim()) {
-    return; // No change
   }
 
   try {
     const session = getSession();
     if (!session) throw new Error('No session found');
 
-    // Update all saves with this category
-    const savesToUpdate = allSaves.filter(save => save.category === oldCategory.trim());
+    saveCategoriesBtn.disabled = true;
+    saveCategoriesBtn.textContent = 'Saving...';
 
-    for (const save of savesToUpdate) {
-      await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...save,
-          category: newCategory.trim()
-        })
-      });
+    // Handle deletions
+    for (const categoryToDelete of categoriesToDelete) {
+      const savesToUpdate = allSaves.filter(save => save.category === categoryToDelete);
+      for (const save of savesToUpdate) {
+        await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...save,
+            category: null
+          })
+        });
+      }
+    }
+
+    // Handle renames
+    for (const [oldName, newName] of categoryChanges) {
+      if (categoriesToDelete.has(oldName)) continue; // Skip if deleted
+
+      const savesToUpdate = allSaves.filter(save => save.category === oldName);
+      for (const save of savesToUpdate) {
+        await fetch(`${API_BASE}/v1/user/saves/${save.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...save,
+            category: newName
+          })
+        });
+      }
     }
 
     // Refresh saves
     await fetchSaves();
 
-    // If the renamed category was selected, update selection
-    if (selectedCategory === oldCategory.trim()) {
-      setCategory(newCategory.trim());
+    // Update selection if needed
+    if (selectedCategory) {
+      if (categoriesToDelete.has(selectedCategory)) {
+        clearCategory();
+      } else if (categoryChanges.has(selectedCategory)) {
+        setCategory(categoryChanges.get(selectedCategory));
+      } else {
+        renderSaves();
+      }
     } else {
       renderSaves();
     }
 
-    alert(`Successfully renamed "${oldCategory.trim()}" to "${newCategory.trim()}"`);
+    closeEditCategoriesModal();
+    alert('Categories updated successfully!');
 
   } catch (error) {
-    console.error('Error renaming category:', error);
-    alert('Failed to rename category. Please try again.');
+    console.error('Error updating categories:', error);
+    alert('Failed to update categories. Please try again.');
+  } finally {
+    saveCategoriesBtn.disabled = false;
+    saveCategoriesBtn.textContent = 'Done';
   }
 }
 
@@ -375,6 +450,12 @@ function initEventListeners() {
   // Share button
   shareBtn.addEventListener('click', handleShare);
 
+  // Edit categories button
+  editCategoriesBtn.addEventListener('click', openEditCategoriesModal);
+
+  // Save categories button
+  saveCategoriesBtn.addEventListener('click', saveCategoryChanges);
+
   // Tab switching
   tabs.forEach(tab => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
@@ -394,14 +475,6 @@ function initEventListeners() {
         // Reset to previous selection
         categoryFilter.value = selectedCategory || '';
       }
-      return;
-    }
-
-    if (value === '__edit_categories__') {
-      // Show edit categories interface
-      await handleEditCategories();
-      // Reset to previous selection
-      categoryFilter.value = selectedCategory || '';
       return;
     }
 
@@ -582,18 +655,6 @@ function updateCategoryFilter() {
   // Build dropdown options
   categoryFilter.innerHTML = '<option value="">All Categories</option>';
 
-  // Add "Edit Category Names" option at top
-  const editOption = document.createElement('option');
-  editOption.value = '__edit_categories__';
-  editOption.textContent = 'Edit Category Names';
-  categoryFilter.appendChild(editOption);
-
-  // Add separator
-  const separator1 = document.createElement('option');
-  separator1.disabled = true;
-  separator1.textContent = '──────────';
-  categoryFilter.appendChild(separator1);
-
   // Add existing categories
   categories.forEach(category => {
     const option = document.createElement('option');
@@ -603,10 +664,10 @@ function updateCategoryFilter() {
   });
 
   // Add separator
-  const separator2 = document.createElement('option');
-  separator2.disabled = true;
-  separator2.textContent = '──────────';
-  categoryFilter.appendChild(separator2);
+  const separator = document.createElement('option');
+  separator.disabled = true;
+  separator.textContent = '──────────';
+  categoryFilter.appendChild(separator);
 
   // Add "Other (Enter New)" option at bottom
   const otherOption = document.createElement('option');
@@ -1645,6 +1706,7 @@ window.editSave = editSave;
 window.deleteSave = deleteSave;
 window.closeAddModal = closeAddModal;
 window.closeEditModal = closeEditModal;
+window.closeEditCategoriesModal = closeEditCategoriesModal;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
 
