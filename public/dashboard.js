@@ -240,11 +240,10 @@ function setCategory(category) {
 
   // Count items in this category
   const itemCount = allSaves.filter(save => save.category === category).length;
-  categoryItemCount.textContent = `${itemCount} place${itemCount !== 1 ? 's' : ''}`;
+  categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
 
-  // Show category header and share button
+  // Show category header
   categoryHeaderSection.style.display = 'block';
-  shareBtn.classList.add('active');
 
   // Update category filter dropdown to match
   categoryFilter.value = category;
@@ -257,7 +256,6 @@ function setCategory(category) {
 function clearCategory() {
   selectedCategory = null;
   categoryHeaderSection.style.display = 'none';
-  shareBtn.classList.remove('active');
 
   // Reset category filter dropdown
   categoryFilter.value = '';

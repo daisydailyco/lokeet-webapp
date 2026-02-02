@@ -113,6 +113,22 @@
       margin-bottom: 8px;
     }
 
+    .separator {
+      margin: 0 8px;
+      opacity: 0.6;
+    }
+
+    .share-link {
+      cursor: pointer;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+
+    .share-link:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
     .category-dropdown {
       position: absolute;
       top: 100%;
@@ -156,25 +172,6 @@
       color: white;
     }
 
-    .share-btn-large {
-      background: rgba(66, 167, 70, 0.3);
-      border: 1px solid rgba(66, 167, 70, 0.5);
-      color: #000;
-      padding: 12px 32px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .share-btn-large:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transform: translateY(-2px);
-    }
 
     .logo {
       font-size: 24px;
@@ -377,30 +374,6 @@
       background: #333333;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-
-    .share-btn-tab {
-      padding: 12px 24px;
-      border: 1px solid rgba(66, 167, 70, 0.5);
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      background: rgba(66, 167, 70, 0.3);
-      color: #000;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: none;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .share-btn-tab.active {
-      display: inline-flex;
-    }
-
-    .share-btn-tab:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      transform: translateY(-2px);
     }
 
     /* Tab Content */
@@ -1053,11 +1026,6 @@
         font-size: 28px;
       }
 
-      .share-btn-large {
-        font-size: 14px;
-        padding: 10px 24px;
-      }
-
       .settings-btn {
         width: 36px;
         height: 36px;
@@ -1073,8 +1041,7 @@
         flex-wrap: nowrap;
       }
 
-      .tab-action-btn,
-      .share-btn-tab {
+      .tab-action-btn {
         white-space: nowrap;
       }
 
@@ -1228,7 +1195,9 @@
           <span id="clear-category-btn" class="category-icon-btn right">×</span>
         </h1>
         <div class="category-meta">
-          <span id="category-item-count">0 places</span>
+          <span id="category-item-count">0 Saves</span>
+          <span class="separator">•</span>
+          <span id="share-btn" class="share-link">Share Saves 🔗</span>
         </div>
       </div>
     </div>
@@ -1241,10 +1210,6 @@
         <button class="tab" data-tab="map">Map</button>
         <button class="tab" data-tab="calendar">Calendar</button>
         <button id="add-save-btn" class="tab-action-btn">+ New Save</button>
-        <button id="share-btn" class="share-btn-tab" style="display: none;">
-          <span>🔗</span>
-          <span>Share</span>
-        </button>
       </div>
 
       <!-- My Saves Tab -->
