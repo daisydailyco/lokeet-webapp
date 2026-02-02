@@ -753,7 +753,7 @@ function createSaveCard(save) {
     ${dateStr ? `<div class="card-date">📅 ${dateStr}</div>` : ''}
     ${save.tags && save.tags.length > 0 ? `<div class="card-tags">${tagsHTML}</div>` : ''}
     ${save.url ? `<div class="card-link-preview">
-      <a href="${save.url}" target="_blank" class="card-link-text" style="font-size: 14px; color: #000; text-decoration: underline; cursor: pointer;">🔗 Open in new tab</a>
+      <a href="${save.url}" target="_blank" class="card-link-text" style="font-size: 14px; color: #666; text-decoration: underline; cursor: pointer;">Link 🔗 Open in new tab</a>
     </div>` : ''}
   `;
 
