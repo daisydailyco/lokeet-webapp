@@ -430,9 +430,9 @@ function createSaveCard(save) {
   card.innerHTML = `
     <div class="card-edit-icon" data-save-id="${save.id}">+</div>
     <div class="card-title">${save.event_name || save.venue_name || 'Untitled'}</div>
+    ${save.category ? `<div class="card-category" data-category="${save.category}">${save.category}</div>` : ''}
     ${save.address ? `<div class="card-address">📍 ${save.address}</div>` : ''}
     ${dateStr ? `<div class="card-date">📅 ${dateStr}</div>` : ''}
-    ${save.category ? `<div class="card-category" data-category="${save.category}">${save.category}</div>` : ''}
     ${save.tags && save.tags.length > 0 ? `<div class="card-tags">${tagsHTML}</div>` : ''}
     <div class="card-link-preview">
       <button class="card-link-btn" data-url="${save.url || ''}">Link Preview - Open in Tab</button>

@@ -23,7 +23,7 @@ export default function Home() {
 
         {/* Try It Now Banner */}
         <section className="container mx-auto px-4 py-12">
-          <div className="bg-white border-2 border-[#42a746] rounded-3xl p-12 text-center shadow-lg">
+          <div className="bg-white border-2 border-black rounded-3xl p-12 text-center shadow-lg">
             <h2 className="text-3xl font-bold mb-3">Start Creating Your List Now!</h2>
             <p className="text-base opacity-90 mb-6 max-w-2xl mx-auto">
               Try Lokeet instantly - no login required. Log in to save your lists permanently.
