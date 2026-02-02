@@ -585,7 +585,7 @@ function createSaveCard(save) {
   const card = document.createElement('div');
   card.className = 'save-card';
 
-  // Format date
+  // Format date and time
   let dateStr = '';
   if (save.event_date) {
     const date = new Date(save.event_date);
@@ -594,6 +594,16 @@ function createSaveCard(save) {
       day: 'numeric',
       year: 'numeric'
     });
+
+    // Add time if available
+    if (save.start_time) {
+      // Format time from 24hr to 12hr
+      const [hours, minutes] = save.start_time.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      dateStr += ` • ${displayHour}:${minutes} ${ampm}`;
+    }
   }
 
   // Tags HTML
@@ -1112,6 +1122,13 @@ function showSavesForDate(dateStr) {
 
   if (savesForDate.length === 0) return;
 
+  // Sort by start_time (earliest first)
+  savesForDate.sort((a, b) => {
+    const timeA = a.start_time || '23:59'; // Put items without time at the end
+    const timeB = b.start_time || '23:59';
+    return timeA.localeCompare(timeB);
+  });
+
   // If only one save, show details directly
   if (savesForDate.length === 1) {
     showSaveDetails(savesForDate[0].id);
@@ -1138,8 +1155,19 @@ function showSavesForDate(dateStr) {
 
   let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
   savesForDate.forEach(save => {
+    // Format time if available
+    let timeStr = '';
+    if (save.start_time) {
+      const [hours, minutes] = save.start_time.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      timeStr = `<div style="font-size: 14px; color: #666; margin-bottom: 4px;">🕐 ${displayHour}:${minutes} ${ampm}</div>`;
+    }
+
     html += `
       <div onclick="showSaveDetails('${save.id}')" style="padding: 16px; background: #f9f9f9; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+        ${timeStr}
         <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">${save.event_name || save.venue_name || 'Untitled'}</div>
         ${save.address ? `<div style="font-size: 14px; color: #666;">📍 ${save.address}</div>` : ''}
         ${save.category ? `<div style="font-size: 12px; color: #666; text-transform: uppercase; margin-top: 4px;">${save.category}</div>` : ''}
@@ -1182,9 +1210,19 @@ function showSaveDetails(saveId) {
 
   if (save.event_date) {
     const date = new Date(save.event_date);
-    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    let dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    // Add time if available
+    if (save.start_time) {
+      const [hours, minutes] = save.start_time.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      dateStr += ` • ${displayHour}:${minutes} ${ampm}`;
+    }
+
     html += `<div>
-      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Date</div>
+      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Date & Time</div>
       <div style="font-size: 16px;">📅 ${dateStr}</div>
     </div>`;
   }
@@ -1544,6 +1582,7 @@ function editSave(itemId) {
   document.getElementById('edit-category').value = save.category || '';
   document.getElementById('edit-event-name').value = save.event_name || save.venue_name || '';
   document.getElementById('edit-date').value = save.event_date || '';
+  document.getElementById('edit-time').value = save.start_time || '';
 
   // Open modal
   editModal.classList.add('active');
@@ -1599,6 +1638,7 @@ async function handleEditSave(e) {
 
     const eventName = document.getElementById('edit-event-name').value.trim();
     const date = document.getElementById('edit-date').value;
+    const time = document.getElementById('edit-time').value;
 
     // Get current save to preserve existing location if not changed
     const currentSave = allSaves.find(s => s.id === itemId);
@@ -1648,7 +1688,8 @@ async function handleEditSave(e) {
     const updateData = {
       category: category || null,
       event_name: eventName || null,
-      event_date: date || null
+      event_date: date || null,
+      start_time: time || null
     };
 
     // Add location data if provided
