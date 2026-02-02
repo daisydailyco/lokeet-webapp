@@ -161,6 +161,27 @@ function setDefaultTimezone(timezone) {
   localStorage.setItem('lokeet_default_timezone', timezone);
 }
 
+// Get timezone abbreviation from timezone identifier
+function getTimezoneAbbr(timezone) {
+  if (!timezone) return '';
+
+  const timezoneMap = {
+    'America/New_York': 'ET',
+    'America/Chicago': 'CT',
+    'America/Denver': 'MT',
+    'America/Phoenix': 'MST',
+    'America/Los_Angeles': 'PT',
+    'America/Anchorage': 'AKT',
+    'Pacific/Honolulu': 'HST',
+    'Europe/London': 'GMT',
+    'Europe/Paris': 'CET',
+    'Asia/Tokyo': 'JST',
+    'Australia/Sydney': 'AEDT'
+  };
+
+  return timezoneMap[timezone] || '';
+}
+
 // Initialize dashboard
 async function init() {
   try {
@@ -665,6 +686,12 @@ function createSaveCard(save) {
         const endAmpm = endHour >= 12 ? 'PM' : 'AM';
         const endDisplayHour = endHour % 12 || 12;
         timeStr += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+      }
+
+      // Add timezone abbreviation if available
+      const tzAbbr = getTimezoneAbbr(save.timezone);
+      if (tzAbbr) {
+        timeStr += ` ${tzAbbr}`;
       }
 
       dateStr += ` • ${timeStr}`;
@@ -1271,6 +1298,12 @@ function showSavesForDate(dateStr) {
         formattedTime += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
       }
 
+      // Add timezone abbreviation if available
+      const tzAbbr = getTimezoneAbbr(save.timezone);
+      if (tzAbbr) {
+        formattedTime += ` ${tzAbbr}`;
+      }
+
       timeStr = `<div style="font-size: 14px; color: #666; margin-bottom: 4px;">🕐 ${formattedTime}</div>`;
     }
 
@@ -1337,6 +1370,12 @@ function showSaveDetails(saveId) {
         const endAmpm = endHour >= 12 ? 'PM' : 'AM';
         const endDisplayHour = endHour % 12 || 12;
         timeStr += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+      }
+
+      // Add timezone abbreviation if available
+      const tzAbbr = getTimezoneAbbr(save.timezone);
+      if (tzAbbr) {
+        timeStr += ` ${tzAbbr}`;
       }
 
       dateStr += ` • ${timeStr}`;
