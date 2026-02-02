@@ -753,7 +753,7 @@ function createSaveCard(save) {
     ${dateStr ? `<div class="card-date">📅 ${dateStr}</div>` : ''}
     ${save.tags && save.tags.length > 0 ? `<div class="card-tags">${tagsHTML}</div>` : ''}
     ${save.url ? `<div class="card-link-preview">
-      <a href="${save.url}" target="_blank" class="card-link-text" style="font-size: 14px; color: #666; text-decoration: underline; cursor: pointer;">Post Save Link 🔗 Open in new tab</a>
+      <a href="${save.url}" target="_blank" class="card-link-text" style="font-size: 14px; color: #666; text-decoration: underline; cursor: pointer;">Post Link 🔗 Open in New Tab</a>
     </div>` : ''}
   `;
 
@@ -1486,8 +1486,8 @@ function showSaveDetails(saveId) {
 
   if (save.url) {
     html += `<div>
-      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Link</div>
-      <a href="${save.url}" target="_blank" style="font-size: 16px; color: #000; text-decoration: underline;">🔗 Open in new tab</a>
+      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Post</div>
+      <a href="${save.url}" target="_blank" style="font-size: 16px; color: #000; text-decoration: underline;">🔗 Open in New Tab</a>
     </div>`;
   }
 
