@@ -2217,7 +2217,7 @@ function startArrowAnimation() {
       arrowIndicator.innerHTML = arrowHTML;
       arrowIndex = (arrowIndex + 1) % 5;
     }
-  }, 200); // Change arrow every 200ms
+  }, 1000); // Change arrow every 1 second
 }
 
 function stopArrowAnimation() {
