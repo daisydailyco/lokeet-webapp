@@ -388,6 +388,9 @@ async function init() {
     currentUser = verification.user;
     userEmailSpan.textContent = currentUser.email || 'User';
 
+    // Fetch user profile (display name, username, etc.)
+    await fetchUserProfile();
+
     // Fetch user's saves
     await fetchSaves();
 
@@ -408,6 +411,37 @@ async function init() {
     console.error('Dashboard initialization error:', error);
     await customAlert('Failed to load dashboard. Please try logging in again.');
     window.location.href = '/login.html';
+  }
+}
+
+// Fetch user profile from backend
+async function fetchUserProfile() {
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    const response = await fetch(`${API_BASE}/v1/user/profile`, {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.profile) {
+        // Merge profile data into currentUser
+        currentUser = {
+          ...currentUser,
+          ...data.profile
+        };
+        console.log('[PROFILE] Loaded user profile');
+      }
+    } else {
+      console.log('[PROFILE] No profile data found (this is okay for new users)');
+    }
+  } catch (error) {
+    console.error('[PROFILE] Error fetching profile:', error);
+    // Non-critical error, don't block dashboard loading
   }
 }
 
