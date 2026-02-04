@@ -386,10 +386,12 @@ async function init() {
     }
 
     currentUser = verification.user;
-    userEmailSpan.textContent = currentUser.email || 'User';
 
     // Fetch user profile (display name, username, etc.)
     await fetchUserProfile();
+
+    // Update display name in settings dropdown
+    updateUserDisplayName();
 
     // Fetch user's saves
     await fetchSaves();
@@ -2378,6 +2380,20 @@ async function deleteSave(itemId) {
   }
 }
 
+// Update user display name in settings dropdown
+function updateUserDisplayName() {
+  // Priority: Display Name > Username > Email
+  let displayText = currentUser.email || 'User';
+
+  if (currentUser.display_name) {
+    displayText = currentUser.display_name;
+  } else if (currentUser.username) {
+    displayText = '@' + currentUser.username;
+  }
+
+  userEmailSpan.textContent = displayText;
+}
+
 // Profile Modal Functions
 function openProfileModal() {
   // Close settings dropdown
@@ -2575,6 +2591,9 @@ async function handleSaveProfile(e) {
     if (result.user) {
       currentUser = result.user;
     }
+
+    // Update display name in settings dropdown
+    updateUserDisplayName();
 
     // Close modal first, then show success message
     closeProfileModal();
