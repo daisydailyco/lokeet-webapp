@@ -2205,13 +2205,13 @@ function startArrowAnimation() {
 
   arrowAnimationInterval = setInterval(() => {
     if (arrowIndicator && arrowIndicator.classList.contains('show')) {
-      // Create 5 arrows where one is green (moving from left to right)
+      // Create 5 arrows where one is green and bold (moving from left to right)
       let arrowHTML = '';
       for (let i = 0; i < 5; i++) {
         if (i === arrowIndex) {
-          arrowHTML += '<span style="color: #42A746;">&gt;</span>';
+          arrowHTML += '<span style="color: #42A746; font-weight: 700;">&gt;</span>';
         } else {
-          arrowHTML += '<span style="color: #000;">&gt;</span>';
+          arrowHTML += '<span style="color: #666; font-weight: 400;">&gt;</span>';
         }
       }
       arrowIndicator.innerHTML = arrowHTML;
