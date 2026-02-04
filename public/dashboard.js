@@ -1169,12 +1169,16 @@ function initMap() {
       </a>
     ` : '';
 
+    const googleMapsQuery = save.address
+      ? encodeURIComponent(save.address)
+      : `${save.coordinates.lat},${save.coordinates.lng}`;
+
     const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
       <div style="padding: 8px;">
         <strong>${save.event_name || save.venue_name || 'Location'}</strong><br>
         ${save.address || ''}
         <br><br>
-        <a href="https://www.google.com/maps/search/?api=1&query=${save.coordinates.lat},${save.coordinates.lng}"
+        <a href="https://www.google.com/maps/search/?api=1&query=${googleMapsQuery}"
            target="_blank"
            style="color: #000; font-weight: 600;">
           Open in Google Maps →
