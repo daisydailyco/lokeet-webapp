@@ -1006,6 +1006,39 @@
       min-height: 80px;
     }
 
+    /* Password Toggle (matching signup page) */
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+      color: #666;
+    }
+
+    .password-toggle:hover {
+      opacity: 0.7;
+    }
+
+    .password-toggle svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1360,6 +1393,11 @@
           <div id="settings-dropdown" class="settings-dropdown">
             <div class="settings-dropdown-item">
               <div class="settings-dropdown-email" id="user-email">user@example.com</div>
+            </div>
+            <div class="settings-dropdown-item">
+              <button class="settings-dropdown-btn" id="customize-profile-btn">
+                Customize Profile
+              </button>
             </div>
             <div class="settings-dropdown-item">
               <button class="settings-dropdown-btn update-btn" id="settings-update-btn">
@@ -1739,6 +1777,83 @@
       <div class="modal-actions">
         <button type="button" class="modal-btn primary" id="custom-alert-ok" style="width: 100%;">OK</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Customize Profile Modal -->
+  <div id="profile-modal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>Customize Profile</h2>
+        <button class="close-btn" onclick="closeProfileModal()">&times;</button>
+      </div>
+
+      <form id="profile-form">
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" id="profile-display-name" placeholder="Your display name">
+        </div>
+
+        <div class="form-group">
+          <label>Username</label>
+          <div style="position: relative;">
+            <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px;">@</span>
+            <input type="text" id="profile-username" placeholder="username" style="padding-left: 32px;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Zip Code</label>
+          <input type="text" id="profile-zip" placeholder="12345" maxlength="5">
+        </div>
+
+        <div class="form-group">
+          <label>Birthday</label>
+          <input type="date" id="profile-birthday">
+        </div>
+
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="profile-email" required placeholder="your@email.com">
+        </div>
+
+        <div class="form-group">
+          <label>Change Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="profile-new-password" placeholder="New password (leave blank to keep current)">
+            <button type="button" class="password-toggle" onclick="toggleProfilePassword('profile-new-password')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group" id="profile-confirm-password-group" style="display: none;">
+          <label>Confirm New Password *</label>
+          <div class="password-wrapper">
+            <input type="password" id="profile-confirm-password" placeholder="Confirm new password">
+            <button type="button" class="password-toggle" onclick="toggleProfilePassword('profile-confirm-password')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="modal-btn secondary" onclick="closeProfileModal()">Cancel</button>
+          <button type="submit" class="modal-btn primary" id="save-profile-btn">Save Changes</button>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e0e0e0;">
+          <button type="button" class="modal-btn" id="delete-account-btn" style="background: #ff3b30; color: white; width: 100%;">
+            Delete Account
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

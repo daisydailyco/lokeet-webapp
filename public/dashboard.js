@@ -65,6 +65,20 @@ const logoutBtn = document.getElementById('logout-btn');
 const settingsBtn = document.getElementById('settings-btn');
 const settingsDropdown = document.getElementById('settings-dropdown');
 const settingsUpdateBtn = document.getElementById('settings-update-btn');
+const customizeProfileBtn = document.getElementById('customize-profile-btn');
+
+// Profile modal elements
+const profileModal = document.getElementById('profile-modal');
+const profileForm = document.getElementById('profile-form');
+const profileDisplayName = document.getElementById('profile-display-name');
+const profileUsername = document.getElementById('profile-username');
+const profileZip = document.getElementById('profile-zip');
+const profileBirthday = document.getElementById('profile-birthday');
+const profileEmail = document.getElementById('profile-email');
+const profileNewPassword = document.getElementById('profile-new-password');
+const profileConfirmPassword = document.getElementById('profile-confirm-password');
+const profileConfirmPasswordGroup = document.getElementById('profile-confirm-password-group');
+const deleteAccountBtn = document.getElementById('delete-account-btn');
 
 // Custom Confirmation Dialog
 function customConfirm(message, title = 'Confirm') {
@@ -671,6 +685,23 @@ function initEventListeners() {
 
   // Edit form submission
   editForm.addEventListener('submit', handleEditSave);
+
+  // Profile modal handlers
+  customizeProfileBtn.addEventListener('click', openProfileModal);
+  profileForm.addEventListener('submit', handleSaveProfile);
+  deleteAccountBtn.addEventListener('click', handleDeleteAccount);
+
+  // Show/hide confirm password when new password is entered
+  profileNewPassword.addEventListener('input', (e) => {
+    if (e.target.value.trim()) {
+      profileConfirmPasswordGroup.style.display = 'block';
+      profileConfirmPassword.required = true;
+    } else {
+      profileConfirmPasswordGroup.style.display = 'none';
+      profileConfirmPassword.required = false;
+      profileConfirmPassword.value = '';
+    }
+  });
 }
 
 // Handle update to newest version
@@ -2205,6 +2236,173 @@ async function deleteSave(itemId) {
   }
 }
 
+// Profile Modal Functions
+function openProfileModal() {
+  // Close settings dropdown
+  settingsDropdown.classList.remove('show');
+
+  // Load current user data
+  if (currentUser) {
+    profileEmail.value = currentUser.email || '';
+    // Load other profile fields if they exist
+    profileDisplayName.value = currentUser.display_name || '';
+    profileUsername.value = currentUser.username || '';
+    profileZip.value = currentUser.zip_code || '';
+    profileBirthday.value = currentUser.birthday || '';
+  }
+
+  // Reset password fields
+  profileNewPassword.value = '';
+  profileConfirmPassword.value = '';
+  profileConfirmPasswordGroup.style.display = 'none';
+  profileConfirmPassword.required = false;
+
+  profileModal.classList.add('active');
+}
+
+function closeProfileModal() {
+  profileModal.classList.remove('active');
+  profileForm.reset();
+}
+
+// Toggle password visibility
+function toggleProfilePassword(fieldId) {
+  const field = document.getElementById(fieldId);
+  if (field.type === 'password') {
+    field.type = 'text';
+  } else {
+    field.type = 'password';
+  }
+}
+
+// Handle profile save
+async function handleSaveProfile(e) {
+  e.preventDefault();
+
+  const saveBtn = document.getElementById('save-profile-btn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    const displayName = profileDisplayName.value.trim();
+    const username = profileUsername.value.trim();
+    const zipCode = profileZip.value.trim();
+    const birthday = profileBirthday.value;
+    const email = profileEmail.value.trim();
+    const newPassword = profileNewPassword.value;
+    const confirmPassword = profileConfirmPassword.value;
+
+    // Validate password if changing
+    if (newPassword) {
+      if (newPassword.length < 8) {
+        await customAlert('Password must be at least 8 characters long', 'Invalid Password');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        await customAlert('Passwords do not match', 'Password Mismatch');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+    }
+
+    // Build update payload
+    const payload = {
+      display_name: displayName || null,
+      username: username || null,
+      zip_code: zipCode || null,
+      birthday: birthday || null,
+      email: email
+    };
+
+    if (newPassword) {
+      payload.password = newPassword;
+    }
+
+    // Call backend to update profile
+    const response = await fetch(`${API_BASE}/v1/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update profile');
+    }
+
+    // Update current user data
+    const updatedUser = await response.json();
+    currentUser = updatedUser;
+
+    // Update email display in settings dropdown
+    userEmailSpan.textContent = email;
+
+    await customAlert('Profile updated successfully!', 'Success');
+    closeProfileModal();
+
+  } catch (error) {
+    console.error('Save profile error:', error);
+    await customAlert(error.message || 'Failed to update profile. Please try again.', 'Error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+  }
+}
+
+// Handle account deletion
+async function handleDeleteAccount() {
+  const confirmed = await customConfirm(
+    'Are you sure you want to delete your account? This action cannot be undone and all your saves will be permanently deleted.',
+    'Delete Account'
+  );
+
+  if (!confirmed) return;
+
+  // Ask for final confirmation
+  const finalConfirm = await customConfirm(
+    'This is your final warning. Your account and all data will be permanently deleted. Are you absolutely sure?',
+    'Final Confirmation'
+  );
+
+  if (!finalConfirm) return;
+
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    const response = await fetch(`${API_BASE}/v1/user/account`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete account');
+    }
+
+    await customAlert('Your account has been deleted. You will now be logged out.', 'Account Deleted');
+
+    // Log out
+    clearSession();
+    window.location.href = '/login.html';
+
+  } catch (error) {
+    console.error('Delete account error:', error);
+    await customAlert('Failed to delete account. Please try again.', 'Error');
+  }
+}
+
 // Make functions globally accessible
 window.editSave = editSave;
 window.deleteSave = deleteSave;
@@ -2214,6 +2412,8 @@ window.closeEditCategoriesModal = closeEditCategoriesModal;
 window.openEditCategoriesModal = openEditCategoriesModal;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
+window.closeProfileModal = closeProfileModal;
+window.toggleProfilePassword = toggleProfilePassword;
 
 // Arrow animation for empty state
 let arrowAnimationInterval = null;
