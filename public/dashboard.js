@@ -165,6 +165,67 @@ function customAlert(message, title = 'Notice') {
   });
 }
 
+// Custom Delete Confirmation Dialog
+function customDeleteConfirm() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('delete-confirm-modal');
+    const input = document.getElementById('delete-confirm-input');
+    const okBtn = document.getElementById('delete-confirm-ok');
+    const cancelBtn = document.getElementById('delete-confirm-cancel');
+
+    // Reset input
+    input.value = '';
+    okBtn.disabled = true;
+
+    modal.style.display = 'block';
+
+    // Enable/disable delete button based on input
+    const handleInput = () => {
+      if (input.value === 'DELETE') {
+        okBtn.disabled = false;
+      } else {
+        okBtn.disabled = true;
+      }
+    };
+
+    const handleOk = () => {
+      if (input.value === 'DELETE') {
+        cleanup();
+        resolve(true);
+      }
+    };
+
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    const cleanup = () => {
+      modal.style.display = 'none';
+      input.value = '';
+      okBtn.disabled = true;
+      input.removeEventListener('input', handleInput);
+      okBtn.removeEventListener('click', handleOk);
+      cancelBtn.removeEventListener('click', handleCancel);
+      modal.removeEventListener('click', handleBackdropClick);
+    };
+
+    const handleBackdropClick = (e) => {
+      if (e.target === modal) {
+        handleCancel();
+      }
+    };
+
+    input.addEventListener('input', handleInput);
+    okBtn.addEventListener('click', handleOk);
+    cancelBtn.addEventListener('click', handleCancel);
+    modal.addEventListener('click', handleBackdropClick);
+
+    // Focus input
+    setTimeout(() => input.focus(), 100);
+  });
+}
+
 // Initialize Radar SDK
 function initializeRadar() {
   if (window.Radar) {
@@ -2566,20 +2627,10 @@ async function handleSaveAccountSettings(e) {
 
 // Handle account deletion
 async function handleDeleteAccount() {
-  const confirmed = await customConfirm(
-    'Are you sure you want to delete your account? This action cannot be undone and all your saves will be permanently deleted.',
-    'Delete Account'
-  );
+  // Show delete confirmation requiring "DELETE" to be typed
+  const confirmed = await customDeleteConfirm();
 
   if (!confirmed) return;
-
-  // Ask for final confirmation
-  const finalConfirm = await customConfirm(
-    'This is your final warning. Your account and all data will be permanently deleted. Are you absolutely sure?',
-    'Final Confirmation'
-  );
-
-  if (!finalConfirm) return;
 
   try {
     const session = getSession();
