@@ -437,47 +437,39 @@
     }
 
     .category-filter-bar .filter-edit-icon {
-      font-size: 18px;
-      color: #666;
-      cursor: pointer;
-      user-select: none;
-      transition: all 0.2s;
-      line-height: 1;
+      position: relative;
       width: 28px;
       height: 28px;
+      background: #f0f0f0;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      background: transparent;
-      position: relative;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 18px;
+      font-weight: bold;
+      color: #666;
     }
 
     .category-filter-bar .filter-edit-icon:hover {
+      background: #000000;
       color: white;
-      background: #000;
-    }
-
-    .category-filter-bar .filter-edit-icon::after {
-      content: 'Edit';
-      position: absolute;
-      bottom: -35px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #000;
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
     }
 
     .category-filter-bar .filter-edit-icon:hover::after {
-      opacity: 1;
+      content: 'Edit';
+      position: absolute;
+      top: -30px;
+      right: 0;
+      background: #000000;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
     /* My Saves Tab */
