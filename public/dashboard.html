@@ -1039,6 +1039,11 @@
       stroke: currentColor;
     }
 
+    /* Delete Account Button in Settings Modal */
+    #delete-account-btn:hover {
+      background: #f0f0f0 !important;
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1856,15 +1861,15 @@
           </div>
         </div>
 
+        <div style="margin-bottom: 20px;">
+          <button type="button" id="delete-account-btn" style="width: 100%; padding: 12px; border: none; background: transparent; text-align: left; font-size: 14px; font-weight: 500; color: #ff3b30; cursor: pointer; border-radius: 8px; transition: all 0.2s;">
+            Delete Account
+          </button>
+        </div>
+
         <div class="modal-actions">
           <button type="button" class="modal-btn secondary" onclick="closeAccountSettingsModal()">Back</button>
           <button type="submit" class="modal-btn primary" id="save-settings-btn">Save Changes</button>
-        </div>
-
-        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e0e0e0;">
-          <button type="button" class="modal-btn" id="delete-account-btn" style="background: #ff3b30; color: white; width: 100%;">
-            Delete Account
-          </button>
         </div>
       </form>
     </div>
