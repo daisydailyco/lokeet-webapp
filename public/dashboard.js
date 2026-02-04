@@ -1090,21 +1090,24 @@ function initMap() {
   }
   mapInitialized = false;
 
+  const mapContainer = document.querySelector('.map-container');
+  const mapEmpty = document.getElementById('map-empty');
+
   // Get saves with coordinates from filtered saves
   const savesWithCoords = filteredSaves.filter(save =>
     save.coordinates && save.coordinates.lat && save.coordinates.lng
   );
 
   if (savesWithCoords.length === 0) {
-    mapDiv.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-        <div style="font-size: 64px; margin-bottom: 20px;">🗺️</div>
-        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: #000;">No maps yet!</h2>
-        <p style="font-size: 16px; color: #666;">Click "Add Save" to get started</p>
-      </div>
-    `;
+    // Hide map container, show empty state
+    mapContainer.style.display = 'none';
+    mapEmpty.style.display = 'block';
     return;
   }
+
+  // Show map container, hide empty state
+  mapContainer.style.display = 'block';
+  mapEmpty.style.display = 'none';
 
   // Calculate center from all coordinates
   const avgLat = savesWithCoords.reduce((sum, save) => sum + save.coordinates.lat, 0) / savesWithCoords.length;
