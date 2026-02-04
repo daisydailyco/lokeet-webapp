@@ -416,12 +416,13 @@
     .category-filter-bar .filter-group {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
     }
 
     .category-filter-bar select {
       padding: 6px 8px;
-      border: none;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
       font-size: 14px;
       background: transparent;
       cursor: pointer;
@@ -431,21 +432,28 @@
 
     .category-filter-bar select:focus {
       outline: none;
+      border-color: #000;
       background: transparent;
     }
 
     .category-filter-bar .filter-edit-icon {
-      font-size: 20px;
+      font-size: 18px;
       color: #666;
       cursor: pointer;
       user-select: none;
       transition: all 0.2s;
       line-height: 1;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
     }
 
     .category-filter-bar .filter-edit-icon:hover {
-      color: #000;
-      transform: scale(1.1);
+      color: white;
+      background: #000;
     }
 
     /* My Saves Tab */
