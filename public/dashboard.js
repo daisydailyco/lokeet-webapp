@@ -34,6 +34,7 @@ const tabContents = document.querySelectorAll('.tab-content');
 
 // My Saves tab elements
 const savesGrid = document.getElementById('saves-grid');
+const savesContainer = document.querySelector('.saves-container');
 const emptyState = document.getElementById('empty-state');
 const categoryFilter = document.getElementById('category-filter');
 const categoryFilterBar = document.getElementById('category-filter-bar');
@@ -740,12 +741,12 @@ function renderSaves() {
   savesGrid.innerHTML = '';
 
   if (filteredSaves.length === 0) {
-    savesGrid.style.display = 'none';
+    savesContainer.style.display = 'none';
     emptyState.style.display = 'block';
     return;
   }
 
-  savesGrid.style.display = 'grid';
+  savesContainer.style.display = 'block';
   emptyState.style.display = 'none';
 
   // Update category filter options
@@ -872,7 +873,7 @@ function updateCategoryFilter() {
   }
 
   // Build dropdown options
-  categoryFilter.innerHTML = '<option value="">Sort by Category</option>';
+  categoryFilter.innerHTML = '<option value="">All Categories</option>';
 
   // Add existing categories
   categories.forEach(category => {
