@@ -873,7 +873,7 @@ function updateCategoryFilter() {
   }
 
   // Build dropdown options
-  categoryFilter.innerHTML = '<option value="">All Categories</option>';
+  categoryFilter.innerHTML = '<option value="">Sort by Category</option>';
 
   // Add existing categories
   categories.forEach(category => {
