@@ -2627,10 +2627,18 @@ async function handleSaveAccountSettings(e) {
 
 // Handle account deletion
 async function handleDeleteAccount() {
+  // Close any open modals first
+  accountSettingsModal.classList.remove('active');
+  profileModal.classList.remove('active');
+
   // Show delete confirmation requiring "DELETE" to be typed
   const confirmed = await customDeleteConfirm();
 
-  if (!confirmed) return;
+  if (!confirmed) {
+    // If cancelled, reopen account settings modal
+    accountSettingsModal.classList.add('active');
+    return;
+  }
 
   try {
     const session = getSession();
@@ -2656,6 +2664,8 @@ async function handleDeleteAccount() {
   } catch (error) {
     console.error('Delete account error:', error);
     await customAlert('Failed to delete account. Please try again.', 'Error');
+    // Reopen account settings modal on error
+    accountSettingsModal.classList.add('active');
   }
 }
 
