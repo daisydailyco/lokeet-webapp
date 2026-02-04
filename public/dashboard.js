@@ -22,6 +22,7 @@ let selectedCategory = null;
 const loadingDiv = document.getElementById('loading');
 const dashboardDiv = document.getElementById('dashboard');
 const userEmailSpan = document.getElementById('user-email');
+const userUsernameSpan = document.getElementById('user-username');
 const categoryHeaderSection = document.getElementById('category-header-section');
 const categoryNameText = document.getElementById('category-name-text');
 const categoryItemCount = document.getElementById('category-item-count');
@@ -2382,16 +2383,27 @@ async function deleteSave(itemId) {
 
 // Update user display name in settings dropdown
 function updateUserDisplayName() {
-  // Priority: Display Name > Username > Email
-  let displayText = currentUser.email || 'User';
-
-  if (currentUser.display_name) {
-    displayText = currentUser.display_name;
-  } else if (currentUser.username) {
-    displayText = '@' + currentUser.username;
+  // If both display name and username exist, show both
+  if (currentUser.display_name && currentUser.username) {
+    userEmailSpan.textContent = currentUser.display_name;
+    userUsernameSpan.textContent = '@' + currentUser.username;
+    userUsernameSpan.style.display = 'block';
   }
-
-  userEmailSpan.textContent = displayText;
+  // If only display name exists, show display name only
+  else if (currentUser.display_name) {
+    userEmailSpan.textContent = currentUser.display_name;
+    userUsernameSpan.style.display = 'none';
+  }
+  // If only username exists, show username only
+  else if (currentUser.username) {
+    userEmailSpan.textContent = '@' + currentUser.username;
+    userUsernameSpan.style.display = 'none';
+  }
+  // Default to email
+  else {
+    userEmailSpan.textContent = currentUser.email || 'User';
+    userUsernameSpan.style.display = 'none';
+  }
 }
 
 // Profile Modal Functions
