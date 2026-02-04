@@ -2339,6 +2339,14 @@ async function checkUsernameAvailability(username) {
       }
     });
 
+    // If endpoint doesn't exist yet (404), allow username without validation
+    if (response.status === 404) {
+      usernameFeedback.textContent = '';
+      usernameFeedback.style.color = '';
+      isUsernameAvailable = true;
+      return;
+    }
+
     if (!response.ok) {
       throw new Error('Failed to check username');
     }
@@ -2357,9 +2365,10 @@ async function checkUsernameAvailability(username) {
 
   } catch (error) {
     console.error('Username check error:', error);
-    usernameFeedback.textContent = 'Unable to check username availability';
-    usernameFeedback.style.color = '#666';
-    isUsernameAvailable = true; // Allow submission if check fails
+    // Allow submission if check fails (e.g., network error)
+    usernameFeedback.textContent = '';
+    usernameFeedback.style.color = '';
+    isUsernameAvailable = true;
   }
 }
 
