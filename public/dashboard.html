@@ -412,8 +412,9 @@
       align-items: center;
       justify-content: flex-end;
       gap: 12px;
-      padding: 0 24px 12px;
-      margin-bottom: 4px;
+      max-width: 1400px;
+      margin: 0 auto 8px;
+      padding: 16px 24px 12px;
     }
 
     .category-filter-bar select {
@@ -1347,16 +1348,16 @@
       </div>
     </div>
 
+    <!-- Category Filter (Above Content) -->
+    <div id="category-filter-bar" class="category-filter-bar" style="display: none;">
+      <select id="category-filter">
+        <option value="">Sort by Category</option>
+      </select>
+      <span id="edit-categories-btn" class="filter-edit-icon" title="Edit Categories">+</span>
+    </div>
+
     <!-- Main Container -->
     <div class="dashboard-container">
-
-      <!-- Category Filter (Above Content) -->
-      <div id="category-filter-bar" class="category-filter-bar" style="display: none;">
-        <select id="category-filter">
-          <option value="">Sort by Category</option>
-        </select>
-        <span id="edit-categories-btn" class="filter-edit-icon" title="Edit Categories">+</span>
-      </div>
 
       <!-- My Saves Tab -->
       <div id="saves-tab" class="tab-content active">
