@@ -387,7 +387,6 @@
       color: white;
       cursor: pointer;
       transition: all 0.2s;
-      margin-left: auto;
     }
 
     .tab-action-btn:hover {
@@ -401,22 +400,29 @@
       display: none;
       font-size: 18px;
       margin-right: 12px;
-      margin-left: auto;
       font-family: monospace;
       letter-spacing: 2px;
       align-self: center;
       line-height: 1;
     }
 
+    /* When arrow is shown, it pushes to the right */
     .arrow-indicator.show {
       display: inline-block;
+      margin-left: auto;
     }
 
     .arrow-indicator span {
       transition: color 0.1s ease;
     }
 
+    /* By default, button stays on right side */
     .tab-action-btn {
+      margin-left: auto;
+    }
+
+    /* When arrow is visible, remove button's left margin since arrow already pushes right */
+    .arrow-indicator.show ~ .tab-action-btn {
       margin-left: 0;
     }
 
