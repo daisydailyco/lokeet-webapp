@@ -408,12 +408,15 @@
 
     /* Category Filter Bar */
     .category-filter-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       max-width: 1400px;
       margin: 0 auto;
       padding: 8px 24px;
+    }
+
+    .category-filter-bar .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .category-filter-bar select {
@@ -432,8 +435,7 @@
     }
 
     .category-filter-bar .filter-edit-icon {
-      font-size: 24px;
-      font-weight: 400;
+      font-size: 20px;
       color: #666;
       cursor: pointer;
       user-select: none;
@@ -1189,6 +1191,10 @@
         padding: 8px 16px;
       }
 
+      .category-filter-bar .filter-group {
+        width: 100%;
+      }
+
       .category-filter-bar select {
         flex: 1;
       }
@@ -1344,10 +1350,12 @@
 
     <!-- Category Filter (Above Content) -->
     <div id="category-filter-bar" class="category-filter-bar" style="display: none;">
-      <select id="category-filter">
-        <option value="">Sort by Category</option>
-      </select>
-      <span id="edit-categories-btn" class="filter-edit-icon" title="Edit Categories">+</span>
+      <div class="filter-group">
+        <select id="category-filter">
+          <option value="">Sort by Category</option>
+        </select>
+        <span id="edit-categories-btn" class="filter-edit-icon" title="Edit Categories">↗</span>
+      </div>
     </div>
 
     <!-- Main Container -->

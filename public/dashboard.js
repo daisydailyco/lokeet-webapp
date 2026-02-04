@@ -825,7 +825,7 @@ function createSaveCard(save) {
   ).join('');
 
   card.innerHTML = `
-    <div class="card-edit-icon" data-save-id="${save.id}">+</div>
+    <div class="card-edit-icon" data-save-id="${save.id}">↗</div>
     <div class="card-title">${save.event_name || save.venue_name || 'Untitled'}</div>
     ${save.category ? `<div class="card-category" data-category="${save.category}">${save.category}</div>` : ''}
     ${save.address ? `<div class="card-address">📍 ${save.address}</div>` : ''}
