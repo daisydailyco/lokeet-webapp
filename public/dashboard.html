@@ -450,11 +450,34 @@
       justify-content: center;
       border-radius: 50%;
       background: transparent;
+      position: relative;
     }
 
     .category-filter-bar .filter-edit-icon:hover {
       color: white;
       background: #000;
+    }
+
+    .category-filter-bar .filter-edit-icon::after {
+      content: 'Edit';
+      position: absolute;
+      bottom: -35px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .category-filter-bar .filter-edit-icon:hover::after {
+      opacity: 1;
     }
 
     /* My Saves Tab */
@@ -1363,7 +1386,7 @@
         <select id="category-filter">
           <option value="">Sort by Category</option>
         </select>
-        <span id="edit-categories-btn" class="filter-edit-icon" title="Edit">↗</span>
+        <span id="edit-categories-btn" class="filter-edit-icon">↗</span>
       </div>
     </div>
 
