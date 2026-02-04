@@ -2372,6 +2372,11 @@ function closeProfileModal() {
   profileModal.classList.remove('active');
   profileForm.reset();
   usernameFeedback.textContent = '';
+
+  // Reset save button state
+  const saveBtn = document.getElementById('save-profile-btn');
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Save Changes';
 }
 
 function openAccountSettingsModal() {
@@ -2395,6 +2400,12 @@ function openAccountSettingsModal() {
 function closeAccountSettingsModal() {
   accountSettingsModal.classList.remove('active');
   accountSettingsForm.reset();
+
+  // Reset save button state
+  const saveBtn = document.getElementById('save-settings-btn');
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Save Changes';
+
   // Reopen profile modal
   openProfileModal();
 }
@@ -2531,8 +2542,9 @@ async function handleSaveProfile(e) {
       currentUser = result.user;
     }
 
-    await customAlert('Profile updated successfully!', 'Success');
+    // Close modal first, then show success message
     closeProfileModal();
+    await customAlert('Profile updated successfully!', 'Success');
 
   } catch (error) {
     console.error('Save profile error:', error);
@@ -2613,8 +2625,9 @@ async function handleSaveAccountSettings(e) {
     // Update email display in settings dropdown
     userEmailSpan.textContent = email;
 
-    await customAlert('Account settings updated successfully!', 'Success');
+    // Close modal first, then show success message
     closeAccountSettingsModal();
+    await customAlert('Account settings updated successfully!', 'Success');
 
   } catch (error) {
     console.error('Save settings error:', error);
