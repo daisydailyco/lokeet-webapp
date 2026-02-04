@@ -36,8 +36,7 @@ const tabContents = document.querySelectorAll('.tab-content');
 const savesGrid = document.getElementById('saves-grid');
 const emptyState = document.getElementById('empty-state');
 const categoryFilter = document.getElementById('category-filter');
-const categoryFilterMap = document.getElementById('category-filter-map');
-const categoryFilterCalendar = document.getElementById('category-filter-calendar');
+const categoryFilterBar = document.getElementById('category-filter-bar');
 
 // Map elements
 const mapDiv = document.getElementById('map');
@@ -624,8 +623,10 @@ function initEventListeners() {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
   });
 
-  // Filters - sync all three dropdowns
-  const handleCategoryChange = async (value, sourceDropdown) => {
+  // Filters
+  categoryFilter.addEventListener('change', async (e) => {
+    const value = e.target.value;
+
     // Handle special options
     if (value === '__other_new__') {
       // Prompt for new category name
@@ -634,17 +635,10 @@ function initEventListeners() {
         setCategory(newCategory.trim());
       } else {
         // Reset to previous selection
-        if (categoryFilter) categoryFilter.value = selectedCategory || '';
-        if (categoryFilterMap) categoryFilterMap.value = selectedCategory || '';
-        if (categoryFilterCalendar) categoryFilterCalendar.value = selectedCategory || '';
+        categoryFilter.value = selectedCategory || '';
       }
       return;
     }
-
-    // Sync all dropdowns
-    if (categoryFilter) categoryFilter.value = value;
-    if (categoryFilterMap) categoryFilterMap.value = value;
-    if (categoryFilterCalendar) categoryFilterCalendar.value = value;
 
     // Handle normal category selection
     if (value) {
@@ -652,15 +646,7 @@ function initEventListeners() {
     } else {
       clearCategory();
     }
-  };
-
-  categoryFilter.addEventListener('change', (e) => handleCategoryChange(e.target.value, categoryFilter));
-  if (categoryFilterMap) {
-    categoryFilterMap.addEventListener('change', (e) => handleCategoryChange(e.target.value, categoryFilterMap));
-  }
-  if (categoryFilterCalendar) {
-    categoryFilterCalendar.addEventListener('change', (e) => handleCategoryChange(e.target.value, categoryFilterCalendar));
-  }
+  });
 
   // Add category dropdown change handler
   addCategorySelect.addEventListener('change', (e) => {
@@ -878,42 +864,40 @@ function updateCategoryFilter() {
     }
   });
 
-  // Helper function to populate a dropdown
-  const populateDropdown = (dropdown) => {
-    if (!dropdown) return;
+  // Show/hide filter bar based on whether there are any saves
+  if (allSaves.length === 0) {
+    categoryFilterBar.style.display = 'none';
+  } else {
+    categoryFilterBar.style.display = 'flex';
+  }
 
-    dropdown.innerHTML = '<option value="">All Categories</option>';
+  // Build dropdown options
+  categoryFilter.innerHTML = '<option value="">Sort by Category</option>';
 
-    // Add existing categories
-    categories.forEach(category => {
-      const option = document.createElement('option');
-      option.value = category;
-      option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-      dropdown.appendChild(option);
-    });
+  // Add existing categories
+  categories.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    categoryFilter.appendChild(option);
+  });
 
-    // Add separator
-    const separator = document.createElement('option');
-    separator.disabled = true;
-    separator.textContent = '──────────';
-    dropdown.appendChild(separator);
+  // Add separator
+  const separator = document.createElement('option');
+  separator.disabled = true;
+  separator.textContent = '──────────';
+  categoryFilter.appendChild(separator);
 
-    // Add "Other (Enter New)" option at bottom
-    const otherOption = document.createElement('option');
-    otherOption.value = '__other_new__';
-    otherOption.textContent = 'Other (Enter New)';
-    dropdown.appendChild(otherOption);
+  // Add "Other (Enter New)" option at bottom
+  const otherOption = document.createElement('option');
+  otherOption.value = '__other_new__';
+  otherOption.textContent = 'Other (Enter New)';
+  categoryFilter.appendChild(otherOption);
 
-    // Restore selected category
-    if (selectedCategory && categories.has(selectedCategory)) {
-      dropdown.value = selectedCategory;
-    }
-  };
-
-  // Populate all three dropdowns
-  populateDropdown(categoryFilter);
-  populateDropdown(categoryFilterMap);
-  populateDropdown(categoryFilterCalendar);
+  // Restore selected category
+  if (selectedCategory && categories.has(selectedCategory)) {
+    categoryFilter.value = selectedCategory;
+  }
 }
 
 // Populate add modal category dropdown
@@ -2188,16 +2172,6 @@ window.closeEditCategoriesModal = closeEditCategoriesModal;
 window.openEditCategoriesModal = openEditCategoriesModal;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
-window.handleCategoryFilterChange = (value) => {
-  if (categoryFilter) categoryFilter.value = value;
-  if (categoryFilterMap) categoryFilterMap.value = value;
-  if (categoryFilterCalendar) categoryFilterCalendar.value = value;
-  if (value) {
-    setCategory(value);
-  } else {
-    clearCategory();
-  }
-};
 
 // Initialize on page load
 init();

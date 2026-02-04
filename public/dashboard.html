@@ -399,54 +399,55 @@
       display: block;
     }
 
-    /* Floating Filter */
-    .floating-filter {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      z-index: 10;
-    }
-
-    .floating-filter .filter-group {
+    /* Category Filter Bar */
+    .category-filter-bar {
       display: flex;
-      flex-direction: row;
       align-items: center;
+      justify-content: flex-end;
       gap: 12px;
+      padding: 12px 24px;
+      margin-bottom: 16px;
     }
 
-    .floating-filter .filter-group label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #666;
-      white-space: nowrap;
-    }
-
-    .floating-filter .filter-group select {
+    .category-filter-bar select {
       padding: 8px 12px;
       border: 1px solid #e0e0e0;
       border-radius: 6px;
       font-size: 14px;
-      background: white;
+      background: transparent;
       cursor: pointer;
-      min-width: 180px;
+      min-width: 200px;
+      color: #333;
     }
 
-    .floating-filter .filter-group select:focus {
+    .category-filter-bar select:focus {
       outline: none;
       border-color: #000;
+      background: white;
+    }
+
+    .category-filter-bar .filter-edit-icon {
+      font-size: 24px;
+      font-weight: 400;
+      color: #666;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+      line-height: 1;
+    }
+
+    .category-filter-bar .filter-edit-icon:hover {
+      color: #000;
+      transform: scale(1.1);
     }
 
     /* My Saves Tab */
     .saves-container {
       background: white;
-      padding: 80px 20px 20px;
+      padding: 20px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       margin-bottom: 24px;
-    }
-
-    .saves-grid {
-      margin-top: 20px;
     }
 
     .filter-group {
@@ -664,7 +665,7 @@
 
     .empty-state {
       text-align: center;
-      padding: 120px 20px 80px;
+      padding: 80px 20px;
       background: white;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -695,7 +696,6 @@
       overflow: hidden;
       height: 600px;
       margin-bottom: 24px;
-      padding-top: 100px;
     }
 
     #map {
@@ -745,7 +745,6 @@
     /* Calendar View */
     #calendar-view {
       margin-bottom: 24px;
-      padding-top: 100px;
     }
 
     .calendar-grid {
@@ -1179,40 +1178,15 @@
         grid-template-columns: 1fr;
       }
 
-      .floating-filter {
-        position: relative;
-        top: 0;
-        right: 0;
-        width: 100%;
-        padding: 16px;
-        background: white;
-        border-radius: 12px 12px 0 0;
-        margin-bottom: 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      }
-
-      .floating-filter .filter-group {
+      .category-filter-bar {
+        padding: 12px 16px;
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
+        gap: 12px;
       }
 
-      .floating-filter .filter-group select {
+      .category-filter-bar select {
         min-width: 100%;
-      }
-
-      .saves-container {
-        padding-top: 20px;
-        border-radius: 0 0 12px 12px;
-      }
-
-      .saves-grid {
-        margin-top: 0;
-      }
-
-      .empty-state {
-        padding-top: 80px;
-        border-radius: 0 0 12px 12px;
       }
     }
 
@@ -1367,21 +1341,16 @@
     <!-- Main Container -->
     <div class="dashboard-container">
 
+      <!-- Category Filter (Above Content) -->
+      <div id="category-filter-bar" class="category-filter-bar" style="display: none;">
+        <select id="category-filter">
+          <option value="">Sort by Category</option>
+        </select>
+        <span id="edit-categories-btn" class="filter-edit-icon" title="Edit Categories">+</span>
+      </div>
+
       <!-- My Saves Tab -->
       <div id="saves-tab" class="tab-content active">
-        <!-- Category Filter (Floating) -->
-        <div class="floating-filter">
-          <div class="filter-group">
-            <label style="display: flex; align-items: center; gap: 8px;">
-              Sort by Category
-              <span id="edit-categories-btn" class="filter-edit-icon" title="Edit Categories">+</span>
-            </label>
-            <select id="category-filter">
-              <option value="">All Categories</option>
-            </select>
-          </div>
-        </div>
-
         <!-- Saves Container -->
         <div class="saves-container">
           <!-- Saves Grid -->
@@ -1400,19 +1369,6 @@
 
       <!-- Map View Tab -->
       <div id="map-tab" class="tab-content">
-        <!-- Category Filter (Floating) -->
-        <div class="floating-filter">
-          <div class="filter-group">
-            <label style="display: flex; align-items: center; gap: 8px;">
-              Sort by Category
-              <span class="filter-edit-icon" title="Edit Categories" onclick="openEditCategoriesModal()">+</span>
-            </label>
-            <select id="category-filter-map" onchange="handleCategoryFilterChange(this.value)">
-              <option value="">All Categories</option>
-            </select>
-          </div>
-        </div>
-
         <div class="map-container">
           <div id="map"></div>
         </div>
@@ -1427,19 +1383,6 @@
 
       <!-- Calendar Tab -->
       <div id="calendar-tab" class="tab-content">
-        <!-- Category Filter (Floating) -->
-        <div class="floating-filter">
-          <div class="filter-group">
-            <label style="display: flex; align-items: center; gap: 8px;">
-              Sort by Category
-              <span class="filter-edit-icon" title="Edit Categories" onclick="openEditCategoriesModal()">+</span>
-            </label>
-            <select id="category-filter-calendar" onchange="handleCategoryFilterChange(this.value)">
-              <option value="">All Categories</option>
-            </select>
-          </div>
-        </div>
-
         <div id="calendar-view">
           <!-- Calendar will be rendered here -->
         </div>
