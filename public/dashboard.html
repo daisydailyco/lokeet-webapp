@@ -399,20 +399,22 @@
     /* Arrow Animation for Empty State */
     .arrow-indicator {
       display: none;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 700;
-      color: #000000;
-      margin-right: 8px;
+      margin-right: 12px;
       margin-left: auto;
       font-family: monospace;
-      min-width: 60px;
-      text-align: right;
+      letter-spacing: 2px;
       align-self: center;
       line-height: 1;
     }
 
     .arrow-indicator.show {
       display: inline-block;
+    }
+
+    .arrow-indicator span {
+      transition: color 0.1s ease;
     }
 
     .tab-action-btn {
@@ -1375,7 +1377,7 @@
         <button class="tab active" data-tab="saves">Saves</button>
         <button class="tab" data-tab="map">Map</button>
         <button class="tab" data-tab="calendar">Calendar</button>
-        <span id="arrow-indicator" class="arrow-indicator">>>>>></span>
+        <span id="arrow-indicator" class="arrow-indicator"></span>
         <button id="add-save-btn" class="tab-action-btn">+ New Save</button>
       </div>
     </div>

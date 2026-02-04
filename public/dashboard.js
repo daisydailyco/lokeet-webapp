@@ -2198,7 +2198,6 @@ window.showSavesForDate = showSavesForDate;
 
 // Arrow animation for empty state
 let arrowAnimationInterval = null;
-const arrowStates = ['>>>>>', ' >>>>', '  >>>', '   >>', '    >', '     '];
 let arrowIndex = 0;
 
 function startArrowAnimation() {
@@ -2206,8 +2205,17 @@ function startArrowAnimation() {
 
   arrowAnimationInterval = setInterval(() => {
     if (arrowIndicator && arrowIndicator.classList.contains('show')) {
-      arrowIndicator.textContent = arrowStates[arrowIndex];
-      arrowIndex = (arrowIndex + 1) % arrowStates.length;
+      // Create 5 arrows where one is green (moving from left to right)
+      let arrowHTML = '';
+      for (let i = 0; i < 5; i++) {
+        if (i === arrowIndex) {
+          arrowHTML += '<span style="color: #42A746;">&gt;</span>';
+        } else {
+          arrowHTML += '<span style="color: #000;">&gt;</span>';
+        }
+      }
+      arrowIndicator.innerHTML = arrowHTML;
+      arrowIndex = (arrowIndex + 1) % 5;
     }
   }, 200); // Change arrow every 200ms
 }
