@@ -420,7 +420,7 @@ let categoryChanges = new Map(); // Map of original name -> new name
 let categoriesToDelete = new Set(); // Set of categories to delete
 
 // Open edit categories modal
-function openEditCategoriesModal() {
+async function openEditCategoriesModal() {
   const categories = new Set();
   allSaves.forEach(save => {
     if (save.category) {
