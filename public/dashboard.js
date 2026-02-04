@@ -656,11 +656,13 @@ function initEventListeners() {
     if (value === '__create_new__') {
       // Show custom category input
       addCustomCategoryGroup.style.display = 'block';
+      addCustomCategoryInput.required = true;
       addCustomCategoryInput.focus();
     } else {
       // Hide custom category input
       addCustomCategoryGroup.style.display = 'none';
       addCustomCategoryInput.value = '';
+      addCustomCategoryInput.required = false;
     }
   });
 
@@ -929,17 +931,22 @@ function populateAddCategoryDropdown() {
     addCategorySelect.appendChild(option);
   });
 
-  // Add separator
-  const separator = document.createElement('option');
-  separator.disabled = true;
-  separator.textContent = '──────────';
-  addCategorySelect.appendChild(separator);
+  // Add separator if there are categories
+  if (categories.size > 0) {
+    const separator = document.createElement('option');
+    separator.disabled = true;
+    separator.textContent = '──────────';
+    addCategorySelect.appendChild(separator);
+  }
 
   // Add "Other (Create New)" option at bottom
   const otherOption = document.createElement('option');
   otherOption.value = '__create_new__';
   otherOption.textContent = 'Other (Create New)';
   addCategorySelect.appendChild(otherOption);
+
+  // Return whether categories exist
+  return categories.size > 0;
 }
 
 // Populate edit modal category dropdown
@@ -1690,12 +1697,24 @@ function openAddModal() {
   addForm.reset();
   selectedAddAddress = null;
 
-  // Populate category dropdown
-  populateAddCategoryDropdown();
+  // Populate category dropdown and check if categories exist
+  const hasCategories = populateAddCategoryDropdown();
 
-  // Hide custom category input
-  addCustomCategoryGroup.style.display = 'none';
-  addCustomCategoryInput.value = '';
+  // If no categories exist, auto-select "Other (Create New)" and show custom category field
+  if (!hasCategories) {
+    addCategorySelect.value = '__create_new__';
+    addCustomCategoryGroup.style.display = 'block';
+    addCustomCategoryInput.required = true;
+    // Focus on custom category input after a brief delay
+    setTimeout(() => {
+      addCustomCategoryInput.focus();
+    }, 150);
+  } else {
+    // Hide custom category input
+    addCustomCategoryGroup.style.display = 'none';
+    addCustomCategoryInput.value = '';
+    addCustomCategoryInput.required = false;
+  }
 
   // Set default timezone
   addTimezoneSelect.value = getDefaultTimezone();
