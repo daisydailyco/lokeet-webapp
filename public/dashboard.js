@@ -1160,6 +1160,15 @@ function initMap() {
     el.textContent = index + 1;
 
     // Create popup
+    const postLinkHTML = save.url ? `
+      <br>
+      <a href="${save.url}"
+         target="_blank"
+         style="color: #000; font-weight: 600;">
+        View Post 🔗 Open in New Tab →
+      </a>
+    ` : '';
+
     const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
       <div style="padding: 8px;">
         <strong>${save.event_name || save.venue_name || 'Location'}</strong><br>
@@ -1170,6 +1179,7 @@ function initMap() {
            style="color: #000; font-weight: 600;">
           Open in Google Maps →
         </a>
+        ${postLinkHTML}
       </div>
     `);
 
