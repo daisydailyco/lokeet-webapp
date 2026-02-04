@@ -36,6 +36,8 @@ const tabContents = document.querySelectorAll('.tab-content');
 const savesGrid = document.getElementById('saves-grid');
 const emptyState = document.getElementById('empty-state');
 const categoryFilter = document.getElementById('category-filter');
+const categoryFilterMap = document.getElementById('category-filter-map');
+const categoryFilterCalendar = document.getElementById('category-filter-calendar');
 
 // Map elements
 const mapDiv = document.getElementById('map');
@@ -622,10 +624,8 @@ function initEventListeners() {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
   });
 
-  // Filters
-  categoryFilter.addEventListener('change', async (e) => {
-    const value = e.target.value;
-
+  // Filters - sync all three dropdowns
+  const handleCategoryChange = async (value, sourceDropdown) => {
     // Handle special options
     if (value === '__other_new__') {
       // Prompt for new category name
@@ -634,10 +634,17 @@ function initEventListeners() {
         setCategory(newCategory.trim());
       } else {
         // Reset to previous selection
-        categoryFilter.value = selectedCategory || '';
+        if (categoryFilter) categoryFilter.value = selectedCategory || '';
+        if (categoryFilterMap) categoryFilterMap.value = selectedCategory || '';
+        if (categoryFilterCalendar) categoryFilterCalendar.value = selectedCategory || '';
       }
       return;
     }
+
+    // Sync all dropdowns
+    if (categoryFilter) categoryFilter.value = value;
+    if (categoryFilterMap) categoryFilterMap.value = value;
+    if (categoryFilterCalendar) categoryFilterCalendar.value = value;
 
     // Handle normal category selection
     if (value) {
@@ -645,7 +652,15 @@ function initEventListeners() {
     } else {
       clearCategory();
     }
-  });
+  };
+
+  categoryFilter.addEventListener('change', (e) => handleCategoryChange(e.target.value, categoryFilter));
+  if (categoryFilterMap) {
+    categoryFilterMap.addEventListener('change', (e) => handleCategoryChange(e.target.value, categoryFilterMap));
+  }
+  if (categoryFilterCalendar) {
+    categoryFilterCalendar.addEventListener('change', (e) => handleCategoryChange(e.target.value, categoryFilterCalendar));
+  }
 
   // Add category dropdown change handler
   addCategorySelect.addEventListener('change', (e) => {
@@ -863,28 +878,42 @@ function updateCategoryFilter() {
     }
   });
 
-  // Build dropdown options
-  categoryFilter.innerHTML = '<option value="">All Categories</option>';
+  // Helper function to populate a dropdown
+  const populateDropdown = (dropdown) => {
+    if (!dropdown) return;
 
-  // Add existing categories
-  categories.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-    categoryFilter.appendChild(option);
-  });
+    dropdown.innerHTML = '<option value="">All Categories</option>';
 
-  // Add separator
-  const separator = document.createElement('option');
-  separator.disabled = true;
-  separator.textContent = '──────────';
-  categoryFilter.appendChild(separator);
+    // Add existing categories
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+      dropdown.appendChild(option);
+    });
 
-  // Add "Other (Enter New)" option at bottom
-  const otherOption = document.createElement('option');
-  otherOption.value = '__other_new__';
-  otherOption.textContent = 'Other (Enter New)';
-  categoryFilter.appendChild(otherOption);
+    // Add separator
+    const separator = document.createElement('option');
+    separator.disabled = true;
+    separator.textContent = '──────────';
+    dropdown.appendChild(separator);
+
+    // Add "Other (Enter New)" option at bottom
+    const otherOption = document.createElement('option');
+    otherOption.value = '__other_new__';
+    otherOption.textContent = 'Other (Enter New)';
+    dropdown.appendChild(otherOption);
+
+    // Restore selected category
+    if (selectedCategory && categories.has(selectedCategory)) {
+      dropdown.value = selectedCategory;
+    }
+  };
+
+  // Populate all three dropdowns
+  populateDropdown(categoryFilter);
+  populateDropdown(categoryFilterMap);
+  populateDropdown(categoryFilterCalendar);
 }
 
 // Populate add modal category dropdown
@@ -2156,8 +2185,19 @@ window.deleteSave = deleteSave;
 window.closeAddModal = closeAddModal;
 window.closeEditModal = closeEditModal;
 window.closeEditCategoriesModal = closeEditCategoriesModal;
+window.openEditCategoriesModal = openEditCategoriesModal;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
+window.handleCategoryFilterChange = (value) => {
+  if (categoryFilter) categoryFilter.value = value;
+  if (categoryFilterMap) categoryFilterMap.value = value;
+  if (categoryFilterCalendar) categoryFilterCalendar.value = value;
+  if (value) {
+    setCategory(value);
+  } else {
+    clearCategory();
+  }
+};
 
 // Initialize on page load
 init();
