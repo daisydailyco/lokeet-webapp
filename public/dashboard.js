@@ -79,6 +79,12 @@ const profileNewPassword = document.getElementById('profile-new-password');
 const profileConfirmPassword = document.getElementById('profile-confirm-password');
 const profileConfirmPasswordGroup = document.getElementById('profile-confirm-password-group');
 const deleteAccountBtn = document.getElementById('delete-account-btn');
+const usernameFeedback = document.getElementById('username-feedback');
+
+// Username availability state
+let usernameCheckTimeout = null;
+let isUsernameAvailable = true;
+let originalUsername = '';
 
 // Custom Confirmation Dialog
 function customConfirm(message, title = 'Confirm') {
@@ -701,6 +707,41 @@ function initEventListeners() {
       profileConfirmPassword.required = false;
       profileConfirmPassword.value = '';
     }
+  });
+
+  // Username availability checking
+  profileUsername.addEventListener('input', (e) => {
+    const username = e.target.value.trim();
+
+    // Clear previous timeout
+    if (usernameCheckTimeout) {
+      clearTimeout(usernameCheckTimeout);
+    }
+
+    // Clear feedback if empty
+    if (!username) {
+      usernameFeedback.textContent = '';
+      usernameFeedback.style.color = '';
+      isUsernameAvailable = true;
+      return;
+    }
+
+    // If username hasn't changed from original, skip check
+    if (username === originalUsername) {
+      usernameFeedback.textContent = 'This is your current username';
+      usernameFeedback.style.color = '#666';
+      isUsernameAvailable = true;
+      return;
+    }
+
+    // Show checking message
+    usernameFeedback.textContent = 'Checking availability...';
+    usernameFeedback.style.color = '#666';
+
+    // Debounce: check after 500ms of no typing
+    usernameCheckTimeout = setTimeout(async () => {
+      await checkUsernameAvailability(username);
+    }, 500);
   });
 }
 
@@ -2249,6 +2290,9 @@ function openProfileModal() {
     profileUsername.value = currentUser.username || '';
     profileZip.value = currentUser.zip_code || '';
     profileBirthday.value = currentUser.birthday || '';
+
+    // Store original username for comparison
+    originalUsername = currentUser.username || '';
   }
 
   // Reset password fields
@@ -2257,7 +2301,66 @@ function openProfileModal() {
   profileConfirmPasswordGroup.style.display = 'none';
   profileConfirmPassword.required = false;
 
+  // Reset username feedback
+  usernameFeedback.textContent = '';
+  usernameFeedback.style.color = '';
+  isUsernameAvailable = true;
+
   profileModal.classList.add('active');
+}
+
+// Check username availability
+async function checkUsernameAvailability(username) {
+  try {
+    const session = getSession();
+    if (!session) return;
+
+    // Validate username format (alphanumeric, underscore, hyphen only)
+    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!usernameRegex.test(username)) {
+      usernameFeedback.textContent = 'Username can only contain letters, numbers, underscores, and hyphens';
+      usernameFeedback.style.color = '#ff3b30';
+      isUsernameAvailable = false;
+      return;
+    }
+
+    // Check minimum length
+    if (username.length < 3) {
+      usernameFeedback.textContent = 'Username must be at least 3 characters';
+      usernameFeedback.style.color = '#ff3b30';
+      isUsernameAvailable = false;
+      return;
+    }
+
+    const response = await fetch(`${API_BASE}/v1/user/username/check?username=${encodeURIComponent(username)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to check username');
+    }
+
+    const data = await response.json();
+
+    if (data.available) {
+      usernameFeedback.textContent = 'This username is available!';
+      usernameFeedback.style.color = '#42A746';
+      isUsernameAvailable = true;
+    } else {
+      usernameFeedback.textContent = 'Sorry, this username is already taken. Please try again.';
+      usernameFeedback.style.color = '#ff3b30';
+      isUsernameAvailable = false;
+    }
+
+  } catch (error) {
+    console.error('Username check error:', error);
+    usernameFeedback.textContent = 'Unable to check username availability';
+    usernameFeedback.style.color = '#666';
+    isUsernameAvailable = true; // Allow submission if check fails
+  }
 }
 
 function closeProfileModal() {
@@ -2294,6 +2397,14 @@ async function handleSaveProfile(e) {
     const email = profileEmail.value.trim();
     const newPassword = profileNewPassword.value;
     const confirmPassword = profileConfirmPassword.value;
+
+    // Check username availability before saving
+    if (username && username !== originalUsername && !isUsernameAvailable) {
+      await customAlert('Please choose an available username', 'Username Unavailable');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+      return;
+    }
 
     // Validate password if changing
     if (newPassword) {
