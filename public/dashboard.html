@@ -1804,25 +1804,37 @@
         </div>
 
         <div class="form-group">
-          <label>Zip Code</label>
-          <input type="text" id="profile-zip" placeholder="12345" maxlength="5">
-        </div>
-
-        <div class="form-group">
           <label>Birthday</label>
           <input type="date" id="profile-birthday">
         </div>
 
+        <div class="modal-actions">
+          <button type="button" class="modal-btn secondary" onclick="openAccountSettingsModal()">Settings</button>
+          <button type="submit" class="modal-btn primary" id="save-profile-btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Account Settings Modal -->
+  <div id="account-settings-modal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>Account Settings</h2>
+        <button class="close-btn" onclick="closeAccountSettingsModal()">&times;</button>
+      </div>
+
+      <form id="account-settings-form">
         <div class="form-group">
           <label>Email *</label>
-          <input type="email" id="profile-email" required placeholder="your@email.com">
+          <input type="email" id="settings-email" required placeholder="your@email.com">
         </div>
 
         <div class="form-group">
           <label>Change Password</label>
           <div class="password-wrapper">
-            <input type="password" id="profile-new-password" placeholder="New password (leave blank to keep current)">
-            <button type="button" class="password-toggle" onclick="toggleProfilePassword('profile-new-password')">
+            <input type="password" id="settings-new-password" placeholder="New password (leave blank to keep current)">
+            <button type="button" class="password-toggle" onclick="toggleProfilePassword('settings-new-password')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -1831,11 +1843,11 @@
           </div>
         </div>
 
-        <div class="form-group" id="profile-confirm-password-group" style="display: none;">
+        <div class="form-group" id="settings-confirm-password-group" style="display: none;">
           <label>Confirm New Password *</label>
           <div class="password-wrapper">
-            <input type="password" id="profile-confirm-password" placeholder="Confirm new password">
-            <button type="button" class="password-toggle" onclick="toggleProfilePassword('profile-confirm-password')">
+            <input type="password" id="settings-confirm-password" placeholder="Confirm new password">
+            <button type="button" class="password-toggle" onclick="toggleProfilePassword('settings-confirm-password')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -1845,8 +1857,8 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="modal-btn secondary" onclick="closeProfileModal()">Cancel</button>
-          <button type="submit" class="modal-btn primary" id="save-profile-btn">Save Changes</button>
+          <button type="button" class="modal-btn secondary" onclick="closeAccountSettingsModal()">Back</button>
+          <button type="submit" class="modal-btn primary" id="save-settings-btn">Save Changes</button>
         </div>
 
         <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e0e0e0;">

@@ -72,14 +72,17 @@ const profileModal = document.getElementById('profile-modal');
 const profileForm = document.getElementById('profile-form');
 const profileDisplayName = document.getElementById('profile-display-name');
 const profileUsername = document.getElementById('profile-username');
-const profileZip = document.getElementById('profile-zip');
 const profileBirthday = document.getElementById('profile-birthday');
-const profileEmail = document.getElementById('profile-email');
-const profileNewPassword = document.getElementById('profile-new-password');
-const profileConfirmPassword = document.getElementById('profile-confirm-password');
-const profileConfirmPasswordGroup = document.getElementById('profile-confirm-password-group');
-const deleteAccountBtn = document.getElementById('delete-account-btn');
 const usernameFeedback = document.getElementById('username-feedback');
+
+// Account settings modal elements
+const accountSettingsModal = document.getElementById('account-settings-modal');
+const accountSettingsForm = document.getElementById('account-settings-form');
+const settingsEmail = document.getElementById('settings-email');
+const settingsNewPassword = document.getElementById('settings-new-password');
+const settingsConfirmPassword = document.getElementById('settings-confirm-password');
+const settingsConfirmPasswordGroup = document.getElementById('settings-confirm-password-group');
+const deleteAccountBtn = document.getElementById('delete-account-btn');
 
 // Username availability state
 let usernameCheckTimeout = null;
@@ -695,17 +698,20 @@ function initEventListeners() {
   // Profile modal handlers
   customizeProfileBtn.addEventListener('click', openProfileModal);
   profileForm.addEventListener('submit', handleSaveProfile);
+
+  // Account settings modal handlers
+  accountSettingsForm.addEventListener('submit', handleSaveAccountSettings);
   deleteAccountBtn.addEventListener('click', handleDeleteAccount);
 
-  // Show/hide confirm password when new password is entered
-  profileNewPassword.addEventListener('input', (e) => {
+  // Show/hide confirm password when new password is entered (in settings modal)
+  settingsNewPassword.addEventListener('input', (e) => {
     if (e.target.value.trim()) {
-      profileConfirmPasswordGroup.style.display = 'block';
-      profileConfirmPassword.required = true;
+      settingsConfirmPasswordGroup.style.display = 'block';
+      settingsConfirmPassword.required = true;
     } else {
-      profileConfirmPasswordGroup.style.display = 'none';
-      profileConfirmPassword.required = false;
-      profileConfirmPassword.value = '';
+      settingsConfirmPasswordGroup.style.display = 'none';
+      settingsConfirmPassword.required = false;
+      settingsConfirmPassword.value = '';
     }
   });
 
@@ -2284,22 +2290,14 @@ function openProfileModal() {
 
   // Load current user data
   if (currentUser) {
-    profileEmail.value = currentUser.email || '';
-    // Load other profile fields if they exist
+    // Load profile fields
     profileDisplayName.value = currentUser.display_name || '';
     profileUsername.value = currentUser.username || '';
-    profileZip.value = currentUser.zip_code || '';
     profileBirthday.value = currentUser.birthday || '';
 
     // Store original username for comparison
     originalUsername = currentUser.username || '';
   }
-
-  // Reset password fields
-  profileNewPassword.value = '';
-  profileConfirmPassword.value = '';
-  profileConfirmPasswordGroup.style.display = 'none';
-  profileConfirmPassword.required = false;
 
   // Reset username feedback
   usernameFeedback.textContent = '';
@@ -2307,6 +2305,37 @@ function openProfileModal() {
   isUsernameAvailable = true;
 
   profileModal.classList.add('active');
+}
+
+function closeProfileModal() {
+  profileModal.classList.remove('active');
+  profileForm.reset();
+  usernameFeedback.textContent = '';
+}
+
+function openAccountSettingsModal() {
+  // Close profile modal
+  profileModal.classList.remove('active');
+
+  // Load current user data
+  if (currentUser) {
+    settingsEmail.value = currentUser.email || '';
+  }
+
+  // Reset password fields
+  settingsNewPassword.value = '';
+  settingsConfirmPassword.value = '';
+  settingsConfirmPasswordGroup.style.display = 'none';
+  settingsConfirmPassword.required = false;
+
+  accountSettingsModal.classList.add('active');
+}
+
+function closeAccountSettingsModal() {
+  accountSettingsModal.classList.remove('active');
+  accountSettingsForm.reset();
+  // Reopen profile modal
+  openProfileModal();
 }
 
 // Check username availability
@@ -2401,11 +2430,7 @@ async function handleSaveProfile(e) {
 
     const displayName = profileDisplayName.value.trim();
     const username = profileUsername.value.trim();
-    const zipCode = profileZip.value.trim();
     const birthday = profileBirthday.value;
-    const email = profileEmail.value.trim();
-    const newPassword = profileNewPassword.value;
-    const confirmPassword = profileConfirmPassword.value;
 
     // Check username availability before saving
     if (username && username !== originalUsername && !isUsernameAvailable) {
@@ -2414,6 +2439,64 @@ async function handleSaveProfile(e) {
       saveBtn.textContent = 'Save Changes';
       return;
     }
+
+    // Build update payload - only profile fields, use current email
+    const payload = {
+      display_name: displayName || null,
+      username: username || null,
+      zip_code: null,
+      birthday: birthday || null,
+      email: currentUser.email // Keep current email
+    };
+
+    // Call backend to update profile
+    const response = await fetch(`${API_BASE}/v1/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update profile');
+    }
+
+    // Update current user data
+    const result = await response.json();
+    if (result.user) {
+      currentUser = result.user;
+    }
+
+    await customAlert('Profile updated successfully!', 'Success');
+    closeProfileModal();
+
+  } catch (error) {
+    console.error('Save profile error:', error);
+    await customAlert(error.message || 'Failed to update profile. Please try again.', 'Error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+  }
+}
+
+// Handle account settings save
+async function handleSaveAccountSettings(e) {
+  e.preventDefault();
+
+  const saveBtn = document.getElementById('save-settings-btn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    const email = settingsEmail.value.trim();
+    const newPassword = settingsNewPassword.value;
+    const confirmPassword = settingsConfirmPassword.value;
 
     // Validate password if changing
     if (newPassword) {
@@ -2432,12 +2515,12 @@ async function handleSaveProfile(e) {
       }
     }
 
-    // Build update payload
+    // Build update payload with email and password
     const payload = {
-      display_name: displayName || null,
-      username: username || null,
-      zip_code: zipCode || null,
-      birthday: birthday || null,
+      display_name: currentUser.display_name || null,
+      username: currentUser.username || null,
+      zip_code: null,
+      birthday: currentUser.birthday || null,
       email: email
     };
 
@@ -2457,22 +2540,24 @@ async function handleSaveProfile(e) {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to update profile');
+      throw new Error(error.message || 'Failed to update settings');
     }
 
     // Update current user data
-    const updatedUser = await response.json();
-    currentUser = updatedUser;
+    const result = await response.json();
+    if (result.user) {
+      currentUser = result.user;
+    }
 
     // Update email display in settings dropdown
     userEmailSpan.textContent = email;
 
-    await customAlert('Profile updated successfully!', 'Success');
-    closeProfileModal();
+    await customAlert('Account settings updated successfully!', 'Success');
+    closeAccountSettingsModal();
 
   } catch (error) {
-    console.error('Save profile error:', error);
-    await customAlert(error.message || 'Failed to update profile. Please try again.', 'Error');
+    console.error('Save settings error:', error);
+    await customAlert(error.message || 'Failed to update settings. Please try again.', 'Error');
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save Changes';
@@ -2533,6 +2618,8 @@ window.openEditCategoriesModal = openEditCategoriesModal;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
 window.closeProfileModal = closeProfileModal;
+window.openAccountSettingsModal = openAccountSettingsModal;
+window.closeAccountSettingsModal = closeAccountSettingsModal;
 window.toggleProfilePassword = toggleProfilePassword;
 
 // Arrow animation for empty state
