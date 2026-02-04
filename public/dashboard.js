@@ -60,6 +60,7 @@ const editTimezoneSelect = document.getElementById('edit-timezone');
 
 // Buttons
 const addSaveBtn = document.getElementById('add-save-btn');
+const arrowIndicator = document.getElementById('arrow-indicator');
 const logoutBtn = document.getElementById('logout-btn');
 const settingsBtn = document.getElementById('settings-btn');
 const settingsDropdown = document.getElementById('settings-dropdown');
@@ -739,6 +740,13 @@ function switchTab(tabName) {
 // Render saves cards
 function renderSaves() {
   savesGrid.innerHTML = '';
+
+  // Toggle arrow indicator based on whether there are any saves
+  if (allSaves.length === 0) {
+    arrowIndicator.classList.add('show');
+  } else {
+    arrowIndicator.classList.remove('show');
+  }
 
   if (filteredSaves.length === 0) {
     savesContainer.style.display = 'none';
@@ -2187,6 +2195,33 @@ window.closeEditCategoriesModal = closeEditCategoriesModal;
 window.openEditCategoriesModal = openEditCategoriesModal;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
+
+// Arrow animation for empty state
+let arrowAnimationInterval = null;
+const arrowStates = ['>>>>>', ' >>>>', '  >>>', '   >>', '    >', '     '];
+let arrowIndex = 0;
+
+function startArrowAnimation() {
+  if (arrowAnimationInterval) return; // Already running
+
+  arrowAnimationInterval = setInterval(() => {
+    if (arrowIndicator && arrowIndicator.classList.contains('show')) {
+      arrowIndicator.textContent = arrowStates[arrowIndex];
+      arrowIndex = (arrowIndex + 1) % arrowStates.length;
+    }
+  }, 200); // Change arrow every 200ms
+}
+
+function stopArrowAnimation() {
+  if (arrowAnimationInterval) {
+    clearInterval(arrowAnimationInterval);
+    arrowAnimationInterval = null;
+    arrowIndex = 0;
+  }
+}
+
+// Start arrow animation on load
+startArrowAnimation();
 
 // Initialize on page load
 init();
