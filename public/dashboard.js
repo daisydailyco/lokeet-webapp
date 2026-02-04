@@ -2211,13 +2211,13 @@ function startArrowAnimation() {
         if (i === arrowIndex) {
           arrowHTML += '<span style="color: #42A746; font-weight: 700;">&gt;</span>';
         } else {
-          arrowHTML += '<span style="color: #666; font-weight: 400;">&gt;</span>';
+          arrowHTML += '<span style="color: #666; font-weight: 700;">&gt;</span>';
         }
       }
       arrowIndicator.innerHTML = arrowHTML;
       arrowIndex = (arrowIndex + 1) % 5;
     }
-  }, 1000); // Change arrow every 1 second
+  }, 500); // Change arrow every 0.5 seconds
 }
 
 function stopArrowAnimation() {
