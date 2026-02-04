@@ -63,6 +63,82 @@ const settingsBtn = document.getElementById('settings-btn');
 const settingsDropdown = document.getElementById('settings-dropdown');
 const settingsUpdateBtn = document.getElementById('settings-update-btn');
 
+// Custom Confirmation Dialog
+function customConfirm(message, title = 'Confirm') {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('custom-confirm-modal');
+    const titleEl = document.getElementById('custom-confirm-title');
+    const messageEl = document.getElementById('custom-confirm-message');
+    const okBtn = document.getElementById('custom-confirm-ok');
+    const cancelBtn = document.getElementById('custom-confirm-cancel');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    modal.style.display = 'block';
+
+    const handleOk = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    const cleanup = () => {
+      modal.style.display = 'none';
+      okBtn.removeEventListener('click', handleOk);
+      cancelBtn.removeEventListener('click', handleCancel);
+      modal.removeEventListener('click', handleBackdropClick);
+    };
+
+    const handleBackdropClick = (e) => {
+      if (e.target === modal) {
+        handleCancel();
+      }
+    };
+
+    okBtn.addEventListener('click', handleOk);
+    cancelBtn.addEventListener('click', handleCancel);
+    modal.addEventListener('click', handleBackdropClick);
+  });
+}
+
+// Custom Alert Dialog
+function customAlert(message, title = 'Notice') {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('custom-alert-modal');
+    const titleEl = document.getElementById('custom-alert-title');
+    const messageEl = document.getElementById('custom-alert-message');
+    const okBtn = document.getElementById('custom-alert-ok');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    modal.style.display = 'block';
+
+    const handleOk = () => {
+      cleanup();
+      resolve();
+    };
+
+    const cleanup = () => {
+      modal.style.display = 'none';
+      okBtn.removeEventListener('click', handleOk);
+      modal.removeEventListener('click', handleBackdropClick);
+    };
+
+    const handleBackdropClick = (e) => {
+      if (e.target === modal) {
+        handleOk();
+      }
+    };
+
+    okBtn.addEventListener('click', handleOk);
+    modal.addEventListener('click', handleBackdropClick);
+  });
+}
+
 // Initialize Radar SDK
 function initializeRadar() {
   if (window.Radar) {
@@ -243,7 +319,7 @@ async function init() {
 
   } catch (error) {
     console.error('Dashboard initialization error:', error);
-    alert('Failed to load dashboard. Please try logging in again.');
+    await customAlert('Failed to load dashboard. Please try logging in again.');
     window.location.href = '/login.html';
   }
 }
@@ -353,7 +429,7 @@ function openEditCategoriesModal() {
   });
 
   if (categories.size === 0) {
-    alert('No categories to edit.');
+    await customAlert('No categories to edit.');
     return;
   }
 
@@ -387,8 +463,9 @@ function openEditCategoriesModal() {
 
     // Delete button
     const deleteBtn = row.querySelector('.category-delete-btn');
-    deleteBtn.addEventListener('click', () => {
-      if (confirm(`Delete category "${category}"? This will remove the category from all saves.`)) {
+    deleteBtn.addEventListener('click', async () => {
+      const confirmed = await customConfirm(`Delete category "${category}"? This will remove the category from all saves.`, 'Delete Category');
+      if (confirmed) {
         categoriesToDelete.add(category);
         row.remove();
       }
@@ -490,11 +567,11 @@ async function saveCategoryChanges() {
     }
 
     closeEditCategoriesModal();
-    alert('Categories updated successfully!');
+    await customAlert('Categories updated successfully!', 'Success');
 
   } catch (error) {
     console.error('Error updating categories:', error);
-    alert('Failed to update categories. Please try again.');
+    await customAlert('Failed to update categories. Please try again.', 'Error');
   } finally {
     saveCategoriesBtn.disabled = false;
     saveCategoriesBtn.textContent = 'Done';
@@ -919,7 +996,7 @@ async function handleShare() {
     const categorySaves = allSaves.filter(save => save.category === selectedCategory);
 
     if (categorySaves.length === 0) {
-      alert('No saves in this category to share');
+      await customAlert('No saves in this category to share');
       return;
     }
 
@@ -996,7 +1073,7 @@ async function handleShare() {
 
   } catch (error) {
     console.error('Share error:', error);
-    alert(`Failed to create share link: ${error.message}`);
+    await customAlert(`Failed to create share link: ${error.message}`, 'Error');
 
     // Reset button
     shareBtn.innerHTML = '<span>🔗</span><span>Share</span>';
@@ -1640,7 +1717,7 @@ async function handleAddSave(e) {
       if (!customCategory) {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save';
-        alert('Please enter a category name');
+        await customAlert('Please enter a category name');
         return;
       }
       category = customCategory;
@@ -1764,11 +1841,11 @@ async function handleAddSave(e) {
     // Close modal
     closeAddModal();
 
-    alert('Save added successfully!');
+    await customAlert('Save added successfully!', 'Success');
 
   } catch (error) {
     console.error('Add save error:', error);
-    alert('Failed to add save. Please try again.');
+    await customAlert('Failed to add save. Please try again.', 'Error');
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save';
@@ -2018,11 +2095,11 @@ async function handleEditSave(e) {
     // Close modal
     closeEditModal();
 
-    alert('Save updated successfully!');
+    await customAlert('Save updated successfully!', 'Success');
 
   } catch (error) {
     console.error('Update save error:', error);
-    alert('Failed to update save. Please try again.');
+    await customAlert('Failed to update save. Please try again.', 'Error');
   } finally {
     editSaveBtn.disabled = false;
     editSaveBtn.textContent = 'Save';
@@ -2031,7 +2108,8 @@ async function handleEditSave(e) {
 
 // Delete save
 async function deleteSave(itemId) {
-  if (!confirm('Are you sure you want to delete this save?')) {
+  const confirmed = await customConfirm('Are you sure you want to delete this save?', 'Delete Save');
+  if (!confirmed) {
     return;
   }
 
@@ -2061,11 +2139,11 @@ async function deleteSave(itemId) {
       mapDiv.innerHTML = '';
     }
 
-    alert('Save deleted successfully!');
+    await customAlert('Save deleted successfully!', 'Success');
 
   } catch (error) {
     console.error('Delete save error:', error);
-    alert('Failed to delete save. Please try again.');
+    await customAlert('Failed to delete save. Please try again.', 'Error');
   }
 }
 
