@@ -444,13 +444,25 @@ function initializeRadarMap(items) {
           }
         }
 
-        // Create popup HTML matching dashboard style
+        // Create popup HTML matching dashboard style with single-line overflow
         let popupHTML = `
-          <div style="padding: 8px;">
-            <strong>${venue}</strong><br>
-            ${category ? `<div style="font-size: 11px; color: #666; text-transform: uppercase; margin-top: 4px;">${category}</div>` : ''}
-            ${address ? `<div style="margin-top: 4px;">${address}</div>` : ''}
-            ${dateTimeStr ? `<div style="margin-top: 4px; font-size: 13px;">📅 ${dateTimeStr}</div>` : ''}
+          <div style="padding: 8px; max-width: 250px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px;">
+              <strong style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${venue}</strong>
+              <div onclick="
+                const saves = document.querySelectorAll('.tab');
+                saves[0].click();
+                const cards = document.querySelectorAll('.location-card');
+                if (cards[${index}]) {
+                  cards[${index}].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  cards[${index}].style.background = '#fff8e1';
+                  setTimeout(() => { cards[${index}].style.background = 'white'; }, 2000);
+                }
+              " style="cursor: pointer; font-size: 18px; color: #666; flex-shrink: 0;">↗</div>
+            </div>
+            ${category ? `<div style="font-size: 11px; color: #666; text-transform: uppercase; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${category}</div>` : ''}
+            ${address ? `<div style="margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${address}</div>` : ''}
+            ${dateTimeStr ? `<div style="margin-top: 4px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">📅 ${dateTimeStr}</div>` : ''}
             <br>
         `;
 
@@ -461,7 +473,7 @@ function initializeRadarMap(items) {
         popupHTML += `
           <a href="https://www.google.com/maps/search/?api=1&query=${googleMapsQuery}"
              target="_blank"
-             style="color: #000; font-weight: 600;">
+             style="color: #000; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             Open in Google Maps →
           </a>
         `;
@@ -472,7 +484,7 @@ function initializeRadarMap(items) {
             <br>
             <a href="${item.url}"
                target="_blank"
-               style="color: #000; font-weight: 600;">
+               style="color: #000; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
               View Post 🔗 Open in New Tab →
             </a>
           `;
@@ -644,9 +656,10 @@ function renderCalendar() {
     const isToday = dateStr === todayStr;
     const hasItems = itemsByDate[dateStr];
 
-    const itemName = hasItems && hasItems.length === 1
+    // Always show the first item's name, even if there are multiple
+    const itemName = hasItems
       ? (hasItems[0].event_name || hasItems[0].venue_name || 'Event')
-      : (hasItems ? `${hasItems.length} events` : '');
+      : '';
 
     let classes = 'calendar-day-cell';
     if (isToday) classes += ' today';
