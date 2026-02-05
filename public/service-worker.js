@@ -1,5 +1,5 @@
 // LoopLocal Service Worker
-const CACHE_NAME = 'lokeet-v99';
+const CACHE_NAME = 'lokeet-v100';
 const urlsToCache = [
   '/',
   '/style.css',
@@ -8,7 +8,12 @@ const urlsToCache = [
   '/manifest.json',
   '/dashboard.html',
   '/dashboard.js',
-  '/auth.js'
+  '/auth.js',
+  '/favicon.ico',
+  '/icon.png',
+  '/apple-icon.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 // Listen for SKIP_WAITING message
