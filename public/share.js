@@ -647,7 +647,7 @@ function renderCalendar() {
       ? (hasItems[0].event_name || hasItems[0].venue_name || 'Event')
       : '';
 
-    let classes = 'calendar-day-cell';
+    let classes = 'calendar-day';
     if (isToday) classes += ' today';
     if (hasItems) classes += ' has-events';
 
@@ -655,9 +655,9 @@ function renderCalendar() {
     const itemData = hasItems ? JSON.stringify(hasItems[0]).replace(/"/g, '&quot;') : '';
 
     calendarHTML += `
-      <div class="${classes}">
+      <div class="${classes}" ${hasItems ? `onclick="window.showPreviewModal(JSON.parse('${itemData}'))"` : ''}>
         <div class="calendar-day-number">${day}</div>
-        ${hasItems ? `<div class="calendar-day-events" onclick="window.showPreviewModal(JSON.parse('${itemData}'))" style="cursor: pointer;">${itemName}</div>` : ''}
+        ${hasItems ? `<div class="calendar-day-saves">${itemName}</div>` : ''}
       </div>
     `;
   }
@@ -683,21 +683,25 @@ function changeCalendarMonth(direction) {
 // Make function globally accessible
 window.changeCalendarMonth = changeCalendarMonth;
 
-// Show preview modal
+// Show preview modal - Match Dashboard Style
 function showPreviewModal(item) {
   const modal = document.getElementById('preview-modal');
+  const modalTitle = document.getElementById('preview-modal-title');
   const modalBody = document.getElementById('preview-modal-body');
 
   const venue = item.venue_name || item.event_name || 'Saved Location';
   const address = item.address || '';
   const category = item.category || '';
 
+  // Set title
+  modalTitle.textContent = venue;
+
   // Format date and time
   let dateTimeStr = '';
   if (item.event_date) {
     const date = new Date(item.event_date + 'T00:00:00');
     dateTimeStr = date.toLocaleDateString('en-US', {
-      month: 'long',
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
@@ -743,34 +747,28 @@ function showPreviewModal(item) {
     }
   }
 
-  // Build modal HTML
-  let html = `<h2>${venue}</h2>`;
+  // Build modal HTML - matching dashboard structure
+  let html = '<div style="display: flex; flex-direction: column; gap: 16px;">';
 
   if (category) {
-    html += `
-      <div class="preview-field">
-        <div class="preview-label">Category</div>
-        <div class="preview-value">${category}</div>
-      </div>
-    `;
+    html += `<div>
+      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Category</div>
+      <div style="font-size: 16px;">${category}</div>
+    </div>`;
   }
 
   if (address) {
-    html += `
-      <div class="preview-field">
-        <div class="preview-label">Location</div>
-        <div class="preview-value">📍 ${address}</div>
-      </div>
-    `;
+    html += `<div>
+      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Location</div>
+      <div style="font-size: 16px;">📍 ${address}</div>
+    </div>`;
   }
 
   if (dateTimeStr) {
-    html += `
-      <div class="preview-field">
-        <div class="preview-label">Date & Time</div>
-        <div class="preview-value">📅 ${dateTimeStr}</div>
-      </div>
-    `;
+    html += `<div>
+      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Date & Time</div>
+      <div style="font-size: 16px;">📅 ${dateTimeStr}</div>
+    </div>`;
   }
 
   // Add Google Maps link
@@ -778,38 +776,38 @@ function showPreviewModal(item) {
     const googleMapsQuery = address
       ? encodeURIComponent(address)
       : `${item.latitude},${item.longitude}`;
-    html += `
-      <div class="preview-field">
-        <a href="https://www.google.com/maps/search/?api=1&query=${googleMapsQuery}"
-           target="_blank"
-           class="preview-link">
-          Open in Google Maps →
-        </a>
-      </div>
-    `;
+    html += `<div>
+      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Map</div>
+      <a href="https://www.google.com/maps/search/?api=1&query=${googleMapsQuery}"
+         target="_blank"
+         style="font-size: 16px; color: #000; text-decoration: underline;">
+        🔗 Open in Google Maps
+      </a>
+    </div>`;
   }
 
   // Add View Post link if URL exists
   if (item.url) {
-    html += `
-      <div class="preview-field">
-        <a href="${item.url}"
-           target="_blank"
-           class="preview-link">
-          View Post 🔗 Open in New Tab →
-        </a>
-      </div>
-    `;
+    html += `<div>
+      <div style="font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 4px;">Post</div>
+      <a href="${item.url}"
+         target="_blank"
+         style="font-size: 16px; color: #000; text-decoration: underline;">
+        🔗 Open in New Tab
+      </a>
+    </div>`;
   }
 
+  html += '</div>';
+
   modalBody.innerHTML = html;
-  modal.style.display = 'flex';
+  modal.classList.add('active');
 }
 
 // Close preview modal
 function closePreviewModal() {
   const modal = document.getElementById('preview-modal');
-  modal.style.display = 'none';
+  modal.classList.remove('active');
 }
 
 // Make functions globally accessible
@@ -872,18 +870,17 @@ function initializeMenuDropdown() {
 // Initialize preview modal
 function initializePreviewModal() {
   const modal = document.getElementById('preview-modal');
-  const closeBtn = modal.querySelector('.preview-modal-close');
-  const overlay = modal.querySelector('.preview-modal-overlay');
 
-  // Close on button click
-  closeBtn.addEventListener('click', closePreviewModal);
-
-  // Close on overlay click
-  overlay.addEventListener('click', closePreviewModal);
+  // Close on overlay click (click outside modal content)
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closePreviewModal();
+    }
+  });
 
   // Close on escape key
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.style.display === 'flex') {
+    if (e.key === 'Escape' && modal.classList.contains('active')) {
       closePreviewModal();
     }
   });
