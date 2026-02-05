@@ -587,15 +587,17 @@ function renderCalendar() {
     return;
   }
 
-  // Group items by date
-  const itemsByDate = {};
+  // Group items by date and store globally for calendar clicks
+  window.calendarItemsByDate = {};
   itemsWithDates.forEach(item => {
     const dateKey = item.event_date.split('T')[0];
-    if (!itemsByDate[dateKey]) {
-      itemsByDate[dateKey] = [];
+    if (!window.calendarItemsByDate[dateKey]) {
+      window.calendarItemsByDate[dateKey] = [];
     }
-    itemsByDate[dateKey].push(item);
+    window.calendarItemsByDate[dateKey].push(item);
   });
+
+  const itemsByDate = window.calendarItemsByDate;
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
@@ -651,11 +653,8 @@ function renderCalendar() {
     if (isToday) classes += ' today';
     if (hasItems) classes += ' has-events';
 
-    // Store item data for onclick
-    const itemData = hasItems ? JSON.stringify(hasItems[0]).replace(/"/g, '&quot;') : '';
-
     calendarHTML += `
-      <div class="${classes}" ${hasItems ? `onclick="window.showPreviewModal(JSON.parse('${itemData}'))"` : ''}>
+      <div class="${classes}" ${hasItems ? `onclick="showItemsForDate('${dateStr}')"` : ''}>
         <div class="calendar-day-number">${day}</div>
         ${hasItems ? `<div class="calendar-day-saves">${itemName}</div>` : ''}
       </div>
@@ -682,6 +681,106 @@ function changeCalendarMonth(direction) {
 
 // Make function globally accessible
 window.changeCalendarMonth = changeCalendarMonth;
+
+// Show items for a specific date
+function showItemsForDate(dateStr) {
+  const itemsForDate = window.calendarItemsByDate[dateStr];
+
+  if (!itemsForDate || itemsForDate.length === 0) return;
+
+  // If only one item, show details directly
+  if (itemsForDate.length === 1) {
+    showPreviewModal(itemsForDate[0]);
+    return;
+  }
+
+  // Format date nicely
+  const date = new Date(dateStr + 'T00:00:00');
+  const dateFormatted = date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  // Show list of items for this date
+  const modal = document.getElementById('preview-modal');
+  const modalTitle = document.getElementById('preview-modal-title');
+  const modalBody = document.getElementById('preview-modal-body');
+
+  modalTitle.textContent = dateFormatted;
+
+  // Sort by start_time (earliest first)
+  const sortedItems = [...itemsForDate].sort((a, b) => {
+    const timeA = a.start_time || '23:59';
+    const timeB = b.start_time || '23:59';
+    return timeA.localeCompare(timeB);
+  });
+
+  let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+  sortedItems.forEach((item, index) => {
+    // Format time if available
+    let timeStr = '';
+    if (item.start_time) {
+      const [hours, minutes] = item.start_time.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      let formattedTime = `${displayHour}:${minutes} ${ampm}`;
+
+      // Add end time if available
+      if (item.end_time) {
+        const [endHours, endMinutes] = item.end_time.split(':');
+        const endHour = parseInt(endHours);
+        const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+        const endDisplayHour = endHour % 12 || 12;
+        formattedTime += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+      }
+
+      // Add timezone abbreviation if available
+      if (item.timezone) {
+        const tzMap = {
+          'Pacific/Midway': 'SST', 'Pacific/Honolulu': 'HST', 'America/Anchorage': 'AKST',
+          'America/Los_Angeles': 'PST', 'America/Denver': 'MST', 'America/Phoenix': 'MST',
+          'America/Chicago': 'CST', 'America/New_York': 'EST', 'America/Caracas': 'VET',
+          'America/Halifax': 'AST', 'America/St_Johns': 'NST', 'America/Argentina/Buenos_Aires': 'ART',
+          'America/Sao_Paulo': 'BRT', 'Atlantic/Azores': 'AZOT', 'Atlantic/Cape_Verde': 'CVT',
+          'Europe/London': 'GMT', 'Europe/Paris': 'CET', 'Europe/Berlin': 'CET',
+          'Europe/Athens': 'EET', 'Africa/Cairo': 'EET', 'Africa/Johannesburg': 'SAST',
+          'Europe/Moscow': 'MSK', 'Asia/Dubai': 'GST', 'Asia/Karachi': 'PKT',
+          'Asia/Kolkata': 'IST', 'Asia/Dhaka': 'BST', 'Asia/Bangkok': 'ICT',
+          'Asia/Singapore': 'SGT', 'Asia/Hong_Kong': 'HKT', 'Asia/Shanghai': 'CST',
+          'Asia/Tokyo': 'JST', 'Asia/Seoul': 'KST', 'Australia/Sydney': 'AEDT',
+          'Australia/Adelaide': 'ACDT', 'Pacific/Auckland': 'NZDT', 'Pacific/Fiji': 'FJT'
+        };
+        const tzAbbr = tzMap[item.timezone];
+        if (tzAbbr) formattedTime += ` ${tzAbbr}`;
+      }
+
+      timeStr = `<div style="font-size: 14px; color: #666; margin-bottom: 4px;">🕐 ${formattedTime}</div>`;
+    }
+
+    // Store the item in a temporary global for the click handler
+    const itemIndex = `dateItem_${dateStr}_${index}`;
+    window[itemIndex] = item;
+
+    html += `
+      <div onclick="showPreviewModal(window['${itemIndex}'])" style="padding: 16px; background: #f9f9f9; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+        ${timeStr}
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">${item.event_name || item.venue_name || 'Untitled'}</div>
+        ${item.address ? `<div style="font-size: 14px; color: #666;">📍 ${item.address}</div>` : ''}
+        ${item.category ? `<div style="font-size: 12px; color: #666; text-transform: uppercase; margin-top: 4px;">${item.category}</div>` : ''}
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  modalBody.innerHTML = html;
+  modal.classList.add('active');
+}
+
+// Make function globally accessible
+window.showItemsForDate = showItemsForDate;
 
 // Show preview modal - Match Dashboard Style
 function showPreviewModal(item) {
