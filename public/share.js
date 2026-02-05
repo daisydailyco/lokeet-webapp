@@ -11,6 +11,9 @@ let radarMap = null;
 let markers = [];
 let isEditMode = false;
 let currentItems = [];
+let allCategories = [];
+let selectedCategories = [];
+let shareData = null;
 
 async function loadSharedList() {
   try {
@@ -39,6 +42,16 @@ async function loadSharedList() {
 
     // Store items for reordering
     currentItems = data.items;
+    shareData = data;
+
+    // Parse categories (may be combined with " + ")
+    if (data.category.includes(' + ')) {
+      allCategories = data.category.split(' + ').map(c => c.trim());
+      selectedCategories = [...allCategories]; // Select all by default
+    } else {
+      allCategories = [data.category];
+      selectedCategories = [data.category];
+    }
 
     // Hide loading, show content
     document.getElementById('loading').style.display = 'none';
@@ -46,8 +59,9 @@ async function loadSharedList() {
 
     // Render the page
     renderCategoryHeader(data);
-    renderLocationCards(data.items);
-    initializeRadarMap(data.items);
+    setupCategoryFilter();
+    renderLocationCards(getFilteredItems());
+    initializeRadarMap(getFilteredItems());
 
   } catch (error) {
     console.error('Error loading shared list:', error);
@@ -57,11 +71,20 @@ async function loadSharedList() {
 }
 
 function renderCategoryHeader(data) {
-  // Count items with coordinates
-  const itemsWithCoords = data.items.filter(item => item.latitude && item.longitude).length;
-  const totalItems = data.items.length;
-
+  // Display category name
   document.getElementById('category-name').textContent = data.category;
+
+  // Update counts
+  updateCounts();
+
+  document.getElementById('view-count').textContent = `${data.views} view${data.views !== 1 ? 's' : ''}`;
+  document.title = `${data.category} - ParaSosh`; // Cache bust
+}
+
+function updateCounts() {
+  const filteredItems = getFilteredItems();
+  const itemsWithCoords = filteredItems.filter(item => item.latitude && item.longitude).length;
+  const totalItems = filteredItems.length;
 
   // Show count with location info if some items are missing coordinates
   if (itemsWithCoords < totalItems) {
@@ -69,9 +92,108 @@ function renderCategoryHeader(data) {
   } else {
     document.getElementById('item-count').textContent = `${totalItems} place${totalItems !== 1 ? 's' : ''}`;
   }
+}
 
-  document.getElementById('view-count').textContent = `${data.views} view${data.views !== 1 ? 's' : ''}`;
-  document.title = `${data.category} - ParaSosh`; // Cache bust
+function getFilteredItems() {
+  if (selectedCategories.length === 0 || selectedCategories.length === allCategories.length) {
+    return currentItems;
+  }
+  return currentItems.filter(item => item.category && selectedCategories.includes(item.category));
+}
+
+function setupCategoryFilter() {
+  // Only show filter if there are multiple categories
+  if (allCategories.length <= 1) {
+    return;
+  }
+
+  const filterBar = document.getElementById('share-category-filter-bar');
+  const toggle = document.getElementById('share-category-toggle');
+  const dropdown = document.getElementById('share-category-dropdown');
+  const checkboxContainer = document.getElementById('share-category-checkboxes');
+
+  // Show filter bar
+  filterBar.style.display = 'block';
+
+  // Populate checkboxes
+  allCategories.forEach(category => {
+    const label = document.createElement('label');
+    label.style.cssText = 'display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s; font-size: 14px;';
+    label.onmouseover = () => label.style.background = '#f0f0f0';
+    label.onmouseout = () => label.style.background = 'transparent';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = category;
+    checkbox.checked = selectedCategories.includes(category);
+    checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+    checkbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        if (!selectedCategories.includes(category)) {
+          selectedCategories.push(category);
+        }
+      } else {
+        selectedCategories = selectedCategories.filter(c => c !== category);
+      }
+      updateCategoryLabel();
+      updateView();
+    });
+
+    const span = document.createElement('span');
+    span.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+
+    label.appendChild(checkbox);
+    label.appendChild(span);
+    checkboxContainer.appendChild(label);
+  });
+
+  // Toggle dropdown
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!toggle.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  updateCategoryLabel();
+}
+
+function updateCategoryLabel() {
+  const label = document.getElementById('share-category-label');
+  if (!label) return;
+
+  if (selectedCategories.length === 0) {
+    label.textContent = 'Select Categories';
+  } else if (selectedCategories.length === 1) {
+    label.textContent = selectedCategories[0].charAt(0).toUpperCase() + selectedCategories[0].slice(1);
+  } else if (selectedCategories.length === allCategories.length) {
+    label.textContent = 'All Categories';
+  } else {
+    label.textContent = `${selectedCategories.length} Selected`;
+  }
+}
+
+function updateView() {
+  const filteredItems = getFilteredItems();
+  renderLocationCards(filteredItems);
+  updateCounts();
+
+  // Update map if it's visible
+  const mapTab = document.getElementById('map-tab');
+  if (mapTab.classList.contains('active')) {
+    initializeRadarMap(filteredItems);
+  }
+
+  // Update calendar if it's visible
+  const calendarTab = document.getElementById('calendar-tab');
+  if (calendarTab.classList.contains('active')) {
+    renderCalendar();
+  }
 }
 
 function renderLocationCards(items) {
@@ -401,8 +523,9 @@ let currentCalendarYear = new Date().getFullYear();
 function renderCalendar() {
   const calendarView = document.getElementById('calendar-view');
 
-  // Filter items with dates
-  const itemsWithDates = currentItems.filter(item => item.event_date);
+  // Filter items with dates (using filtered items)
+  const filteredItems = getFilteredItems();
+  const itemsWithDates = filteredItems.filter(item => item.event_date);
 
   if (itemsWithDates.length === 0) {
     calendarView.innerHTML = `
@@ -522,9 +645,16 @@ function initializeTabs() {
       tab.classList.add('active');
       document.getElementById(`${targetTab}-tab`).classList.add('active');
 
-      // Render calendar when calendar tab is clicked
+      // Update map with filtered items when switching to map tab
+      if (targetTab === 'map') {
+        initializeRadarMap(getFilteredItems());
+      }
+
+      // Render calendar or map when switching tabs
       if (targetTab === 'calendar') {
         renderCalendar();
+      } else if (targetTab === 'map') {
+        initializeRadarMap(getFilteredItems());
       }
     });
   });
