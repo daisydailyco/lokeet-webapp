@@ -65,6 +65,15 @@
         </div>
       </div>
 
+      <!-- Tabs -->
+      <div class="tabs-fixed">
+        <div class="tabs">
+          <button class="tab active" data-tab="saves">Saves</button>
+          <button class="tab" data-tab="map">Map</button>
+          <button class="tab" data-tab="calendar">Calendar</button>
+        </div>
+      </div>
+
       <!-- Category Info -->
       <div class="category-header">
         <h1 id="category-name">Loading...</h1>
@@ -76,8 +85,8 @@
       </div>
 
       <!-- Category Filter (for multiple categories) -->
-      <div id="share-category-filter-bar" style="display: none; max-width: 1400px; margin: 0 auto; padding: 8px 24px;">
-        <div style="display: flex; align-items: center; gap: 4px; position: relative;">
+      <div id="share-category-filter-bar" class="category-filter-bar" style="display: none;">
+        <div class="filter-group" style="position: relative;">
           <button id="share-category-toggle" type="button" style="padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: transparent; cursor: pointer; color: #333; font-weight: 500; display: flex; align-items: center; gap: 8px;">
             <span id="share-category-label">Select Categories</span>
             <span style="font-size: 12px;">▼</span>
@@ -87,15 +96,6 @@
               <div id="share-category-checkboxes"></div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Tabs (Fixed) -->
-      <div class="tabs-fixed">
-        <div class="tabs">
-          <button class="tab active" data-tab="saves">Saves</button>
-          <button class="tab" data-tab="map">Map</button>
-          <button class="tab" data-tab="calendar">Calendar</button>
         </div>
       </div>
 

@@ -549,6 +549,37 @@ body {
   opacity: 0.8;
 }
 
+/* Category Filter Bar */
+.category-filter-bar {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 24px;
+}
+
+.category-filter-bar .filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.category-filter-bar select,
+.category-filter-bar button {
+  padding: 6px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  background: transparent;
+  cursor: pointer;
+  color: #333;
+  font-weight: 500;
+}
+
+.category-filter-bar select:focus,
+.category-filter-bar button:focus {
+  outline: none;
+  border-color: #000;
+}
+
 .separator {
   margin: 0 8px;
 }
@@ -920,6 +951,14 @@ body {
 
   .category-header h1 {
     font-size: 28px;
+  }
+
+  .category-filter-bar {
+    padding: 8px 16px;
+  }
+
+  .category-filter-bar .filter-group {
+    width: 100%;
   }
 
   .location-list {
