@@ -409,30 +409,73 @@ function initializeRadarMap(items) {
       if (item.latitude && item.longitude) {
         console.log(`Adding marker ${index + 1} at:`, item.latitude, item.longitude);
 
-        const venue = item.venue_name || item.address || item.event_name || 'Saved Location';
-        const author = item.author ? (item.author.startsWith('@') ? item.author : '@' + item.author) : '';
-        const eventDate = formatEventDate(item.event_date);
-        const imageUrl = item.images && item.images[0] ? item.images[0] : '';
+        const venue = item.venue_name || item.event_name || 'Saved Location';
+        const address = item.address || '';
+        const category = item.category || '';
 
-        // Create very compact popup HTML (no image to keep it small)
+        // Format date and time
+        let dateTimeStr = '';
+        if (item.event_date) {
+          const date = new Date(item.event_date + 'T00:00:00');
+          dateTimeStr = date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+
+          // Add time if available
+          if (item.start_time) {
+            const [hours, minutes] = item.start_time.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            let timeStr = `${displayHour}:${minutes} ${ampm}`;
+
+            // Add end time if available
+            if (item.end_time) {
+              const [endHours, endMinutes] = item.end_time.split(':');
+              const endHour = parseInt(endHours);
+              const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+              const endDisplayHour = endHour % 12 || 12;
+              timeStr += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+            }
+
+            dateTimeStr += ` • ${timeStr}`;
+          }
+        }
+
+        // Create popup HTML matching dashboard style
         let popupHTML = `
-          <div style="padding: 6px; min-width: 140px; max-width: 160px;">
-            <div style="background: rgba(66, 167, 70, 0.1); border: 1px solid rgba(66, 167, 70, 0.3); color: #42A746; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 600; display: inline-block; margin-bottom: 4px;">
-              #${index + 1}
-            </div>
-            <div style="font-size: 13px; font-weight: 600; color: #000000; margin: 4px 0; line-height: 1.2;">${venue}</div>
+          <div style="padding: 8px;">
+            <strong>${venue}</strong><br>
+            ${category ? `<div style="font-size: 11px; color: #666; text-transform: uppercase; margin-top: 4px;">${category}</div>` : ''}
+            ${address ? `<div style="margin-top: 4px;">${address}</div>` : ''}
+            ${dateTimeStr ? `<div style="margin-top: 4px; font-size: 13px;">📅 ${dateTimeStr}</div>` : ''}
+            <br>
         `;
 
-        if (author) {
-          popupHTML += `<div style="font-size: 10px; color: #666; margin: 2px 0;">${author}</div>`;
-        }
+        // Add Google Maps link
+        const googleMapsQuery = address
+          ? encodeURIComponent(address)
+          : `${item.latitude},${item.longitude}`;
+        popupHTML += `
+          <a href="https://www.google.com/maps/search/?api=1&query=${googleMapsQuery}"
+             target="_blank"
+             style="color: #000; font-weight: 600;">
+            Open in Google Maps →
+          </a>
+        `;
 
-        if (eventDate) {
-          popupHTML += `<div style="font-size: 10px; color: #666; margin: 2px 0 4px 0;">${eventDate}</div>`;
-        }
-
+        // Add View Post link if URL exists
         if (item.url) {
-          popupHTML += `<a href="${item.url}" target="_blank" style="display: block; text-align: center; margin-top: 6px; padding: 5px 10px; background: #42A746; color: white; text-decoration: none; border-radius: 5px; font-size: 10px; font-weight: 600;">View Post</a>`;
+          popupHTML += `
+            <br>
+            <a href="${item.url}"
+               target="_blank"
+               style="color: #000; font-weight: 600;">
+              View Post 🔗 Open in New Tab →
+            </a>
+          `;
         }
 
         popupHTML += '</div>';
