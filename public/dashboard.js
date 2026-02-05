@@ -783,6 +783,45 @@ function initEventListeners() {
     }
   });
 
+  // Handle new category input
+  const newCategoryInput = document.getElementById('new-category-input');
+  if (newCategoryInput) {
+    newCategoryInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const newCategory = newCategoryInput.value.trim();
+        if (newCategory) {
+          // Check if category already exists
+          const existingCategories = new Set();
+          allSaves.forEach(save => {
+            if (save.category) {
+              existingCategories.add(save.category.toLowerCase());
+            }
+          });
+
+          if (existingCategories.has(newCategory.toLowerCase())) {
+            customAlert('This category already exists!');
+            return;
+          }
+
+          // Add to selected categories
+          if (!selectedCategories.includes(newCategory)) {
+            selectedCategories.push(newCategory);
+          }
+
+          // Clear input
+          newCategoryInput.value = '';
+
+          // Update UI
+          updateCategoryCheckboxes();
+          updateCategoryFilterLabel();
+          updateCategoryHeader();
+          applyFilters();
+        }
+      }
+    });
+  }
+
   // Add category dropdown change handler
   addCategorySelect.addEventListener('change', (e) => {
     const value = e.target.value;
