@@ -699,30 +699,113 @@ body {
 
 .location-card {
   background: white;
+  border: 1px solid #e0e0e0;
   border-radius: 12px;
   padding: 20px;
   transition: all 0.2s;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .location-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
+  background: #f9f9f9;
+  border-color: #d0d0d0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.location-number {
-  display: inline-block;
-  background: rgba(66, 167, 70, 0.1);
-  border: 1px solid rgba(66, 167, 70, 0.3);
-  color: #42A746;
-  width: 32px;
-  height: 32px;
+.card-preview-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  background: #f0f0f0;
   border-radius: 50%;
-  text-align: center;
-  line-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
+  font-weight: bold;
+  color: #666;
+}
+
+.card-preview-icon:hover {
+  background: #000000;
+  color: white;
+}
+
+.card-preview-icon:hover::after {
+  content: 'Preview';
+  position: absolute;
+  top: -30px;
+  right: 0;
+  background: #000000;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.card-title {
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  color: #000;
+  padding-right: 30px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-category {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: inline-block;
+  cursor: default;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.card-address {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-date {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.card-link-preview {
+  margin-top: 12px;
+}
+
+.card-link-text {
+  display: inline-block;
+  font-size: 14px;
+  color: #666;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.card-link-text:hover {
+  color: #000;
 }
 
 .location-card h3 {

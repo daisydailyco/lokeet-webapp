@@ -291,20 +291,28 @@ function renderLocationCards(items) {
     }
 
     card.innerHTML = `
-      <div class="location-number">${index + 1}</div>
-      <h3>${venue}</h3>
-      ${address ? `<div class="location-details">📍 ${address}</div>` : ''}
-      ${dateTimeStr ? `<div class="location-date">📅 ${dateTimeStr}</div>` : ''}
+      <div class="card-preview-icon">↗</div>
+      <div class="card-title">${venue}</div>
+      ${item.category ? `<div class="card-category">${item.category}</div>` : ''}
+      ${address ? `<div class="card-address">📍 ${address}</div>` : ''}
+      ${dateTimeStr ? `<div class="card-date">📅 ${dateTimeStr}</div>` : ''}
+      ${item.url ? `<div class="card-link-preview">
+        <a href="${item.url}" target="_blank" class="card-link-text" style="font-size: 14px; color: #666; text-decoration: underline; cursor: pointer;">View Post 🔗 Open in New Tab</a>
+      </div>` : ''}
     `;
 
-    // Click to focus on map marker and show popup
-    card.addEventListener('click', () => {
+    // Preview icon click handler - show popup on map
+    const previewIcon = card.querySelector('.card-preview-icon');
+    previewIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (markers[index]) {
         const markerPos = markers[index].getLngLat();
         radarMap.setCenter(markerPos);
         radarMap.setZoom(15);
         // Open the popup
         markers[index].togglePopup();
+        // Switch to map tab
+        document.querySelector('.tab[data-tab="map"]').click();
       }
     });
 
