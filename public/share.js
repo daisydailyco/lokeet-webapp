@@ -301,19 +301,11 @@ function renderLocationCards(items) {
       </div>` : ''}
     `;
 
-    // Preview icon click handler - show popup on map
+    // Preview icon click handler - show preview modal
     const previewIcon = card.querySelector('.card-preview-icon');
     previewIcon.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (markers[index]) {
-        const markerPos = markers[index].getLngLat();
-        radarMap.setCenter(markerPos);
-        radarMap.setZoom(15);
-        // Open the popup
-        markers[index].togglePopup();
-        // Switch to map tab
-        document.querySelector('.tab[data-tab="map"]').click();
-      }
+      showPreviewModal(item);
     });
 
     container.appendChild(card);
@@ -444,21 +436,15 @@ function initializeRadarMap(items) {
           }
         }
 
+        // Store item data for popup access
+        const itemData = JSON.stringify(item).replace(/"/g, '&quot;');
+
         // Create popup HTML matching dashboard style with single-line overflow
         let popupHTML = `
           <div style="padding: 8px; max-width: 250px;">
             <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px;">
               <strong style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${venue}</strong>
-              <div onclick="
-                const saves = document.querySelectorAll('.tab');
-                saves[0].click();
-                const cards = document.querySelectorAll('.location-card');
-                if (cards[${index}]) {
-                  cards[${index}].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  cards[${index}].style.background = '#fff8e1';
-                  setTimeout(() => { cards[${index}].style.background = 'white'; }, 2000);
-                }
-              " style="cursor: pointer; font-size: 18px; color: #666; flex-shrink: 0;">↗</div>
+              <div onclick="window.showPreviewModal(JSON.parse('${itemData}'))" style="cursor: pointer; font-size: 18px; color: #666; flex-shrink: 0; transition: color 0.2s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#666'">↗</div>
             </div>
             ${category ? `<div style="font-size: 11px; color: #666; text-transform: uppercase; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${category}</div>` : ''}
             ${address ? `<div style="margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${address}</div>` : ''}
@@ -665,10 +651,13 @@ function renderCalendar() {
     if (isToday) classes += ' today';
     if (hasItems) classes += ' has-events';
 
+    // Store item data for onclick
+    const itemData = hasItems ? JSON.stringify(hasItems[0]).replace(/"/g, '&quot;') : '';
+
     calendarHTML += `
       <div class="${classes}">
         <div class="calendar-day-number">${day}</div>
-        ${hasItems ? `<div class="calendar-day-events">${itemName}</div>` : ''}
+        ${hasItems ? `<div class="calendar-day-events" onclick="window.showPreviewModal(JSON.parse('${itemData}'))" style="cursor: pointer;">${itemName}</div>` : ''}
       </div>
     `;
   }
@@ -693,6 +682,139 @@ function changeCalendarMonth(direction) {
 
 // Make function globally accessible
 window.changeCalendarMonth = changeCalendarMonth;
+
+// Show preview modal
+function showPreviewModal(item) {
+  const modal = document.getElementById('preview-modal');
+  const modalBody = document.getElementById('preview-modal-body');
+
+  const venue = item.venue_name || item.event_name || 'Saved Location';
+  const address = item.address || '';
+  const category = item.category || '';
+
+  // Format date and time
+  let dateTimeStr = '';
+  if (item.event_date) {
+    const date = new Date(item.event_date + 'T00:00:00');
+    dateTimeStr = date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    // Add time if available
+    if (item.start_time) {
+      const [hours, minutes] = item.start_time.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      let timeStr = `${displayHour}:${minutes} ${ampm}`;
+
+      // Add end time if available
+      if (item.end_time) {
+        const [endHours, endMinutes] = item.end_time.split(':');
+        const endHour = parseInt(endHours);
+        const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+        const endDisplayHour = endHour % 12 || 12;
+        timeStr += ` - ${endDisplayHour}:${endMinutes} ${endAmpm}`;
+      }
+
+      // Add timezone abbreviation if available
+      if (item.timezone) {
+        const tzMap = {
+          'Pacific/Midway': 'SST', 'Pacific/Honolulu': 'HST', 'America/Anchorage': 'AKST',
+          'America/Los_Angeles': 'PST', 'America/Denver': 'MST', 'America/Phoenix': 'MST',
+          'America/Chicago': 'CST', 'America/New_York': 'EST', 'America/Caracas': 'VET',
+          'America/Halifax': 'AST', 'America/St_Johns': 'NST', 'America/Argentina/Buenos_Aires': 'ART',
+          'America/Sao_Paulo': 'BRT', 'Atlantic/Azores': 'AZOT', 'Atlantic/Cape_Verde': 'CVT',
+          'Europe/London': 'GMT', 'Europe/Paris': 'CET', 'Europe/Berlin': 'CET',
+          'Europe/Athens': 'EET', 'Africa/Cairo': 'EET', 'Africa/Johannesburg': 'SAST',
+          'Europe/Moscow': 'MSK', 'Asia/Dubai': 'GST', 'Asia/Karachi': 'PKT',
+          'Asia/Kolkata': 'IST', 'Asia/Dhaka': 'BST', 'Asia/Bangkok': 'ICT',
+          'Asia/Singapore': 'SGT', 'Asia/Hong_Kong': 'HKT', 'Asia/Shanghai': 'CST',
+          'Asia/Tokyo': 'JST', 'Asia/Seoul': 'KST', 'Australia/Sydney': 'AEDT',
+          'Australia/Adelaide': 'ACDT', 'Pacific/Auckland': 'NZDT', 'Pacific/Fiji': 'FJT'
+        };
+        const tzAbbr = tzMap[item.timezone];
+        if (tzAbbr) timeStr += ` ${tzAbbr}`;
+      }
+
+      dateTimeStr += ` • ${timeStr}`;
+    }
+  }
+
+  // Build modal HTML
+  let html = `<h2>${venue}</h2>`;
+
+  if (category) {
+    html += `
+      <div class="preview-field">
+        <div class="preview-label">Category</div>
+        <div class="preview-value">${category}</div>
+      </div>
+    `;
+  }
+
+  if (address) {
+    html += `
+      <div class="preview-field">
+        <div class="preview-label">Location</div>
+        <div class="preview-value">📍 ${address}</div>
+      </div>
+    `;
+  }
+
+  if (dateTimeStr) {
+    html += `
+      <div class="preview-field">
+        <div class="preview-label">Date & Time</div>
+        <div class="preview-value">📅 ${dateTimeStr}</div>
+      </div>
+    `;
+  }
+
+  // Add Google Maps link
+  if (address || (item.latitude && item.longitude)) {
+    const googleMapsQuery = address
+      ? encodeURIComponent(address)
+      : `${item.latitude},${item.longitude}`;
+    html += `
+      <div class="preview-field">
+        <a href="https://www.google.com/maps/search/?api=1&query=${googleMapsQuery}"
+           target="_blank"
+           class="preview-link">
+          Open in Google Maps →
+        </a>
+      </div>
+    `;
+  }
+
+  // Add View Post link if URL exists
+  if (item.url) {
+    html += `
+      <div class="preview-field">
+        <a href="${item.url}"
+           target="_blank"
+           class="preview-link">
+          View Post 🔗 Open in New Tab →
+        </a>
+      </div>
+    `;
+  }
+
+  modalBody.innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+// Close preview modal
+function closePreviewModal() {
+  const modal = document.getElementById('preview-modal');
+  modal.style.display = 'none';
+}
+
+// Make functions globally accessible
+window.showPreviewModal = showPreviewModal;
+window.closePreviewModal = closePreviewModal;
 
 // Tab Switching
 function initializeTabs() {
@@ -747,15 +869,37 @@ function initializeMenuDropdown() {
   });
 }
 
+// Initialize preview modal
+function initializePreviewModal() {
+  const modal = document.getElementById('preview-modal');
+  const closeBtn = modal.querySelector('.preview-modal-close');
+  const overlay = modal.querySelector('.preview-modal-overlay');
+
+  // Close on button click
+  closeBtn.addEventListener('click', closePreviewModal);
+
+  // Close on overlay click
+  overlay.addEventListener('click', closePreviewModal);
+
+  // Close on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.style.display === 'flex') {
+      closePreviewModal();
+    }
+  });
+}
+
 // Load when page is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     loadSharedList();
     initializeTabs();
     initializeMenuDropdown();
+    initializePreviewModal();
   });
 } else {
   loadSharedList();
   initializeTabs();
   initializeMenuDropdown();
+  initializePreviewModal();
 }

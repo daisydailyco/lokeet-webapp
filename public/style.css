@@ -910,6 +910,107 @@ body {
   text-decoration: underline;
 }
 
+/* Preview Modal */
+.preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.preview-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.preview-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.preview-modal-close:hover {
+  background: #000;
+  color: white;
+}
+
+.preview-modal-body {
+  padding-right: 20px;
+}
+
+.preview-modal-body h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #000;
+}
+
+.preview-modal-body .preview-field {
+  margin-bottom: 16px;
+}
+
+.preview-modal-body .preview-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.preview-modal-body .preview-value {
+  font-size: 16px;
+  color: #000;
+}
+
+.preview-modal-body .preview-link {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 10px 16px;
+  background: #f0f0f0;
+  color: #000;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.preview-modal-body .preview-link:hover {
+  background: #000;
+  color: white;
+}
+
 /* Edit Order Button Styles */
 .edit-button {
   background: white;
