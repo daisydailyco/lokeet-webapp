@@ -1455,10 +1455,16 @@
 
     <!-- Category Filter (Above Content) -->
     <div id="category-filter-bar" class="category-filter-bar" style="display: none;">
-      <div class="filter-group">
-        <select id="category-filter">
-          <option value="">Sort by Category</option>
-        </select>
+      <div class="filter-group" style="position: relative;">
+        <button id="category-filter-toggle" type="button" style="padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: transparent; cursor: pointer; color: #333; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+          <span id="category-filter-label">Sort by Category</span>
+          <span style="font-size: 12px;">▼</span>
+        </button>
+        <div id="category-filter-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: white; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 250px; max-height: 300px; overflow-y: auto;">
+          <div style="padding: 12px;">
+            <div id="category-checkboxes"></div>
+          </div>
+        </div>
         <span id="edit-categories-btn" class="filter-edit-icon">↗</span>
       </div>
     </div>

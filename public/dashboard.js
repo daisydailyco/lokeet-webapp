@@ -16,7 +16,7 @@ let addAutocompleteInstance = null;
 let editAutocompleteInstance = null;
 let selectedAddAddress = null;
 let selectedEditAddress = null;
-let selectedCategory = null;
+let selectedCategories = []; // Changed to array for multiple selection
 
 // DOM elements
 const loadingDiv = document.getElementById('loading');
@@ -490,7 +490,7 @@ function populateCategoryDropdown() {
   categories.forEach(category => {
     const item = document.createElement('div');
     item.className = 'category-dropdown-item';
-    if (category === selectedCategory) {
+    if (selectedCategories.includes(category)) {
       item.classList.add('active');
     }
     item.textContent = category;
@@ -503,35 +503,50 @@ function populateCategoryDropdown() {
   });
 }
 
-// Set category filter
+// Set category filter (now supports multiple categories)
 function setCategory(category) {
-  selectedCategory = category;
-  categoryNameText.textContent = category;
+  // If single category passed, set it as the only selected
+  if (typeof category === 'string') {
+    selectedCategories = [category];
+  } else if (Array.isArray(category)) {
+    selectedCategories = category;
+  }
 
-  // Count items in this category
-  const itemCount = allSaves.filter(save => save.category === category).length;
-  categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
+  updateCategoryHeader();
+  applyFilters();
+  updateCategoryCheckboxes();
+}
 
-  // Show category header
+// Update category header display
+function updateCategoryHeader() {
+  if (selectedCategories.length === 0) {
+    categoryHeaderSection.style.display = 'none';
+    return;
+  }
+
+  // Show header
   categoryHeaderSection.style.display = 'block';
 
-  // Apply filters
-  applyFilters();
+  // Update title
+  if (selectedCategories.length === 1) {
+    categoryNameText.textContent = selectedCategories[0];
+  } else {
+    categoryNameText.textContent = `${selectedCategories.length} Categories Selected`;
+  }
 
-  // Update category filter dropdown to match (after applyFilters to ensure dropdown is populated)
-  categoryFilter.value = category;
+  // Count items in selected categories
+  const itemCount = allSaves.filter(save =>
+    save.category && selectedCategories.includes(save.category)
+  ).length;
+  categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
 }
 
 // Clear category filter
 function clearCategory() {
-  selectedCategory = null;
+  selectedCategories = [];
   categoryHeaderSection.style.display = 'none';
-
-  // Reset category filter dropdown
-  categoryFilter.value = '';
-
-  // Apply filters
   applyFilters();
+  updateCategoryCheckboxes();
 }
 
 // Edit Categories Modal
@@ -747,27 +762,24 @@ function initEventListeners() {
   });
 
   // Filters
-  categoryFilter.addEventListener('change', async (e) => {
-    const value = e.target.value;
+  // Category filter toggle
+  const categoryFilterToggle = document.getElementById('category-filter-toggle');
+  const categoryFilterDropdown = document.getElementById('category-filter-dropdown');
 
-    // Handle special options
-    if (value === '__other_new__') {
-      // Prompt for new category name
-      const newCategory = prompt('Enter new category name:');
-      if (newCategory && newCategory.trim()) {
-        setCategory(newCategory.trim());
-      } else {
-        // Reset to previous selection
-        categoryFilter.value = selectedCategory || '';
-      }
-      return;
-    }
+  if (categoryFilterToggle) {
+    categoryFilterToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = categoryFilterDropdown.style.display === 'block';
+      categoryFilterDropdown.style.display = isVisible ? 'none' : 'block';
+    });
+  }
 
-    // Handle normal category selection
-    if (value) {
-      setCategory(value);
-    } else {
-      clearCategory();
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (categoryFilterToggle && categoryFilterDropdown &&
+        !categoryFilterToggle.contains(e.target) &&
+        !categoryFilterDropdown.contains(e.target)) {
+      categoryFilterDropdown.style.display = 'none';
     }
   });
 
@@ -1042,7 +1054,7 @@ function createSaveCard(save) {
   return card;
 }
 
-// Update category filter dropdown
+// Update category filter with checkboxes
 function updateCategoryFilter() {
   const categories = new Set();
   allSaves.forEach(save => {
@@ -1058,32 +1070,75 @@ function updateCategoryFilter() {
     categoryFilterBar.style.display = 'flex';
   }
 
-  // Build dropdown options
-  categoryFilter.innerHTML = '<option value="">Sort by Category</option>';
+  updateCategoryCheckboxes();
+  updateCategoryFilterLabel();
+}
 
-  // Add existing categories
-  categories.forEach(category => {
-    const option = document.createElement('option');
-    option.value = category;
-    option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-    categoryFilter.appendChild(option);
+// Update category checkboxes
+function updateCategoryCheckboxes() {
+  const categoryCheckboxes = document.getElementById('category-checkboxes');
+  if (!categoryCheckboxes) return;
+
+  const categories = new Set();
+  allSaves.forEach(save => {
+    if (save.category) {
+      categories.add(save.category);
+    }
   });
 
-  // Add separator
-  const separator = document.createElement('option');
-  separator.disabled = true;
-  separator.textContent = '──────────';
-  categoryFilter.appendChild(separator);
+  // Clear existing checkboxes
+  categoryCheckboxes.innerHTML = '';
 
-  // Add "Other (Enter New)" option at bottom
-  const otherOption = document.createElement('option');
-  otherOption.value = '__other_new__';
-  otherOption.textContent = 'Other (Enter New)';
-  categoryFilter.appendChild(otherOption);
+  if (categories.size === 0) {
+    categoryCheckboxes.innerHTML = '<div style="padding: 8px; color: #666; font-size: 13px;">No categories yet</div>';
+    return;
+  }
 
-  // Restore selected category
-  if (selectedCategory && categories.has(selectedCategory)) {
-    categoryFilter.value = selectedCategory;
+  // Create checkbox for each category
+  categories.forEach(category => {
+    const label = document.createElement('label');
+    label.style.cssText = 'display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s; font-size: 14px;';
+    label.onmouseover = () => label.style.background = '#f0f0f0';
+    label.onmouseout = () => label.style.background = 'transparent';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = category;
+    checkbox.checked = selectedCategories.includes(category);
+    checkbox.style.cssText = 'margin-right: 8px; cursor: pointer;';
+    checkbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        if (!selectedCategories.includes(category)) {
+          selectedCategories.push(category);
+        }
+      } else {
+        selectedCategories = selectedCategories.filter(c => c !== category);
+      }
+      updateCategoryFilterLabel();
+      updateCategoryHeader();
+      applyFilters();
+    });
+
+    const span = document.createElement('span');
+    span.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+
+    label.appendChild(checkbox);
+    label.appendChild(span);
+    categoryCheckboxes.appendChild(label);
+  });
+}
+
+// Update category filter label
+function updateCategoryFilterLabel() {
+  const label = document.getElementById('category-filter-label');
+  if (!label) return;
+
+  if (selectedCategories.length === 0) {
+    label.textContent = 'Sort by Category';
+  } else if (selectedCategories.length === 1) {
+    label.textContent = selectedCategories[0].charAt(0).toUpperCase() + selectedCategories[0].slice(1);
+  } else {
+    label.textContent = `${selectedCategories.length} Selected`;
   }
 }
 
@@ -1160,12 +1215,14 @@ function populateEditCategoryDropdown() {
 
 // Apply filters
 function applyFilters() {
-  // Filter by category (use global selectedCategory)
+  // Filter by selected categories
   filteredSaves = allSaves.filter(save => {
-    if (selectedCategory && save.category !== selectedCategory) {
-      return false;
+    // If no categories selected, show all
+    if (selectedCategories.length === 0) {
+      return true;
     }
-    return true;
+    // Otherwise, check if save's category is in selected categories
+    return save.category && selectedCategories.includes(save.category);
   });
 
   // Sort by newest first (default)
@@ -1191,17 +1248,17 @@ function applyFilters() {
 
 // Handle share button
 async function handleShare() {
-  if (!selectedCategory) return;
+  if (selectedCategories.length === 0) return;
 
   try {
     const session = getSession();
     if (!session) throw new Error('No session found');
 
-    // Get saves for the selected category
-    const categorySaves = allSaves.filter(save => save.category === selectedCategory);
+    // Get saves for the selected categories (use filteredSaves which is already filtered)
+    const categorySaves = filteredSaves;
 
     if (categorySaves.length === 0) {
-      await customAlert('No saves in this category to share');
+      await customAlert('No saves in selected categories to share');
       return;
     }
 
@@ -1238,7 +1295,12 @@ async function handleShare() {
       saved_at: save.saved_at || new Date().toISOString()
     }));
 
-    console.log('Sharing category:', selectedCategory);
+    // Create a combined category name
+    const categoryName = selectedCategories.length === 1
+      ? selectedCategories[0]
+      : selectedCategories.join(' + ');
+
+    console.log('Sharing categories:', selectedCategories);
     console.log('Items to share:', formattedItems.length);
 
     // Create a share link by calling backend API
@@ -1248,7 +1310,7 @@ async function handleShare() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        category: selectedCategory,
+        category: categoryName,
         items: formattedItems
       })
     });
@@ -1491,7 +1553,7 @@ function renderCalendar() {
 
   // Count unique dates
   const uniqueDates = Object.keys(savesByDate);
-  const isWeekView = selectedCategory && uniqueDates.length > 0 && uniqueDates.length <= 7;
+  const isWeekView = selectedCategories.length > 0 && uniqueDates.length > 0 && uniqueDates.length <= 7;
 
   if (isWeekView) {
     // Week view: show the week containing the events
