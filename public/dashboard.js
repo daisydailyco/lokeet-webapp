@@ -750,6 +750,22 @@ function initEventListeners() {
   // Share button
   shareBtn.addEventListener('click', handleShare);
 
+  // Confirm share button in modal
+  const confirmShareBtn = document.getElementById('confirm-share-btn');
+  if (confirmShareBtn) {
+    confirmShareBtn.addEventListener('click', confirmShare);
+  }
+
+  // Share name input - submit on Enter key
+  const shareNameInput = document.getElementById('share-name-input');
+  if (shareNameInput) {
+    shareNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        confirmShare();
+      }
+    });
+  }
+
   // Edit categories button
   editCategoriesBtn.addEventListener('click', openEditCategoriesModal);
 
@@ -1285,7 +1301,7 @@ function applyFilters() {
   }
 }
 
-// Handle share button
+// Handle share button - Show naming modal
 async function handleShare() {
   if (selectedCategories.length === 0) return;
 
@@ -1301,6 +1317,61 @@ async function handleShare() {
       return;
     }
 
+    // Show share name modal
+    const modal = document.getElementById('share-name-modal');
+    const input = document.getElementById('share-name-input');
+    const preview = document.getElementById('share-categories-preview');
+
+    // Pre-fill with combined category names
+    const defaultName = selectedCategories.length === 1
+      ? selectedCategories[0]
+      : selectedCategories.join(' + ');
+
+    input.value = defaultName;
+    preview.textContent = `Sharing ${categorySaves.length} item${categorySaves.length !== 1 ? 's' : ''} from: ${selectedCategories.join(', ')}`;
+
+    modal.classList.add('active');
+    input.focus();
+    input.select();
+
+    // Store items for when user confirms
+    window.pendingShareItems = categorySaves;
+
+  } catch (error) {
+    console.error('Share error:', error);
+    await customAlert(`Failed to prepare share: ${error.message}`, 'Error');
+  }
+}
+
+// Close share name modal
+function closeShareNameModal() {
+  const modal = document.getElementById('share-name-modal');
+  modal.classList.remove('active');
+  window.pendingShareItems = null;
+}
+
+// Confirm share with custom name
+async function confirmShare() {
+  const input = document.getElementById('share-name-input');
+  const customName = input.value.trim();
+
+  if (!customName) {
+    await customAlert('Please enter a name for your collection');
+    return;
+  }
+
+  if (!window.pendingShareItems) {
+    await customAlert('No items to share');
+    closeShareNameModal();
+    return;
+  }
+
+  const categorySaves = window.pendingShareItems;
+
+  // Close modal
+  closeShareNameModal();
+
+  try {
     // Show loading state
     const originalHTML = shareBtn.innerHTML;
     shareBtn.innerHTML = '<span>⏳</span><span>Sharing...</span>';
@@ -1334,10 +1405,8 @@ async function handleShare() {
       saved_at: save.saved_at || new Date().toISOString()
     }));
 
-    // Create a combined category name
-    const categoryName = selectedCategories.length === 1
-      ? selectedCategories[0]
-      : selectedCategories.join(' + ');
+    // Use custom name from input
+    const categoryName = customName;
 
     console.log('Sharing categories:', selectedCategories);
     console.log('Items to share:', formattedItems.length);
@@ -2855,6 +2924,8 @@ window.closeAddModal = closeAddModal;
 window.closeEditModal = closeEditModal;
 window.closeEditCategoriesModal = closeEditCategoriesModal;
 window.openEditCategoriesModal = openEditCategoriesModal;
+window.closeShareNameModal = closeShareNameModal;
+window.confirmShare = confirmShare;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
 window.closeProfileModal = closeProfileModal;

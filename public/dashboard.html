@@ -1766,6 +1766,36 @@
     </div>
   </div>
 
+  <!-- Share Name Modal -->
+  <div id="share-name-modal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>Name Your Collection</h2>
+        <button class="close-btn" onclick="closeShareNameModal()">&times;</button>
+      </div>
+
+      <div style="padding: 0 0 24px 0;">
+        <p style="color: #666; margin-bottom: 16px; font-size: 14px;">
+          Give this collection a custom name that will appear on the share page.
+        </p>
+        <input
+          type="text"
+          id="share-name-input"
+          placeholder="e.g., My Favorite Spots, Weekend Guide, Date Night Ideas"
+          style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;"
+        />
+        <p style="color: #999; margin-top: 8px; font-size: 12px;">
+          <span id="share-categories-preview"></span>
+        </p>
+      </div>
+
+      <div class="modal-actions" style="display: flex; gap: 12px;">
+        <button type="button" class="modal-btn secondary" onclick="closeShareNameModal()" style="flex: 1;">Cancel</button>
+        <button type="button" class="modal-btn primary" id="confirm-share-btn" style="flex: 1;">Share</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Custom Confirmation Modal -->
   <div id="custom-confirm-modal" class="modal">
     <div class="modal-content" style="max-width: 400px;">
