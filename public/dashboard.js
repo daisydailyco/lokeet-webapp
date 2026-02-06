@@ -530,8 +530,12 @@ function updateCategoryHeader() {
   // Update title
   if (selectedCategories.length === 1) {
     categoryNameText.textContent = selectedCategories[0];
+    clearCategoryBtn.textContent = '×';
+    clearCategoryBtn.title = 'Clear filter';
   } else {
     categoryNameText.textContent = `${selectedCategories.length} Categories Selected`;
+    clearCategoryBtn.textContent = '↗';
+    clearCategoryBtn.title = 'Edit collection';
   }
 
   // Count items in selected categories
@@ -741,10 +745,17 @@ function initEventListeners() {
   // Add save button
   addSaveBtn.addEventListener('click', openAddModal);
 
-  // Clear category button
+  // Clear/Edit category button
   clearCategoryBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    clearCategory();
+
+    // If multiple categories, open collection modal
+    if (selectedCategories.length > 1) {
+      openCollectionModal();
+    } else {
+      // Single category, just clear it
+      clearCategory();
+    }
   });
 
   // Share button
@@ -756,7 +767,13 @@ function initEventListeners() {
     confirmShareBtn.addEventListener('click', confirmShare);
   }
 
-  // Share name input - submit on Enter key
+  // Save collection button in modal
+  const saveCollectionBtn = document.getElementById('save-collection-btn');
+  if (saveCollectionBtn) {
+    saveCollectionBtn.addEventListener('click', saveCollection);
+  }
+
+  // Share name input - submit on Enter key (defaults to share)
   const shareNameInput = document.getElementById('share-name-input');
   if (shareNameInput) {
     shareNameInput.addEventListener('keypress', (e) => {
@@ -1343,11 +1360,80 @@ async function handleShare() {
   }
 }
 
+// Open collection modal for editing/saving
+function openCollectionModal() {
+  const modal = document.getElementById('share-name-modal');
+  const input = document.getElementById('share-name-input');
+  const preview = document.getElementById('share-categories-preview');
+
+  // Get saves for the selected categories
+  const categorySaves = filteredSaves;
+
+  if (categorySaves.length === 0) {
+    customAlert('No saves in selected categories');
+    return;
+  }
+
+  // Pre-fill with combined category names
+  const defaultName = selectedCategories.join(' + ');
+
+  input.value = defaultName;
+  preview.textContent = `${categorySaves.length} item${categorySaves.length !== 1 ? 's' : ''} from: ${selectedCategories.join(', ')}`;
+
+  modal.classList.add('active');
+  input.focus();
+  input.select();
+
+  // Store items for when user confirms
+  window.pendingShareItems = categorySaves;
+}
+
 // Close share name modal
 function closeShareNameModal() {
   const modal = document.getElementById('share-name-modal');
   modal.classList.remove('active');
   window.pendingShareItems = null;
+}
+
+// Save collection (without sharing)
+async function saveCollection() {
+  const input = document.getElementById('share-name-input');
+  const customName = input.value.trim();
+
+  if (!customName) {
+    await customAlert('Please enter a name for your collection');
+    return;
+  }
+
+  try {
+    // Get saved collections from localStorage
+    let savedCollections = JSON.parse(localStorage.getItem('savedCollections') || '[]');
+
+    // Create new collection
+    const newCollection = {
+      id: Date.now().toString(),
+      name: customName,
+      categories: [...selectedCategories],
+      itemCount: filteredSaves.length,
+      createdAt: new Date().toISOString()
+    };
+
+    // Add to saved collections
+    savedCollections.push(newCollection);
+
+    // Save to localStorage
+    localStorage.setItem('savedCollections', JSON.stringify(savedCollections));
+
+    // Close modal
+    closeShareNameModal();
+
+    // Show success message
+    await customAlert(`Collection "${customName}" saved!`);
+
+  } catch (error) {
+    console.error('Save collection error:', error);
+    await customAlert(`Failed to save collection: ${error.message}`, 'Error');
+  }
 }
 
 // Confirm share with custom name
@@ -2925,7 +3011,9 @@ window.closeEditModal = closeEditModal;
 window.closeEditCategoriesModal = closeEditCategoriesModal;
 window.openEditCategoriesModal = openEditCategoriesModal;
 window.closeShareNameModal = closeShareNameModal;
+window.openCollectionModal = openCollectionModal;
 window.confirmShare = confirmShare;
+window.saveCollection = saveCollection;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
 window.closeProfileModal = closeProfileModal;
