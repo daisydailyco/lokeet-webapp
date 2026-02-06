@@ -651,6 +651,117 @@ function closeEditCategoriesModal() {
   editCategoriesModal.style.display = 'none';
   categoryChanges.clear();
   categoriesToDelete.clear();
+  // Reset to categories tab
+  switchEditTab('categories');
+}
+
+// Switch between edit tabs
+function switchEditTab(tab) {
+  const categoriesTab = document.getElementById('edit-categories-tab');
+  const collectionsTab = document.getElementById('edit-collections-tab');
+  const categoriesContent = document.getElementById('edit-categories-content');
+  const collectionsContent = document.getElementById('edit-collections-content');
+
+  if (tab === 'categories') {
+    categoriesTab.classList.add('active');
+    collectionsTab.classList.remove('active');
+    categoriesContent.style.display = 'block';
+    collectionsContent.style.display = 'none';
+  } else {
+    categoriesTab.classList.remove('active');
+    collectionsTab.classList.add('active');
+    categoriesContent.style.display = 'none';
+    collectionsContent.style.display = 'block';
+    populateCollectionsEdit();
+  }
+}
+
+// Populate collections edit list
+function populateCollectionsEdit() {
+  const collectionsEditList = document.getElementById('collections-edit-list');
+  if (!collectionsEditList) return;
+
+  collectionsEditList.innerHTML = '';
+
+  if (savedCollections.length === 0) {
+    collectionsEditList.innerHTML = '<p style="text-align: center; color: #666; padding: 40px 20px;">No saved collections yet.</p>';
+    return;
+  }
+
+  savedCollections.forEach(collection => {
+    const collectionItem = document.createElement('div');
+    collectionItem.style.cssText = 'border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; margin-bottom: 12px;';
+    collectionItem.dataset.collectionId = collection.id;
+
+    // Collection name input
+    const nameLabel = document.createElement('label');
+    nameLabel.textContent = 'Collection Name';
+    nameLabel.style.cssText = 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #666;';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = collection.name;
+    nameInput.className = 'collection-name-input';
+    nameInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; margin-bottom: 12px;';
+    nameInput.dataset.collectionId = collection.id;
+
+    // Categories checkboxes
+    const categoriesLabel = document.createElement('div');
+    categoriesLabel.textContent = 'Categories';
+    categoriesLabel.style.cssText = 'font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #666;';
+
+    const categoriesContainer = document.createElement('div');
+    categoriesContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;';
+
+    // Get all unique categories
+    const allCategories = new Set();
+    allSaves.forEach(save => {
+      if (save.category) {
+        allCategories.add(save.category);
+      }
+    });
+
+    Array.from(allCategories).sort().forEach(category => {
+      const checkboxWrapper = document.createElement('label');
+      checkboxWrapper.style.cssText = 'display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-size: 13px;';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = category;
+      checkbox.checked = collection.categories.includes(category);
+      checkbox.className = 'collection-category-checkbox';
+      checkbox.dataset.collectionId = collection.id;
+      checkbox.style.cssText = 'cursor: pointer;';
+
+      const label = document.createElement('span');
+      label.textContent = category;
+
+      checkboxWrapper.appendChild(checkbox);
+      checkboxWrapper.appendChild(label);
+      categoriesContainer.appendChild(checkboxWrapper);
+    });
+
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Delete Collection';
+    deleteBtn.className = 'modal-btn';
+    deleteBtn.style.cssText = 'width: 100%; padding: 8px; background: #ff3b30; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;';
+    deleteBtn.addEventListener('click', async () => {
+      const confirmed = await customConfirm(`Delete collection "${collection.name}"?`, 'Delete Collection');
+      if (confirmed) {
+        await deleteCollection(collection.id);
+        collectionItem.remove();
+      }
+    });
+
+    collectionItem.appendChild(nameLabel);
+    collectionItem.appendChild(nameInput);
+    collectionItem.appendChild(categoriesLabel);
+    collectionItem.appendChild(categoriesContainer);
+    collectionItem.appendChild(deleteBtn);
+
+    collectionsEditList.appendChild(collectionItem);
+  });
 }
 
 // Save category changes
@@ -747,6 +858,143 @@ async function saveCategoryChanges() {
   }
 }
 
+// Save collection changes
+async function saveCollectionChanges() {
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    const saveCollectionsBtn = document.getElementById('save-collections-btn');
+    saveCollectionsBtn.disabled = true;
+    saveCollectionsBtn.textContent = 'Saving...';
+
+    // Gather changes from the UI
+    const nameInputs = document.querySelectorAll('.collection-name-input');
+    const updatedCollections = [];
+
+    for (const input of nameInputs) {
+      const collectionId = input.dataset.collectionId;
+      const newName = input.value.trim();
+
+      if (!newName) {
+        await customAlert('Collection name cannot be empty');
+        return;
+      }
+
+      // Get selected categories for this collection
+      const checkboxes = document.querySelectorAll(`.collection-category-checkbox[data-collection-id="${collectionId}"]`);
+      const selectedCategories = Array.from(checkboxes)
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+      if (selectedCategories.length === 0) {
+        await customAlert('Each collection must have at least one category');
+        return;
+      }
+
+      const originalCollection = savedCollections.find(c => c.id === collectionId);
+      if (originalCollection) {
+        updatedCollections.push({
+          ...originalCollection,
+          name: newName,
+          categories: selectedCategories,
+          itemCount: allSaves.filter(save =>
+            save.category && selectedCategories.includes(save.category)
+          ).length
+        });
+      }
+    }
+
+    // Update savedCollections array
+    savedCollections = updatedCollections;
+
+    // Save to backend
+    const payload = {
+      display_name: currentUser.display_name || null,
+      username: currentUser.username || null,
+      zip_code: currentUser.zip_code || null,
+      birthday: currentUser.birthday || null,
+      email: currentUser.email,
+      collections: savedCollections
+    };
+
+    const response = await fetch(`${API_BASE}/v1/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to save collections');
+    }
+
+    updateCollectionsDropdown();
+    closeEditCategoriesModal();
+    await customAlert('Collections updated successfully!', 'Success');
+
+  } catch (error) {
+    console.error('Error updating collections:', error);
+    await customAlert('Failed to update collections. Please try again.', 'Error');
+  } finally {
+    const saveCollectionsBtn = document.getElementById('save-collections-btn');
+    if (saveCollectionsBtn) {
+      saveCollectionsBtn.disabled = false;
+      saveCollectionsBtn.textContent = 'Done';
+    }
+  }
+}
+
+// Delete a collection
+async function deleteCollection(collectionId) {
+  try {
+    const session = getSession();
+    if (!session) throw new Error('No session found');
+
+    // Remove from local array
+    savedCollections = savedCollections.filter(c => c.id !== collectionId);
+
+    // Save to backend
+    const payload = {
+      display_name: currentUser.display_name || null,
+      username: currentUser.username || null,
+      zip_code: currentUser.zip_code || null,
+      birthday: currentUser.birthday || null,
+      email: currentUser.email,
+      collections: savedCollections
+    };
+
+    const response = await fetch(`${API_BASE}/v1/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to delete collection');
+    }
+
+    // Clear active collection if it was deleted
+    if (activeCollection && activeCollection.id === collectionId) {
+      clearCategory();
+    }
+
+    updateCollectionsDropdown();
+    await customAlert('Collection deleted successfully!', 'Success');
+
+  } catch (error) {
+    console.error('Error deleting collection:', error);
+    await customAlert('Failed to delete collection. Please try again.', 'Error');
+  }
+}
+
 // Initialize event listeners
 function initEventListeners() {
   // Settings dropdown toggle
@@ -814,6 +1062,12 @@ function initEventListeners() {
 
   // Save categories button
   saveCategoriesBtn.addEventListener('click', saveCategoryChanges);
+
+  // Save collections button
+  const saveCollectionsBtn = document.getElementById('save-collections-btn');
+  if (saveCollectionsBtn) {
+    saveCollectionsBtn.addEventListener('click', saveCollectionChanges);
+  }
 
   // Tab switching
   tabs.forEach(tab => {
@@ -3168,6 +3422,7 @@ window.closeAddModal = closeAddModal;
 window.closeEditModal = closeEditModal;
 window.closeEditCategoriesModal = closeEditCategoriesModal;
 window.openEditCategoriesModal = openEditCategoriesModal;
+window.switchEditTab = switchEditTab;
 window.closeShareNameModal = closeShareNameModal;
 window.openCollectionModal = openCollectionModal;
 window.confirmShare = confirmShare;
