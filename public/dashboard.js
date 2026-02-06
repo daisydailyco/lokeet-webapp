@@ -1432,20 +1432,29 @@ async function saveCollection() {
     // Add to saved collections
     savedCollections.push(newCollection);
 
-    // Save to backend profile
+    // Save to backend profile - must include all profile fields
+    const payload = {
+      display_name: currentUser.display_name || null,
+      username: currentUser.username || null,
+      zip_code: currentUser.zip_code || null,
+      birthday: currentUser.birthday || null,
+      email: currentUser.email,
+      collections: savedCollections
+    };
+
     const response = await fetch(`${API_BASE}/v1/user/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({
-        collections: savedCollections
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
-      throw new Error('Failed to save collection to profile');
+      const error = await response.json().catch(() => ({}));
+      console.error('Profile update error:', error);
+      throw new Error(error.message || 'Failed to save collection to profile');
     }
 
     // Update collections dropdown
