@@ -691,6 +691,12 @@ function populateCollectionsEdit() {
     }
   });
 
+  // MESSAGE AT TOP
+  const topMessage = document.createElement('p');
+  topMessage.textContent = 'No saved collections yet. Select categories to create a collection.';
+  topMessage.style.cssText = 'text-align: center; color: #666; padding: 12px 20px; font-size: 14px; margin-bottom: 16px; background: #f9f9f9; border-radius: 8px;';
+  collectionsEditList.appendChild(topMessage);
+
   // CREATE NEW COLLECTION SECTION
   const createSection = document.createElement('div');
   createSection.style.cssText = 'border: 2px solid #000; border-radius: 8px; padding: 16px; margin-bottom: 20px; background: #fafafa;';
@@ -700,18 +706,7 @@ function populateCollectionsEdit() {
   createTitle.textContent = 'Create New Collection';
   createTitle.style.cssText = 'margin: 0 0 12px 0; font-size: 16px; font-weight: 600;';
 
-  // Collection name input
-  const nameLabel = document.createElement('label');
-  nameLabel.textContent = 'Collection Name';
-  nameLabel.style.cssText = 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #666;';
-
-  const nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.id = 'new-collection-name-input';
-  nameInput.placeholder = 'e.g., Weekend Spots, Date Night Ideas';
-  nameInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; margin-bottom: 12px;';
-
-  // Categories checkboxes
+  // Categories checkboxes (FIRST)
   const categoriesLabel = document.createElement('div');
   categoriesLabel.textContent = 'Select Categories';
   categoriesLabel.style.cssText = 'font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #666;';
@@ -745,28 +740,60 @@ function populateCollectionsEdit() {
     });
   }
 
+  // Collection name input section (SECOND - initially hidden)
+  const nameSection = document.createElement('div');
+  nameSection.id = 'new-collection-name-section';
+  nameSection.style.cssText = 'display: none;'; // Hidden until 2+ categories selected
+
+  const nameLabel = document.createElement('label');
+  nameLabel.textContent = 'Collection Name';
+  nameLabel.style.cssText = 'display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #666;';
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.id = 'new-collection-name-input';
+  nameInput.placeholder = 'e.g., Weekend Spots, Date Night Ideas';
+  nameInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; margin-bottom: 12px;';
+
+  nameSection.appendChild(nameLabel);
+  nameSection.appendChild(nameInput);
+
   // Create button
   const createBtn = document.createElement('button');
   createBtn.textContent = 'Create Collection';
   createBtn.className = 'modal-btn primary';
-  createBtn.style.cssText = 'width: 100%; padding: 10px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;';
+  createBtn.id = 'create-collection-btn';
+  createBtn.style.cssText = 'width: 100%; padding: 10px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; display: none;'; // Hidden until 2+ categories
   createBtn.addEventListener('click', createNewCollection);
 
   createSection.appendChild(createTitle);
-  createSection.appendChild(nameLabel);
-  createSection.appendChild(nameInput);
   createSection.appendChild(categoriesLabel);
   createSection.appendChild(categoriesContainer);
+  createSection.appendChild(nameSection);
   createSection.appendChild(createBtn);
 
   collectionsEditList.appendChild(createSection);
 
+  // Add event listeners to checkboxes to show/hide name field and button
+  const checkboxes = document.querySelectorAll('.new-collection-category-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      const checkedCount = document.querySelectorAll('.new-collection-category-checkbox:checked').length;
+      const nameSection = document.getElementById('new-collection-name-section');
+      const createBtn = document.getElementById('create-collection-btn');
+
+      if (checkedCount >= 2) {
+        nameSection.style.display = 'block';
+        createBtn.style.display = 'block';
+      } else {
+        nameSection.style.display = 'none';
+        createBtn.style.display = 'none';
+      }
+    });
+  });
+
   // EXISTING COLLECTIONS SECTION
   if (savedCollections.length === 0) {
-    const emptyMessage = document.createElement('p');
-    emptyMessage.textContent = 'No saved collections yet.';
-    emptyMessage.style.cssText = 'text-align: center; color: #666; padding: 20px; font-size: 14px;';
-    collectionsEditList.appendChild(emptyMessage);
     return;
   }
 
@@ -1091,13 +1118,13 @@ async function createNewCollection() {
   const selectedCategories = Array.from(checkboxes).map(cb => cb.value);
 
   // Validation
-  if (!collectionName) {
-    await customAlert('Please enter a collection name');
+  if (selectedCategories.length < 2) {
+    await customAlert('Please select at least two categories');
     return;
   }
 
-  if (selectedCategories.length === 0) {
-    await customAlert('Please select at least one category');
+  if (!collectionName) {
+    await customAlert('Please enter a collection name');
     return;
   }
 
