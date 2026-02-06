@@ -1460,7 +1460,7 @@
     <!-- Filters (Above Content) -->
     <div style="max-width: 1400px; margin: 0 auto; padding: 8px 24px; display: flex; gap: 12px; flex-wrap: wrap;">
       <!-- Category Filter -->
-      <div id="category-filter-bar" class="category-filter-bar" style="display: none; padding: 0; margin: 0;">
+      <div id="category-filter-bar" class="category-filter-bar" style="padding: 0; margin: 0;">
         <div class="filter-group" style="position: relative;">
           <button id="category-filter-toggle" type="button" style="padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: transparent; cursor: pointer; color: #333; font-weight: 500; display: flex; align-items: center; gap: 8px;">
             <span id="category-filter-label">Sort by Category</span>
@@ -1474,12 +1474,11 @@
               <div id="category-checkboxes"></div>
             </div>
           </div>
-          <span id="edit-categories-btn" class="filter-edit-icon">↗</span>
         </div>
       </div>
 
       <!-- Saved Collections Filter -->
-      <div id="collections-filter" class="category-filter-bar" style="display: none; padding: 0; margin: 0;">
+      <div id="collections-filter" class="category-filter-bar" style="padding: 0; margin: 0;">
         <div class="filter-group" style="position: relative;">
           <button id="collections-filter-toggle" type="button" style="padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: transparent; cursor: pointer; color: #333; font-weight: 500; display: flex; align-items: center; gap: 8px;">
             <span>Saved Collections</span>
@@ -1493,6 +1492,7 @@
               <div id="collections-list"></div>
             </div>
           </div>
+          <span id="edit-categories-btn" class="filter-edit-icon">↗</span>
         </div>
       </div>
     </div>
@@ -1998,7 +1998,7 @@
   <script src="/auth.js"></script>
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
   <script src="https://js.radar.com/v4.4.8/radar.min.js"></script>
-  <script src="/dashboard.js?v=106"></script>
+  <script src="/dashboard.js?v=107"></script>
 
   <!-- Service Worker Registration with Update Detection -->
   <script>

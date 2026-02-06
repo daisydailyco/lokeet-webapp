@@ -1459,12 +1459,8 @@ function updateCategoryFilter() {
     }
   });
 
-  // Show/hide filter bar based on whether there are any saves
-  if (allSaves.length === 0) {
-    categoryFilterBar.style.display = 'none';
-  } else {
-    categoryFilterBar.style.display = 'flex';
-  }
+  // Category filter bar is always visible
+  categoryFilterBar.style.display = 'flex';
 
   updateCategoryCheckboxes();
   updateCategoryFilterLabel();
@@ -3358,12 +3354,7 @@ function updateCollectionsDropdown() {
   const collectionsFilter = document.getElementById('collections-filter');
   if (!collectionsFilter) return;
 
-  // Show/hide filter based on collections
-  if (savedCollections.length === 0) {
-    collectionsFilter.style.display = 'none';
-    return;
-  }
-
+  // Collections filter is always visible
   collectionsFilter.style.display = 'flex';
 
   const collectionsList = document.getElementById('collections-list');
@@ -3371,6 +3362,12 @@ function updateCollectionsDropdown() {
 
   // Clear and populate
   collectionsList.innerHTML = '';
+
+  // Show empty state if no collections
+  if (savedCollections.length === 0) {
+    collectionsList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px 12px; font-size: 13px;">No saved collections yet.</p>';
+    return;
+  }
 
   savedCollections.forEach(collection => {
     const item = document.createElement('div');
