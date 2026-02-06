@@ -18,6 +18,7 @@ let selectedAddAddress = null;
 let selectedEditAddress = null;
 let selectedCategories = []; // Changed to array for multiple selection
 let savedCollections = []; // User's saved category collections
+let activeCollection = null; // Currently active saved collection
 
 // DOM elements
 const loadingDiv = document.getElementById('loading');
@@ -27,6 +28,7 @@ const userUsernameSpan = document.getElementById('user-username');
 const categoryHeaderSection = document.getElementById('category-header-section');
 const categoryNameText = document.getElementById('category-name-text');
 const categoryItemCount = document.getElementById('category-item-count');
+const categorySelectedCount = document.getElementById('category-selected-count');
 const clearCategoryBtn = document.getElementById('clear-category-btn');
 const shareBtn = document.getElementById('share-btn');
 
@@ -516,6 +518,9 @@ function populateCategoryDropdown() {
 
 // Set category filter (now supports multiple categories)
 function setCategory(category) {
+  // Clear active collection when manually selecting categories
+  activeCollection = null;
+
   // If single category passed, set it as the only selected
   if (typeof category === 'string') {
     selectedCategories = [category];
@@ -539,7 +544,12 @@ function updateCategoryHeader() {
   categoryHeaderSection.style.display = 'block';
 
   // Update title
-  if (selectedCategories.length === 1) {
+  if (activeCollection) {
+    // Show collection name when viewing a saved collection
+    categoryNameText.textContent = activeCollection.name;
+    clearCategoryBtn.textContent = '↗';
+    clearCategoryBtn.title = 'Edit collection';
+  } else if (selectedCategories.length === 1) {
     categoryNameText.textContent = selectedCategories[0];
     clearCategoryBtn.textContent = '×';
     clearCategoryBtn.title = 'Clear filter';
@@ -554,11 +564,16 @@ function updateCategoryHeader() {
     save.category && selectedCategories.includes(save.category)
   ).length;
   categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
+
+  // Update categories selected count
+  const catText = selectedCategories.length === 1 ? 'Category' : 'Categories';
+  categorySelectedCount.textContent = `${selectedCategories.length} ${catText} Selected`;
 }
 
 // Clear category filter
 function clearCategory() {
   selectedCategories = [];
+  activeCollection = null; // Clear active collection
   categoryHeaderSection.style.display = 'none';
   applyFilters();
   updateCategoryCheckboxes();
@@ -815,15 +830,41 @@ function initEventListeners() {
       e.stopPropagation();
       const isVisible = categoryFilterDropdown.style.display === 'block';
       categoryFilterDropdown.style.display = isVisible ? 'none' : 'block';
+      // Close collections dropdown
+      const collectionsFilterDropdown = document.getElementById('collections-filter-dropdown');
+      if (collectionsFilterDropdown) {
+        collectionsFilterDropdown.style.display = 'none';
+      }
     });
   }
 
-  // Close dropdown when clicking outside
+  // Collections filter toggle
+  const collectionsFilterToggle = document.getElementById('collections-filter-toggle');
+  const collectionsFilterDropdown = document.getElementById('collections-filter-dropdown');
+
+  if (collectionsFilterToggle) {
+    collectionsFilterToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = collectionsFilterDropdown.style.display === 'block';
+      collectionsFilterDropdown.style.display = isVisible ? 'none' : 'block';
+      // Close category dropdown
+      if (categoryFilterDropdown) {
+        categoryFilterDropdown.style.display = 'none';
+      }
+    });
+  }
+
+  // Close dropdowns when clicking outside
   document.addEventListener('click', (e) => {
     if (categoryFilterToggle && categoryFilterDropdown &&
         !categoryFilterToggle.contains(e.target) &&
         !categoryFilterDropdown.contains(e.target)) {
       categoryFilterDropdown.style.display = 'none';
+    }
+    if (collectionsFilterToggle && collectionsFilterDropdown &&
+        !collectionsFilterToggle.contains(e.target) &&
+        !collectionsFilterDropdown.contains(e.target)) {
+      collectionsFilterDropdown.style.display = 'none';
     }
   });
 
@@ -863,6 +904,24 @@ function initEventListeners() {
           applyFilters();
         }
       }
+    });
+  }
+
+  // Handle new collection input
+  const newCollectionInput = document.getElementById('new-collection-input');
+  if (newCollectionInput) {
+    newCollectionInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Check if categories are selected
+      if (selectedCategories.length === 0) {
+        customAlert('Please select categories first to create a collection');
+        return;
+      }
+      // Close dropdown and open collection modal
+      if (collectionsFilterDropdown) {
+        collectionsFilterDropdown.style.display = 'none';
+      }
+      openCollectionModal();
     });
   }
 
@@ -3053,17 +3112,36 @@ function updateCollectionsDropdown() {
 
   collectionsFilter.style.display = 'flex';
 
-  const collectionsSelect = document.getElementById('collections-select');
-  if (!collectionsSelect) return;
+  const collectionsList = document.getElementById('collections-list');
+  if (!collectionsList) return;
 
   // Clear and populate
-  collectionsSelect.innerHTML = '<option value="">Saved Collections</option>';
+  collectionsList.innerHTML = '';
 
   savedCollections.forEach(collection => {
-    const option = document.createElement('option');
-    option.value = collection.id;
-    option.textContent = `${collection.name} (${collection.categories.length} categories)`;
-    collectionsSelect.appendChild(option);
+    const item = document.createElement('div');
+    item.style.cssText = 'padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: background 0.2s; font-size: 14px;';
+    item.textContent = `${collection.name} (${collection.categories.length} categories)`;
+
+    item.addEventListener('mouseenter', () => {
+      item.style.background = '#f5f5f5';
+    });
+
+    item.addEventListener('mouseleave', () => {
+      item.style.background = 'transparent';
+    });
+
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectCollection(collection.id);
+      // Close dropdown
+      const collectionsFilterDropdown = document.getElementById('collections-filter-dropdown');
+      if (collectionsFilterDropdown) {
+        collectionsFilterDropdown.style.display = 'none';
+      }
+    });
+
+    collectionsList.appendChild(item);
   });
 }
 
@@ -3074,14 +3152,14 @@ function selectCollection(collectionId) {
   const collection = savedCollections.find(c => c.id === collectionId);
   if (!collection) return;
 
-  // Set the categories from the collection
-  setCategory(collection.categories);
+  // Set active collection and categories
+  activeCollection = collection;
+  selectedCategories = [...collection.categories];
 
-  // Reset dropdown
-  const collectionsSelect = document.getElementById('collections-select');
-  if (collectionsSelect) {
-    collectionsSelect.value = '';
-  }
+  // Update UI
+  updateCategoryHeader();
+  applyFilters();
+  updateCategoryCheckboxes();
 }
 
 window.editSave = editSave;

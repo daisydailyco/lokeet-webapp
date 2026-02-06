@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Dashboard - Lokeet</title>
 
   <!-- Favicon -->
@@ -1447,6 +1450,8 @@
         <div class="category-meta">
           <span id="category-item-count">0 Saves</span>
           <span class="separator">•</span>
+          <span id="category-selected-count">0 Categories Selected</span>
+          <span class="separator">•</span>
           <span id="share-btn" class="share-link">Share Saves 🔗</span>
         </div>
       </div>
@@ -1475,10 +1480,19 @@
 
       <!-- Saved Collections Filter -->
       <div id="collections-filter" class="category-filter-bar" style="display: none; padding: 0; margin: 0;">
-        <div class="filter-group">
-          <select id="collections-select" onchange="selectCollection(this.value)" style="padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: transparent; cursor: pointer; color: #333; font-weight: 500;">
-            <option value="">Saved Collections</option>
-          </select>
+        <div class="filter-group" style="position: relative;">
+          <button id="collections-filter-toggle" type="button" style="padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: transparent; cursor: pointer; color: #333; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+            <span>Saved Collections</span>
+            <span style="font-size: 12px;">▼</span>
+          </button>
+          <div id="collections-filter-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: white; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 250px; max-height: 300px; overflow-y: auto;">
+            <div style="padding: 12px;">
+              <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0;">
+                <input type="text" id="new-collection-input" placeholder="+ New Collection" style="width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; box-sizing: border-box;">
+              </div>
+              <div id="collections-list"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1966,7 +1980,7 @@
   <script src="/auth.js"></script>
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
   <script src="https://js.radar.com/v4.4.8/radar.min.js"></script>
-  <script src="/dashboard.js"></script>
+  <script src="/dashboard.js?v=104"></script>
 
   <!-- Service Worker Registration with Update Detection -->
   <script>
