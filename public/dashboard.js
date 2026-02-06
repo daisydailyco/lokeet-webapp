@@ -17,6 +17,7 @@ let editAutocompleteInstance = null;
 let selectedAddAddress = null;
 let selectedEditAddress = null;
 let selectedCategories = []; // Changed to array for multiple selection
+let savedCollections = []; // User's saved category collections
 
 // DOM elements
 const loadingDiv = document.getElementById('loading');
@@ -410,6 +411,9 @@ async function init() {
     // Render initial view
     renderSaves();
 
+    // Update collections dropdown
+    updateCollectionsDropdown();
+
   } catch (error) {
     console.error('Dashboard initialization error:', error);
     await customAlert('Failed to load dashboard. Please try logging in again.');
@@ -437,6 +441,13 @@ async function fetchUserProfile() {
           ...currentUser,
           ...data.profile
         };
+
+        // Load saved collections
+        if (data.profile.collections && Array.isArray(data.profile.collections)) {
+          savedCollections = data.profile.collections;
+          console.log('[PROFILE] Loaded', savedCollections.length, 'saved collections');
+        }
+
         console.log('[PROFILE] Loaded user profile');
       }
     } else {
@@ -1406,8 +1417,8 @@ async function saveCollection() {
   }
 
   try {
-    // Get saved collections from localStorage
-    let savedCollections = JSON.parse(localStorage.getItem('savedCollections') || '[]');
+    const session = getSession();
+    if (!session) throw new Error('No session found');
 
     // Create new collection
     const newCollection = {
@@ -1421,8 +1432,24 @@ async function saveCollection() {
     // Add to saved collections
     savedCollections.push(newCollection);
 
-    // Save to localStorage
-    localStorage.setItem('savedCollections', JSON.stringify(savedCollections));
+    // Save to backend profile
+    const response = await fetch(`${API_BASE}/v1/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        collections: savedCollections
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save collection to profile');
+    }
+
+    // Update collections dropdown
+    updateCollectionsDropdown();
 
     // Close modal
     closeShareNameModal();
@@ -3004,6 +3031,50 @@ async function handleDeleteAccount() {
 }
 
 // Make functions globally accessible
+// Update collections dropdown
+function updateCollectionsDropdown() {
+  const collectionsFilter = document.getElementById('collections-filter');
+  if (!collectionsFilter) return;
+
+  // Show/hide filter based on collections
+  if (savedCollections.length === 0) {
+    collectionsFilter.style.display = 'none';
+    return;
+  }
+
+  collectionsFilter.style.display = 'flex';
+
+  const collectionsSelect = document.getElementById('collections-select');
+  if (!collectionsSelect) return;
+
+  // Clear and populate
+  collectionsSelect.innerHTML = '<option value="">Saved Collections</option>';
+
+  savedCollections.forEach(collection => {
+    const option = document.createElement('option');
+    option.value = collection.id;
+    option.textContent = `${collection.name} (${collection.categories.length} categories)`;
+    collectionsSelect.appendChild(option);
+  });
+}
+
+// Select a saved collection
+function selectCollection(collectionId) {
+  if (!collectionId) return;
+
+  const collection = savedCollections.find(c => c.id === collectionId);
+  if (!collection) return;
+
+  // Set the categories from the collection
+  setCategory(collection.categories);
+
+  // Reset dropdown
+  const collectionsSelect = document.getElementById('collections-select');
+  if (collectionsSelect) {
+    collectionsSelect.value = '';
+  }
+}
+
 window.editSave = editSave;
 window.deleteSave = deleteSave;
 window.closeAddModal = closeAddModal;
@@ -3014,6 +3085,8 @@ window.closeShareNameModal = closeShareNameModal;
 window.openCollectionModal = openCollectionModal;
 window.confirmShare = confirmShare;
 window.saveCollection = saveCollection;
+window.updateCollectionsDropdown = updateCollectionsDropdown;
+window.selectCollection = selectCollection;
 window.changeMonth = changeMonth;
 window.showSavesForDate = showSavesForDate;
 window.closeProfileModal = closeProfileModal;
