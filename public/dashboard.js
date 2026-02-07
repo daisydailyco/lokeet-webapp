@@ -544,8 +544,8 @@ function updateCategoryHeader() {
     if (activeCollection) {
       // Show collection name when viewing a saved collection
       categoryNameText.textContent = activeCollection.name;
-      clearCategoryBtn.textContent = '↗';
-      clearCategoryBtn.title = 'Edit collection';
+      clearCategoryBtn.textContent = '×';
+      clearCategoryBtn.title = 'Clear filter';
     } else {
       // Show single category name
       categoryNameText.textContent = selectedCategories[0];
