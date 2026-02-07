@@ -595,7 +595,7 @@ let categoryChanges = new Map(); // Map of original name -> new name
 let categoriesToDelete = new Set(); // Set of categories to delete
 
 // Open edit categories modal
-async function openEditCategoriesModal() {
+async function openEditCategoriesModal(forceOpen = false) {
   const categories = new Set();
   allSaves.forEach(save => {
     if (save.category) {
@@ -603,7 +603,7 @@ async function openEditCategoriesModal() {
     }
   });
 
-  if (categories.size === 0) {
+  if (categories.size === 0 && !forceOpen) {
     await customAlert('No categories to edit.');
     return;
   }
@@ -614,40 +614,45 @@ async function openEditCategoriesModal() {
 
   // Populate modal with category inputs
   categoriesList.innerHTML = '';
-  Array.from(categories).sort().forEach(category => {
-    const row = document.createElement('div');
-    row.className = 'category-edit-row';
-    row.dataset.originalName = category;
 
-    row.innerHTML = `
-      <input type="text" class="category-edit-input" value="${category}" data-original="${category}">
-      <button class="category-delete-btn" title="Delete category">×</button>
-    `;
+  if (categories.size === 0) {
+    categoriesList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No categories yet. Create saves with categories first!</div>';
+  } else {
+    Array.from(categories).sort().forEach(category => {
+      const row = document.createElement('div');
+      row.className = 'category-edit-row';
+      row.dataset.originalName = category;
 
-    // Track input changes
-    const input = row.querySelector('.category-edit-input');
-    input.addEventListener('input', () => {
-      const original = input.dataset.original;
-      const newValue = input.value.trim();
-      if (newValue && newValue !== original) {
-        categoryChanges.set(original, newValue);
-      } else {
-        categoryChanges.delete(original);
-      }
+      row.innerHTML = `
+        <input type="text" class="category-edit-input" value="${category}" data-original="${category}">
+        <button class="category-delete-btn" title="Delete category">×</button>
+      `;
+
+      // Track input changes
+      const input = row.querySelector('.category-edit-input');
+      input.addEventListener('input', () => {
+        const original = input.dataset.original;
+        const newValue = input.value.trim();
+        if (newValue && newValue !== original) {
+          categoryChanges.set(original, newValue);
+        } else {
+          categoryChanges.delete(original);
+        }
+      });
+
+      // Delete button
+      const deleteBtn = row.querySelector('.category-delete-btn');
+      deleteBtn.addEventListener('click', async () => {
+        const confirmed = await customConfirm(`Delete category "${category}"? This will remove the category from all saves.`, 'Delete Category');
+        if (confirmed) {
+          categoriesToDelete.add(category);
+          row.remove();
+        }
+      });
+
+      categoriesList.appendChild(row);
     });
-
-    // Delete button
-    const deleteBtn = row.querySelector('.category-delete-btn');
-    deleteBtn.addEventListener('click', async () => {
-      const confirmed = await customConfirm(`Delete category "${category}"? This will remove the category from all saves.`, 'Delete Category');
-      if (confirmed) {
-        categoriesToDelete.add(category);
-        row.remove();
-      }
-    });
-
-    categoriesList.appendChild(row);
-  });
+  }
 
   editCategoriesModal.style.display = 'flex';
 }
@@ -1321,14 +1326,14 @@ function initEventListeners() {
   // Handle new category input - open edit modal
   const newCategoryInput = document.getElementById('new-category-input');
   if (newCategoryInput) {
-    newCategoryInput.addEventListener('click', (e) => {
+    newCategoryInput.addEventListener('click', async (e) => {
       e.stopPropagation();
       // Close dropdown
       if (categoryFilterDropdown) {
         categoryFilterDropdown.style.display = 'none';
       }
       // Open edit modal on categories tab
-      openEditCategoriesModal();
+      await openEditCategoriesModal(true);
       switchEditTab('categories');
     });
   }
@@ -1336,14 +1341,14 @@ function initEventListeners() {
   // Handle new collection input
   const newCollectionInput = document.getElementById('new-collection-input');
   if (newCollectionInput) {
-    newCollectionInput.addEventListener('click', (e) => {
+    newCollectionInput.addEventListener('click', async (e) => {
       e.stopPropagation();
       // Close dropdown
       if (collectionsFilterDropdown) {
         collectionsFilterDropdown.style.display = 'none';
       }
       // Open edit modal on collections tab
-      openEditCategoriesModal();
+      await openEditCategoriesModal(true);
       switchEditTab('collections');
     });
   }
