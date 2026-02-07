@@ -26,6 +26,7 @@ const dashboardDiv = document.getElementById('dashboard');
 const userEmailSpan = document.getElementById('user-email');
 const userUsernameSpan = document.getElementById('user-username');
 const categoryHeaderSection = document.getElementById('category-header-section');
+const categoryNameDisplay = document.getElementById('category-name-display');
 const categoryNameText = document.getElementById('category-name-text');
 const categoryItemCount = document.getElementById('category-item-count');
 const categorySelectedCount = document.getElementById('category-selected-count');
@@ -535,14 +536,22 @@ function setCategory(category) {
 
 // Update category header display
 function updateCategoryHeader() {
-  // Only show header for single category or collection
-  // Hide when multiple categories selected manually (no collection)
-  if (activeCollection || selectedCategories.length === 1) {
-    categoryHeaderSection.style.display = 'block';
+  if (selectedCategories.length === 0) {
+    // No categories selected - hide everything
+    categoryHeaderSection.style.display = 'none';
+    return;
+  }
 
-    // Update title
+  // Show section whenever categories are selected
+  categoryHeaderSection.style.display = 'block';
+
+  // Show/hide title based on single category or collection
+  if (activeCollection || selectedCategories.length === 1) {
+    // Show title for single category or collection
+    categoryNameDisplay.style.display = 'flex';
+
     if (activeCollection) {
-      // Show collection name when viewing a saved collection
+      // Show collection name
       categoryNameText.textContent = activeCollection.name;
       clearCategoryBtn.textContent = '×';
       clearCategoryBtn.title = 'Clear filter';
@@ -552,20 +561,19 @@ function updateCategoryHeader() {
       clearCategoryBtn.textContent = '×';
       clearCategoryBtn.title = 'Clear filter';
     }
-
-    // Count items in selected categories
-    const itemCount = allSaves.filter(save =>
-      save.category && selectedCategories.includes(save.category)
-    ).length;
-    categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
-
-    // Update categories selected count
-    const catText = selectedCategories.length === 1 ? 'Category' : 'Categories';
-    categorySelectedCount.textContent = `${selectedCategories.length} ${catText} Selected`;
   } else {
-    // Hide header when no categories or multiple categories selected manually
-    categoryHeaderSection.style.display = 'none';
+    // Hide title for multiple manually selected categories
+    categoryNameDisplay.style.display = 'none';
   }
+
+  // Always show subheading with counts
+  const itemCount = allSaves.filter(save =>
+    save.category && selectedCategories.includes(save.category)
+  ).length;
+  categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
+
+  const catText = selectedCategories.length === 1 ? 'Category' : 'Categories';
+  categorySelectedCount.textContent = `${selectedCategories.length} ${catText} Selected`;
 }
 
 // Clear category filter
@@ -1326,6 +1334,11 @@ function initEventListeners() {
             selectedCategories.push(newCategory);
           }
 
+          // If viewing a collection and categories changed, clear the collection
+          if (activeCollection) {
+            activeCollection = null;
+          }
+
           // Clear input
           newCategoryInput.value = '';
 
@@ -1681,6 +1694,18 @@ function updateCategoryCheckboxes() {
       } else {
         selectedCategories = selectedCategories.filter(c => c !== category);
       }
+
+      // If viewing a collection and categories changed, clear the collection
+      if (activeCollection) {
+        const categoriesMatch =
+          activeCollection.categories.length === selectedCategories.length &&
+          activeCollection.categories.every(cat => selectedCategories.includes(cat));
+
+        if (!categoriesMatch) {
+          activeCollection = null;
+        }
+      }
+
       updateCategoryFilterLabel();
       updateCategoryHeader();
       applyFilters();
