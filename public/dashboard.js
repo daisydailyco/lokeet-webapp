@@ -1193,6 +1193,9 @@ async function createNewCollection() {
     // Close the modal
     closeEditCategoriesModal();
 
+    // Switch to Saves tab
+    switchTab('saves');
+
     // Automatically select and display the new collection
     selectCollection(newCollection.id);
 
