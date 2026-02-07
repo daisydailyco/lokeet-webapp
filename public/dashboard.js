@@ -535,39 +535,37 @@ function setCategory(category) {
 
 // Update category header display
 function updateCategoryHeader() {
-  if (selectedCategories.length === 0) {
-    categoryHeaderSection.style.display = 'none';
-    return;
-  }
+  // Only show header for single category or collection
+  // Hide when multiple categories selected manually (no collection)
+  if (activeCollection || selectedCategories.length === 1) {
+    categoryHeaderSection.style.display = 'block';
 
-  // Show header
-  categoryHeaderSection.style.display = 'block';
+    // Update title
+    if (activeCollection) {
+      // Show collection name when viewing a saved collection
+      categoryNameText.textContent = activeCollection.name;
+      clearCategoryBtn.textContent = '↗';
+      clearCategoryBtn.title = 'Edit collection';
+    } else {
+      // Show single category name
+      categoryNameText.textContent = selectedCategories[0];
+      clearCategoryBtn.textContent = '×';
+      clearCategoryBtn.title = 'Clear filter';
+    }
 
-  // Update title
-  if (activeCollection) {
-    // Show collection name when viewing a saved collection
-    categoryNameText.textContent = activeCollection.name;
-    clearCategoryBtn.textContent = '↗';
-    clearCategoryBtn.title = 'Edit collection';
-  } else if (selectedCategories.length === 1) {
-    categoryNameText.textContent = selectedCategories[0];
-    clearCategoryBtn.textContent = '×';
-    clearCategoryBtn.title = 'Clear filter';
+    // Count items in selected categories
+    const itemCount = allSaves.filter(save =>
+      save.category && selectedCategories.includes(save.category)
+    ).length;
+    categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
+
+    // Update categories selected count
+    const catText = selectedCategories.length === 1 ? 'Category' : 'Categories';
+    categorySelectedCount.textContent = `${selectedCategories.length} ${catText} Selected`;
   } else {
-    categoryNameText.textContent = `${selectedCategories.length} Categories Selected`;
-    clearCategoryBtn.textContent = '↗';
-    clearCategoryBtn.title = 'Edit collection';
+    // Hide header when no categories or multiple categories selected manually
+    categoryHeaderSection.style.display = 'none';
   }
-
-  // Count items in selected categories
-  const itemCount = allSaves.filter(save =>
-    save.category && selectedCategories.includes(save.category)
-  ).length;
-  categoryItemCount.textContent = `${itemCount} Save${itemCount !== 1 ? 's' : ''}`;
-
-  // Update categories selected count
-  const catText = selectedCategories.length === 1 ? 'Category' : 'Categories';
-  categorySelectedCount.textContent = `${selectedCategories.length} ${catText} Selected`;
 }
 
 // Clear category filter
