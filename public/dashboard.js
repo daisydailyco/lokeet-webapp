@@ -438,8 +438,9 @@ async function fetchUserProfile() {
 
     if (response.ok) {
       const data = await response.json();
-      console.log('[PROFILE] Profile response:', data);
+      console.log('[PROFILE] Full profile response:', JSON.stringify(data, null, 2));
       if (data.profile) {
+        console.log('[PROFILE] Profile object keys:', Object.keys(data.profile));
         // Merge profile data into currentUser
         currentUser = {
           ...currentUser,
@@ -452,6 +453,7 @@ async function fetchUserProfile() {
           console.log('[PROFILE] Loaded', savedCollections.length, 'saved collections:', savedCollections);
         } else {
           console.log('[PROFILE] No collections found in profile data. collections field:', data.profile.collections);
+          console.log('[PROFILE] Profile data:', data.profile);
           savedCollections = [];
         }
 
@@ -1173,6 +1175,8 @@ async function createNewCollection() {
       collections: savedCollections
     };
 
+    console.log('[COLLECTION] Saving collections to backend:', payload.collections);
+
     const response = await fetch(`${API_BASE}/v1/user/profile`, {
       method: 'PUT',
       headers: {
@@ -1184,8 +1188,12 @@ async function createNewCollection() {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
+      console.error('[COLLECTION] Save failed:', error);
       throw new Error(error.message || 'Failed to create collection');
     }
+
+    const saveResult = await response.json().catch(() => ({}));
+    console.log('[COLLECTION] Save response:', saveResult);
 
     // Update UI
     updateCollectionsDropdown();
