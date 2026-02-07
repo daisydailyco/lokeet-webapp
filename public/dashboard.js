@@ -1189,11 +1189,7 @@ async function createNewCollection() {
     closeEditCategoriesModal();
 
     // Automatically select and display the new collection
-    activeCollection = newCollection;
-    selectedCategories = [...newCollection.categories];
-    updateCategoryHeader();
-    applyFilters();
-    updateCategoryCheckboxes();
+    selectCollection(newCollection.id);
 
   } catch (error) {
     console.error('Error creating collection:', error);
