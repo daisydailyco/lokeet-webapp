@@ -697,11 +697,13 @@ function populateCollectionsEdit() {
     }
   });
 
-  // MESSAGE AT TOP
-  const topMessage = document.createElement('p');
-  topMessage.textContent = 'No saved collections yet. Select categories to create a collection.';
-  topMessage.style.cssText = 'text-align: center; color: #666; padding: 12px 20px; font-size: 14px; margin-bottom: 16px; background: #f9f9f9; border-radius: 8px;';
-  collectionsEditList.appendChild(topMessage);
+  // MESSAGE AT TOP (only if no collections saved)
+  if (savedCollections.length === 0) {
+    const topMessage = document.createElement('p');
+    topMessage.textContent = 'No saved collections yet. Select categories to create a collection.';
+    topMessage.style.cssText = 'text-align: center; color: #666; padding: 12px 20px; font-size: 14px; margin-bottom: 16px; background: #f9f9f9; border-radius: 8px;';
+    collectionsEditList.appendChild(topMessage);
+  }
 
   // CREATE NEW COLLECTION SECTION
   const createSection = document.createElement('div');
@@ -1179,7 +1181,19 @@ async function createNewCollection() {
     // Update UI
     updateCollectionsDropdown();
     populateCollectionsEdit(); // Refresh the edit list
-    await customAlert(`Collection "${collectionName}" created successfully!`, 'Success');
+
+    // Show success message
+    await customAlert('Success', 'Success');
+
+    // Close the modal
+    closeEditCategoriesModal();
+
+    // Automatically select and display the new collection
+    activeCollection = newCollection;
+    selectedCategories = [...newCollection.categories];
+    updateCategoryHeader();
+    applyFilters();
+    updateCategoryCheckboxes();
 
   } catch (error) {
     console.error('Error creating collection:', error);
@@ -1308,47 +1322,18 @@ function initEventListeners() {
     }
   });
 
-  // Handle new category input
+  // Handle new category input - open edit modal
   const newCategoryInput = document.getElementById('new-category-input');
   if (newCategoryInput) {
-    newCategoryInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const newCategory = newCategoryInput.value.trim();
-        if (newCategory) {
-          // Check if category already exists
-          const existingCategories = new Set();
-          allSaves.forEach(save => {
-            if (save.category) {
-              existingCategories.add(save.category.toLowerCase());
-            }
-          });
-
-          if (existingCategories.has(newCategory.toLowerCase())) {
-            customAlert('This category already exists!');
-            return;
-          }
-
-          // Add to selected categories
-          if (!selectedCategories.includes(newCategory)) {
-            selectedCategories.push(newCategory);
-          }
-
-          // If viewing a collection and categories changed, clear the collection
-          if (activeCollection) {
-            activeCollection = null;
-          }
-
-          // Clear input
-          newCategoryInput.value = '';
-
-          // Update UI
-          updateCategoryCheckboxes();
-          updateCategoryFilterLabel();
-          updateCategoryHeader();
-          applyFilters();
-        }
+    newCategoryInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Close dropdown
+      if (categoryFilterDropdown) {
+        categoryFilterDropdown.style.display = 'none';
       }
+      // Open edit modal on categories tab
+      openEditCategoriesModal();
+      switchEditTab('categories');
     });
   }
 
