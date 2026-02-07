@@ -1206,14 +1206,8 @@ function initEventListeners() {
   // Clear/Edit category button
   clearCategoryBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-
-    // If multiple categories, open collection modal
-    if (selectedCategories.length > 1) {
-      openCollectionModal();
-    } else {
-      // Single category, just clear it
-      clearCategory();
-    }
+    // Always clear the filter (category or collection)
+    clearCategory();
   });
 
   // Share button
