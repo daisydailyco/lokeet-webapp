@@ -438,6 +438,7 @@ async function fetchUserProfile() {
 
     if (response.ok) {
       const data = await response.json();
+      console.log('[PROFILE] Profile response:', data);
       if (data.profile) {
         // Merge profile data into currentUser
         currentUser = {
@@ -448,7 +449,10 @@ async function fetchUserProfile() {
         // Load saved collections
         if (data.profile.collections && Array.isArray(data.profile.collections)) {
           savedCollections = data.profile.collections;
-          console.log('[PROFILE] Loaded', savedCollections.length, 'saved collections');
+          console.log('[PROFILE] Loaded', savedCollections.length, 'saved collections:', savedCollections);
+        } else {
+          console.log('[PROFILE] No collections found in profile data. collections field:', data.profile.collections);
+          savedCollections = [];
         }
 
         console.log('[PROFILE] Loaded user profile');
