@@ -1,4 +1,4 @@
-// Lokeet Extension Authentication Module
+// ParaSosh Extension Authentication Module
 // Shared between popup and background scripts
 
 const API_BASE = 'https://web-production-5630.up.railway.app';
@@ -25,8 +25,8 @@ class ExtensionAuth {
       if (data.success && data.session) {
         // Store session in chrome.storage.sync (syncs across devices)
         await chrome.storage.sync.set({
-          lokeet_session: data.session,
-          lokeet_user: data.user
+          looplocal_session: data.session,
+          looplocal_user: data.user
         });
 
         this.session = data.session;
@@ -57,14 +57,14 @@ class ExtensionAuth {
   async logout() {
     try {
       // Get current session
-      const { lokeet_session } = await chrome.storage.sync.get(['lokeet_session']);
+      const { looplocal_session } = await chrome.storage.sync.get(['looplocal_session']);
 
-      if (lokeet_session && lokeet_session.access_token) {
+      if (looplocal_session && looplocal_session.access_token) {
         // Call backend logout
         await fetch(`${API_BASE}/v1/auth/logout`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${lokeet_session.access_token}`
+            'Authorization': `Bearer ${looplocal_session.access_token}`
           }
         });
       }
@@ -72,7 +72,7 @@ class ExtensionAuth {
       console.error('[Auth] Logout error:', error);
     } finally {
       // Clear local session regardless of backend response
-      await chrome.storage.sync.remove(['lokeet_session', 'lokeet_user']);
+      await chrome.storage.sync.remove(['looplocal_session', 'looplocal_user']);
       this.session = null;
       this.user = null;
 
@@ -86,8 +86,8 @@ class ExtensionAuth {
       return this.session;
     }
 
-    const { lokeet_session } = await chrome.storage.sync.get(['lokeet_session']);
-    this.session = lokeet_session || null;
+    const { looplocal_session } = await chrome.storage.sync.get(['looplocal_session']);
+    this.session = looplocal_session || null;
     return this.session;
   }
 
@@ -97,8 +97,8 @@ class ExtensionAuth {
       return this.user;
     }
 
-    const { lokeet_user } = await chrome.storage.sync.get(['lokeet_user']);
-    this.user = lokeet_user || null;
+    const { looplocal_user } = await chrome.storage.sync.get(['looplocal_user']);
+    this.user = looplocal_user || null;
     return this.user;
   }
 
@@ -129,7 +129,7 @@ class ExtensionAuth {
       if (data.valid && data.user) {
         // Update stored user info
         await chrome.storage.sync.set({
-          lokeet_user: data.user
+          looplocal_user: data.user
         });
 
         this.user = data.user;

@@ -1,5 +1,5 @@
 // content-scripts/instagram.js
-class InstagramLokeet {
+class InstagramParaSosh {
   constructor() {
     this.platform = 'instagram';
     this.customCategories = [];
@@ -31,7 +31,7 @@ class InstagramLokeet {
   addSaveButtons() {
     const posts = document.querySelectorAll('article[role="presentation"]');
     posts.forEach(post => {
-      if (!post.querySelector('.lokeet-save-btn')) {
+      if (!post.querySelector('.looplocal-save-btn')) {
         this.addSaveButtonToPost(post);
       }
     });
@@ -42,13 +42,13 @@ class InstagramLokeet {
     if (!actionsContainer) return;
 
     const saveBtn = document.createElement('button');
-    saveBtn.className = 'lokeet-save-btn';
+    saveBtn.className = 'looplocal-save-btn';
     saveBtn.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" 
               stroke="#42a746" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span style="color: #42a746; font-weight: 700;">Save to Lokeet</span>
+      <span style="color: #42a746; font-weight: 700;">Save to ParaSosh</span>
     `;
 
     saveBtn.addEventListener('click', (e) => {
@@ -67,7 +67,7 @@ class InstagramLokeet {
   }
 
   showEditModal(postData, button) {
-    const existingModal = document.getElementById('lokeet-edit-modal');
+    const existingModal = document.getElementById('looplocal-edit-modal');
     if (existingModal) existingModal.remove();
 
     // Only show saved custom categories
@@ -76,7 +76,7 @@ class InstagramLokeet {
     ).join('');
 
     const modal = document.createElement('div');
-    modal.id = 'lokeet-edit-modal';
+    modal.id = 'looplocal-edit-modal';
     modal.innerHTML = `
       <div style="
         position: fixed;
@@ -112,8 +112,8 @@ class InstagramLokeet {
               color: #000000;
               font-size: 20px;
               font-weight: 700;
-            ">Save to Lokeet</h3>
-            <button class="lokeet-modal-close" style="
+            ">Save to ParaSosh</h3>
+            <button class="looplocal-modal-close" style="
               background: white;
               border: none;
               color: #000000;
@@ -139,7 +139,7 @@ class InstagramLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Category</label>
-              <select id="lokeet-category" style="
+              <select id="looplocal-category" style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -156,7 +156,7 @@ class InstagramLokeet {
               </select>
             </div>
 
-            <div id="lokeet-custom-category-container" style="display: none; margin-bottom: 16px;">
+            <div id="looplocal-custom-category-container" style="display: none; margin-bottom: 16px;">
               <label style="
                 display: block;
                 color: #000000;
@@ -165,7 +165,7 @@ class InstagramLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Custom Category Name</label>
-              <input type="text" id="lokeet-custom-category" placeholder="e.g., Brunch Spots, Coffee Shops..." style="
+              <input type="text" id="looplocal-custom-category" placeholder="e.g., Brunch Spots, Coffee Shops..." style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -186,7 +186,7 @@ class InstagramLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Name</label>
-              <input type="text" id="lokeet-name" placeholder="e.g., Bodega on Central, Red Mesa Cantina..." style="
+              <input type="text" id="looplocal-name" placeholder="e.g., Bodega on Central, Red Mesa Cantina..." style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -207,7 +207,7 @@ class InstagramLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Date</label>
-              <input type="date" id="lokeet-date" style="
+              <input type="date" id="looplocal-date" style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -239,7 +239,7 @@ class InstagramLokeet {
             display: flex;
             gap: 12px;
           ">
-            <button class="lokeet-btn-cancel" style="
+            <button class="looplocal-btn-cancel" style="
               flex: 1;
               padding: 12px;
               background: white;
@@ -251,7 +251,7 @@ class InstagramLokeet {
               cursor: pointer;
               transition: all 0.2s;
             ">Cancel</button>
-            <button class="lokeet-btn-save" style="
+            <button class="looplocal-btn-save" style="
               flex: 1;
               padding: 12px;
               background: white;
@@ -262,7 +262,7 @@ class InstagramLokeet {
               font-weight: 600;
               cursor: pointer;
               transition: all 0.2s;
-            ">Save to Lokeet</button>
+            ">Save to ParaSosh</button>
           </div>
         </div>
       </div>
@@ -273,9 +273,9 @@ class InstagramLokeet {
   }
 
   bindModalEvents(modal, postData, button) {
-    const categorySelect = document.getElementById('lokeet-category');
-    const customCategoryContainer = document.getElementById('lokeet-custom-category-container');
-    const customCategoryInput = document.getElementById('lokeet-custom-category');
+    const categorySelect = document.getElementById('looplocal-category');
+    const customCategoryContainer = document.getElementById('looplocal-custom-category-container');
+    const customCategoryInput = document.getElementById('looplocal-custom-category');
 
     // Category dropdown
     categorySelect.addEventListener('change', () => {
@@ -289,7 +289,7 @@ class InstagramLokeet {
     });
 
     // Close button
-    const closeBtn = modal.querySelector('.lokeet-modal-close');
+    const closeBtn = modal.querySelector('.looplocal-modal-close');
     closeBtn.addEventListener('click', () => this.closeModal(modal));
     closeBtn.addEventListener('mouseenter', () => {
       closeBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
@@ -299,7 +299,7 @@ class InstagramLokeet {
     });
 
     // Cancel button
-    const cancelBtn = modal.querySelector('.lokeet-btn-cancel');
+    const cancelBtn = modal.querySelector('.looplocal-btn-cancel');
     cancelBtn.addEventListener('click', () => this.closeModal(modal));
     cancelBtn.addEventListener('mouseenter', () => {
       cancelBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
@@ -309,7 +309,7 @@ class InstagramLokeet {
     });
 
     // Save button
-    const saveBtn = modal.querySelector('.lokeet-btn-save');
+    const saveBtn = modal.querySelector('.looplocal-btn-save');
     saveBtn.addEventListener('click', async () => {
       let category = categorySelect.value;
       
@@ -329,8 +329,8 @@ class InstagramLokeet {
         return;
       }
 
-      const name = document.getElementById('lokeet-name').value.trim();
-      const date = document.getElementById('lokeet-date').value;
+      const name = document.getElementById('looplocal-name').value.trim();
+      const date = document.getElementById('looplocal-date').value;
 
       const enrichedPostData = {
         ...postData,
@@ -375,9 +375,9 @@ class InstagramLokeet {
   }
 
   async saveToBackend(postData, button) {
-    button.classList.add('lokeet-loading');
+    button.classList.add('looplocal-loading');
     button.innerHTML = `
-      <div class="lokeet-spinner"></div>
+      <div class="looplocal-spinner"></div>
       <span style="color: #1877f2; font-weight: 600;">Saving...</span>
     `;
 
@@ -461,8 +461,8 @@ class InstagramLokeet {
   }
 
   showSuccessState(button) {
-    button.classList.remove('lokeet-loading');
-    button.classList.add('lokeet-saved');
+    button.classList.remove('looplocal-loading');
+    button.classList.add('looplocal-saved');
     button.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="#42a746">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
@@ -470,20 +470,20 @@ class InstagramLokeet {
       <span style="color: #42a746; font-weight: 700;">✓ Saved!</span>
     `;
     setTimeout(() => {
-      button.classList.remove('lokeet-saved');
+      button.classList.remove('looplocal-saved');
       button.innerHTML = `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" 
                 stroke="#42a746" stroke-width="2.5"/>
         </svg>
-        <span style="color: #42a746; font-weight: 700;">Save to Lokeet</span>
+        <span style="color: #42a746; font-weight: 700;">Save to ParaSosh</span>
       `;
     }, 3000);
   }
 
   showErrorState(button) {
-    button.classList.remove('lokeet-loading');
-    button.classList.add('lokeet-error');
+    button.classList.remove('looplocal-loading');
+    button.classList.add('looplocal-error');
     button.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" 
@@ -492,13 +492,13 @@ class InstagramLokeet {
       <span style="color: #ed4956; font-weight: 600;">Error - Try Again</span>
     `;
     setTimeout(() => {
-      button.classList.remove('lokeet-error');
+      button.classList.remove('looplocal-error');
       button.innerHTML = `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" 
                 stroke="#42a746" stroke-width="2.5"/>
         </svg>
-        <span style="color: #42a746; font-weight: 700;">Save to Lokeet</span>
+        <span style="color: #42a746; font-weight: 700;">Save to ParaSosh</span>
       `;
     }, 3000);
   }
@@ -518,7 +518,7 @@ class InstagramLokeet {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => new InstagramLokeet());
+  document.addEventListener('DOMContentLoaded', () => new InstagramParaSosh());
 } else {
-  new InstagramLokeet();
+  new InstagramParaSosh();
 }

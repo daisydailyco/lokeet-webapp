@@ -1,0 +1,185 @@
+Lokeet Rebrand Report
+============================================================
+
+Date: 2026-02-07T22:15:53.367895
+Files modified: 86
+Changes made: 88
+
+Files Modified:
+  - .claude\settings.local.json
+  - .vercel\project.json
+  - DATABASE_SETUP_COMPLETE.md
+  - MIGRATION_GUIDE.md
+  - NAMING_CONVENTIONS.md
+  - PHASE0_SUMMARY.md
+  - background.js
+  - content-scripts\instagram.js
+  - content-scripts\tiktok.js
+  - ext-auth.js
+  - lokeet-styles.css
+  - manifest.json
+  - popup.html
+  - popup.js
+  - ps-backend\PHASE0_IMPLEMENTATION.md
+  - ps-backend\README.md
+  - ps-backend\backup.py
+  - ps-backend\init_db.py
+  - ps-backend\main.py
+  - ps-backend\migrate.py
+  - ps-backend\migrate_add_collections.py
+  - ps-backend\test_api.py
+  - ps-backend\test_phase0.py
+  - ps-webapp-next\.next\dev\build-manifest.json
+  - ps-webapp-next\.next\dev\build\chunks\[root-of-the-server]__010d5642._.js
+  - ps-webapp-next\.next\dev\build\chunks\[root-of-the-server]__64ce1244._.js
+  - ps-webapp-next\.next\dev\build\chunks\[turbopack-node]_transforms_postcss_ts_837225e6._.js
+  - ps-webapp-next\.next\dev\build\chunks\d9788_b7697c91._.js
+  - ps-webapp-next\.next\dev\build\postcss.js
+  - ps-webapp-next\.next\dev\server\app\page.js
+  - ps-webapp-next\.next\dev\server\app\page\build-manifest.json
+  - ps-webapp-next\.next\dev\server\app\page\next-font-manifest.json
+  - ps-webapp-next\.next\dev\server\app\page_client-reference-manifest.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\70fff_looplocal-webapp-next__next-internal_server_app_page_actions_5cc71987.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_app_669bd0f3._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\[root-of-the-server]__1cd7b467._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\[root-of-the-server]__5b29b68f._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\[root-of-the-server]__b193b309._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\[root-of-the-server]__d0caf3bf._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_aef70ce3._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_ea389fed._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_next_dist_b772b969._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_next_dist_client_components_7de8bb0b._.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_next_dist_client_components_builtin_forbidden_f67b06e8.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_next_dist_client_components_builtin_global-error_79c843d5.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_next_dist_client_components_builtin_unauthorized_7d547985.js
+  - ps-webapp-next\.next\dev\server\chunks\ssr\d9788_next_dist_e7c35adb._.js
+  - ps-webapp-next\.next\dev\server\middleware-build-manifest.js
+  - ps-webapp-next\.next\dev\server\next-font-manifest.js
+  - ps-webapp-next\.next\dev\server\next-font-manifest.json
+  - ps-webapp-next\.next\dev\static\chunks\13466_Desktop_looplocal-extension_looplocal-webapp-next_app_globals_css_bad6b30c._.single.css
+  - ps-webapp-next\.next\dev\static\chunks\OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_834b2a45._.js
+  - ps-webapp-next\.next\dev\static\chunks\OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_app_page_tsx_45035479._.js
+  - ps-webapp-next\.next\dev\static\chunks\[root-of-the-server]__63ad6966._.css
+  - ps-webapp-next\.next\dev\static\chunks\d9788_@swc_helpers_cjs_cf0e90b3._.js
+  - ps-webapp-next\.next\dev\static\chunks\d9788_next_dist_4ead2afc._.js
+  - ps-webapp-next\.next\dev\static\chunks\d9788_next_dist_bfe97459._.js
+  - ps-webapp-next\.next\dev\static\chunks\d9788_next_dist_client_516d9a96._.js
+  - ps-webapp-next\.next\dev\static\chunks\d9788_next_dist_compiled_afecd67e._.js
+  - ps-webapp-next\.next\dev\static\chunks\d9788_next_dist_compiled_next-devtools_index_27ccecc3.js
+  - ps-webapp-next\.next\dev\static\chunks\d9788_next_dist_compiled_react-dom_73b7b8b1._.js
+  - ps-webapp-next\.next\dev\static\chunks\d9788_next_dist_compiled_react-server-dom-turbopack_31cfdd56._.js
+  - ps-webapp-next\.next\dev\static\chunks\turbopack-OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_120ddbdc._.js
+  - ps-webapp-next\components\ui\interactive-image-accordion.tsx
+  - ps-webapp-next\package-lock.json
+  - ps-webapp-next\package.json
+  - ps-webapp-next\public\auth-callback.html
+  - ps-webapp-next\public\auth.js
+  - ps-webapp-next\public\dashboard.js
+  - ps-webapp-next\public\icons\README.md
+  - ps-webapp-next\public\index-old.html
+  - ps-webapp-next\public\login.html
+  - ps-webapp-next\public\service-worker.js
+  - ps-webapp-next\public\share.js
+  - ps-webapp\auth-callback.html
+  - ps-webapp\auth.js
+  - ps-webapp\dashboard.html
+  - ps-webapp\dashboard.js
+  - ps-webapp\icons\README.md
+  - ps-webapp\index.html
+  - ps-webapp\login.html
+  - ps-webapp\manifest.json
+  - ps-webapp\service-worker.js
+  - ps-webapp\share.html
+  - ps-webapp\share.js
+  - ps-webapp\signup.html
+
+
+Detailed Changes:
+  - Renamed: C:\Users\catri\looplocal-extension\parasosh-styles.css -> C:\Users\catri\looplocal-extension\lokeet-styles.css
+  - Renamed: C:\Users\catri\looplocal-extension\ps-backend\parasosh.db -> C:\Users\catri\looplocal-extension\ps-backend\lokeet.db
+  - Modified background.js: 3 replacements
+  - Modified DATABASE_SETUP_COMPLETE.md: 2 replacements
+  - Modified ext-auth.js: 17 replacements
+  - Modified lokeet-styles.css: 13 replacements
+  - Modified manifest.json: 5 replacements
+  - Modified MIGRATION_GUIDE.md: 6 replacements
+  - Modified NAMING_CONVENTIONS.md: 116 replacements
+  - Modified PHASE0_SUMMARY.md: 11 replacements
+  - Modified popup.html: 14 replacements
+  - Modified popup.js: 24 replacements
+  - Modified settings.local.json: 1 replacements
+  - Modified project.json: 1 replacements
+  - Modified instagram.js: 36 replacements
+  - Modified tiktok.js: 34 replacements
+  - Modified backup.py: 5 replacements
+  - Modified init_db.py: 1 replacements
+  - Modified main.py: 13 replacements
+  - Modified migrate.py: 2 replacements
+  - Modified migrate_add_collections.py: 2 replacements
+  - Modified PHASE0_IMPLEMENTATION.md: 6 replacements
+  - Modified README.md: 11 replacements
+  - Modified test_api.py: 2 replacements
+  - Modified test_phase0.py: 6 replacements
+  - Modified auth-callback.html: 1 replacements
+  - Modified auth.js: 3 replacements
+  - Modified dashboard.html: 3 replacements
+  - Modified dashboard.js: 1 replacements
+  - Modified index.html: 5 replacements
+  - Modified login.html: 4 replacements
+  - Modified manifest.json: 2 replacements
+  - Modified service-worker.js: 2 replacements
+  - Modified share.html: 6 replacements
+  - Modified share.js: 1 replacements
+  - Modified signup.html: 3 replacements
+  - Modified package-lock.json: 2 replacements
+  - Modified package.json: 1 replacements
+  - Modified auth-callback.html: 1 replacements
+  - Modified auth.js: 3 replacements
+  - Modified dashboard.js: 1 replacements
+  - Modified index-old.html: 5 replacements
+  - Modified login.html: 1 replacements
+  - Modified service-worker.js: 1 replacements
+  - Modified share.js: 1 replacements
+  - Modified README.md: 1 replacements
+  - Modified interactive-image-accordion.tsx: 1 replacements
+  - Modified build-manifest.json: 4 replacements
+  - Modified postcss.js: 4 replacements
+  - Modified middleware-build-manifest.js: 4 replacements
+  - Modified next-font-manifest.js: 2 replacements
+  - Modified next-font-manifest.json: 2 replacements
+  - Modified 13466_Desktop_looplocal-extension_looplocal-webapp-next_app_globals_css_bad6b30c._.single.css: 4 replacements
+  - Modified d9788_@swc_helpers_cjs_cf0e90b3._.js: 4 replacements
+  - Modified d9788_next_dist_4ead2afc._.js: 380 replacements
+  - Modified d9788_next_dist_bfe97459._.js: 236 replacements
+  - Modified d9788_next_dist_client_516d9a96._.js: 1014 replacements
+  - Modified d9788_next_dist_compiled_afecd67e._.js: 86 replacements
+  - Modified d9788_next_dist_compiled_next-devtools_index_27ccecc3.js: 4 replacements
+  - Modified d9788_next_dist_compiled_react-dom_73b7b8b1._.js: 42 replacements
+  - Modified d9788_next_dist_compiled_react-server-dom-turbopack_31cfdd56._.js: 22 replacements
+  - Modified OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_834b2a45._.js: 179 replacements
+  - Modified OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_app_page_tsx_45035479._.js: 2 replacements
+  - Modified turbopack-OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_120ddbdc._.js: 6 replacements
+  - Modified [root-of-the-server]__63ad6966._.css: 2 replacements
+  - Modified page.js: 43 replacements
+  - Modified page_client-reference-manifest.js: 258 replacements
+  - Modified 70fff_looplocal-webapp-next__next-internal_server_app_page_actions_5cc71987.js: 3 replacements
+  - Modified d9788_aef70ce3._.js: 2874 replacements
+  - Modified d9788_ea389fed._.js: 368 replacements
+  - Modified d9788_next_dist_b772b969._.js: 2438 replacements
+  - Modified d9788_next_dist_client_components_7de8bb0b._.js: 14 replacements
+  - Modified d9788_next_dist_client_components_builtin_forbidden_f67b06e8.js: 6 replacements
+  - Modified d9788_next_dist_client_components_builtin_global-error_79c843d5.js: 24 replacements
+  - Modified d9788_next_dist_client_components_builtin_unauthorized_7d547985.js: 6 replacements
+  - Modified d9788_next_dist_e7c35adb._.js: 1050 replacements
+  - Modified OneDrive_Desktop_looplocal-extension_looplocal-webapp-next_app_669bd0f3._.js: 14 replacements
+  - Modified [root-of-the-server]__1cd7b467._.js: 20 replacements
+  - Modified [root-of-the-server]__5b29b68f._.js: 14 replacements
+  - Modified [root-of-the-server]__b193b309._.js: 93 replacements
+  - Modified [root-of-the-server]__d0caf3bf._.js: 324 replacements
+  - Modified build-manifest.json: 4 replacements
+  - Modified next-font-manifest.json: 2 replacements
+  - Modified d9788_b7697c91._.js: 334 replacements
+  - Modified [root-of-the-server]__010d5642._.js: 16 replacements
+  - Modified [root-of-the-server]__64ce1244._.js: 4 replacements
+  - Modified [turbopack-node]_transforms_postcss_ts_837225e6._.js: 4 replacements
+  - Modified README.md: 1 replacements

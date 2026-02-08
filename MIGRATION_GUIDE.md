@@ -1,7 +1,7 @@
-# ParaSosh Data Migration Guide
+# Lokeet Data Migration Guide
 
 ## Overview
-We've upgraded ParaSosh to use cloud storage (PostgreSQL database) so your saves persist across devices and extension updates!
+We've upgraded Lokeet to use cloud storage (PostgreSQL database) so your saves persist across devices and extension updates!
 
 ## What Changed?
 - ✅ All saves now sync to the cloud automatically when you're logged in
@@ -16,14 +16,14 @@ We've upgraded ParaSosh to use cloud storage (PostgreSQL database) so your saves
 2. The extension will reload with the new code
 
 ### Step 2: Verify Login
-1. Click the ParaSosh extension icon
+1. Click the Lokeet extension icon
 2. Make sure you're logged in
 3. If not, log in with your account
 
 ### Step 3: Run Migration (One-Time)
 If you have existing local saves that need to be uploaded to the cloud:
 
-1. Right-click the ParaSosh extension icon
+1. Right-click the Lokeet extension icon
 2. Click "Inspect pop-up" or "Inspect service worker"
 3. Go to the **Console** tab
 4. Type: `migrateLocalDataToBackend()`
@@ -45,7 +45,7 @@ The migration will:
 ```
 
 ### Step 4: Verify Migration
-1. Close and reopen the ParaSosh popup
+1. Close and reopen the Lokeet popup
 2. Your saves should now load from the cloud
 3. Check that all your items are there
 
@@ -73,4 +73,4 @@ No migration needed! Just log in and start saving. All your saves will automatic
 - Try running the migration again (it's safe to run multiple times)
 
 ## Need Help?
-Contact support at: support@parasosh.io
+Contact support at: support@lokeet.io

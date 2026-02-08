@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Lokeet: Save & Share",
-  "version": "1.6.0",
+  "name": "ParaSosh: Save & Share",
+  "version": "1.5.0",
   "description": "Save local spots from Instagram and TikTok, organize into custom categories, and share curated lists with interactive maps.",
   "permissions": [
     "activeTab",
@@ -18,7 +18,7 @@
     "*://maps.googleapis.com/*",
     "*://api.radar.io/*",
     "*://web-production-5630.up.railway.app/*",
-    "*://lokeet.io/*"
+    "*://parasosh.io/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -27,12 +27,12 @@
     {
       "matches": ["*://instagram.com/*", "*://www.instagram.com/*"],
       "js": ["content-scripts/instagram.js"],
-      "css": ["lokeet-styles.css"]
+      "css": ["parasosh-styles.css"]
     },
     {
       "matches": ["*://tiktok.com/*", "*://www.tiktok.com/*"],
       "js": ["content-scripts/tiktok.js"],
-      "css": ["lokeet-styles.css"]
+      "css": ["parasosh-styles.css"]
     }
   ],
   "web_accessible_resources": [{
@@ -46,7 +46,7 @@
   }],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Lokeet"
+    "default_title": "ParaSosh"
   },
   "icons": {
     "16": "icons/icon16.png",

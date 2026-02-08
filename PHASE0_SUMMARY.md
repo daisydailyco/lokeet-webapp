@@ -59,8 +59,8 @@
 
 ### No Changes Required In:
 - ✅ Chrome Extension (`popup.js`, `background.js`, `ext-auth.js`)
-- ✅ Web App (`looplocal-webapp/`)
-- ✅ Next.js App (`looplocal-webapp-next/`)
+- ✅ Web App (`lokeet-webapp/`)
+- ✅ Next.js App (`lokeet-webapp-next/`)
 - ✅ API Endpoints (same request/response format)
 - ✅ Share functionality
 
@@ -83,7 +83,7 @@
 - Backup created on every server startup
 - Stored in `ps-backend/backups/`
 - Keeps last 10 backups (automatic cleanup)
-- Timestamped filenames: `looplocal_backup_YYYYMMDD_HHMMSS.db`
+- Timestamped filenames: `lokeet_backup_YYYYMMDD_HHMMSS.db`
 
 ### 3. Migration System
 - SQL migration files in `ps-backend/migrations/`
@@ -197,7 +197,7 @@ If issues occur:
 ls ps-backend/backups/
 
 # Copy backup to main database
-cp backups/looplocal_backup_YYYYMMDD_HHMMSS.db looplocal.db
+cp backups/lokeet_backup_YYYYMMDD_HHMMSS.db lokeet.db
 
 # Restart server
 ```
@@ -236,13 +236,13 @@ git push origin master
 
 ### Check Database Size
 ```bash
-ls -lh ps-backend/looplocal.db
+ls -lh ps-backend/lokeet.db
 ```
 
 ### Query Statistics
 ```bash
-sqlite3 ps-backend/looplocal.db "SELECT COUNT(*) FROM user_saves"
-sqlite3 ps-backend/looplocal.db "SELECT user_id, COUNT(*) FROM user_saves GROUP BY user_id"
+sqlite3 ps-backend/lokeet.db "SELECT COUNT(*) FROM user_saves"
+sqlite3 ps-backend/lokeet.db "SELECT user_id, COUNT(*) FROM user_saves GROUP BY user_id"
 ```
 
 ### Backup Statistics
@@ -267,7 +267,7 @@ SQLite handles:
 - ⚠️  Only 1 concurrent write at a time
 
 ### Migration Path:
-1. Export: `sqlite3 looplocal.db .dump > export.sql`
+1. Export: `sqlite3 lokeet.db .dump > export.sql`
 2. Import to PostgreSQL
 3. Update connection string in main.py
 4. No other code changes needed
@@ -306,8 +306,8 @@ ps-backend/
 ✅ background.js
 ✅ ext-auth.js
 ✅ content-scripts/
-✅ looplocal-webapp/
-✅ looplocal-webapp-next/
+✅ lokeet-webapp/
+✅ lokeet-webapp-next/
 ```
 
 ---

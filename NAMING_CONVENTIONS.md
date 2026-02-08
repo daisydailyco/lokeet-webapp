@@ -1,44 +1,44 @@
-# ParaSosh Naming Conventions - Quick Reference
+# Lokeet Naming Conventions - Quick Reference
 
 **Last Updated:** 2026-01-10
 
 ---
 
-## User-Facing Names (ALWAYS "ParaSosh")
+## User-Facing Names (ALWAYS "Lokeet")
 
 ### Display Names
 ```
-✅ ParaSosh             (logo, brand name)
-✅ ParaSosh: Save & Share  (extension full name)
+✅ Lokeet             (logo, brand name)
+✅ Lokeet: Save & Share  (extension full name)
 ✅ Save & Share         (tagline)
 ```
 
 ### Page Titles
 ```html
 <!-- Extension -->
-<title>ParaSosh</title>
+<title>Lokeet</title>
 
 <!-- Web App -->
-<title>ParaSosh - Save & Share Local Experiences</title>
-<title>Dashboard - ParaSosh</title>
-<title>Log In - ParaSosh</title>
-<title>Sign Up - ParaSosh</title>
-<title>Shared List - ParaSosh</title>
-<title>{Category} - ParaSosh</title>
+<title>Lokeet - Save & Share Local Experiences</title>
+<title>Dashboard - Lokeet</title>
+<title>Log In - Lokeet</title>
+<title>Sign Up - Lokeet</title>
+<title>Shared List - Lokeet</title>
+<title>{Category} - Lokeet</title>
 ```
 
 ### Buttons & UI Text
 ```
-✅ "Save to ParaSosh"
-✅ "Saved to ParaSosh!"
+✅ "Save to Lokeet"
+✅ "Saved to Lokeet!"
 ✅ "Create Your Own List"
 ```
 
 ### URLs & Domains
 ```
-✅ parasosh.io
-✅ https://parasosh.io/signup.html
-✅ https://parasosh.io/share/{share_id}
+✅ lokeet.io
+✅ https://lokeet.io/signup.html
+✅ https://lokeet.io/share/{share_id}
 ```
 
 ---
@@ -48,14 +48,14 @@
 ### File Names
 ```bash
 # CSS
-✅ parasosh-styles.css
+✅ lokeet-styles.css
 
 # Database
-✅ parasosh.db
-✅ parasosh_backup_20260110_120000.db
+✅ lokeet.db
+✅ lokeet_backup_20260110_120000.db
 
 # Extension Packages
-✅ ParaSosh-Extension-v1.4.9.zip
+✅ Lokeet-Extension-v1.4.9.zip
 ```
 
 ### Directory Names
@@ -66,35 +66,35 @@
 ✅ ps-webapp-next/
 
 # Main folder (rename manually after session)
-⚠️ looplocal-extension/  → parasosh-extension/
+⚠️ lokeet-extension/  → lokeet-extension/
 ```
 
 ### localStorage Keys
 ```javascript
 // JavaScript - Web App
-const SESSION_KEY = 'parasosh_session';
-const USER_KEY = 'parasosh_user';
+const SESSION_KEY = 'lokeet_session';
+const USER_KEY = 'lokeet_user';
 ```
 
 ### Service Worker
 ```javascript
 // Cache naming
-const CACHE_NAME = 'parasosh-v1';
+const CACHE_NAME = 'lokeet-v1';
 ```
 
 ### CSS Class Names
 ```javascript
 // Internal (can keep as-is, not visible to users)
-'looplocal-confirm-modal'  // Optional: change to parasosh-*
-'looplocal-confirm-btn'    // Optional: change to parasosh-*
+'lokeet-confirm-modal'  // Optional: change to lokeet-*
+'lokeet-confirm-btn'    // Optional: change to lokeet-*
 ```
 
 ### Code Classes & Functions
 ```javascript
 // PascalCase for classes
-class ParaSoshAPI { }
-class InstagramParaSosh { }
-class TikTokParaSosh { }
+class LokeetAPI { }
+class InstagramLokeet { }
+class TikTokLokeet { }
 
 // camelCase for variables
 const paraSoshSession = getSession();
@@ -104,21 +104,21 @@ const paraSoshData = fetchData();
 ### Database
 ```python
 # Python - Backend
-conn = sqlite3.connect('parasosh.db')
+conn = sqlite3.connect('lokeet.db')
 
 # Backup files
-backup_path = f"parasosh_backup_{timestamp}.db"
+backup_path = f"lokeet_backup_{timestamp}.db"
 ```
 
 ### API Configuration
 ```python
 # FastAPI
 app = FastAPI(
-    title="ParaSosh AI Backend",
+    title="Lokeet AI Backend",
     description="AI-powered social media content parsing..."
 )
 
-BASE_URL = "https://parasosh.io"
+BASE_URL = "https://lokeet.io"
 ```
 
 ---
@@ -126,15 +126,15 @@ BASE_URL = "https://parasosh.io"
 ## Code Comments
 
 ```javascript
-// ParaSosh Extension
-// ParaSosh Authentication Helper
-// ParaSosh Dashboard JavaScript
-// ParaSosh Service Worker
+// Lokeet Extension
+// Lokeet Authentication Helper
+// Lokeet Dashboard JavaScript
+// Lokeet Service Worker
 ```
 
 ```python
-# ParaSosh AI Backend
-# Phase 0: ParaSosh Persistence
+# Lokeet AI Backend
+# Phase 0: Lokeet Persistence
 ```
 
 ---
@@ -143,12 +143,12 @@ BASE_URL = "https://parasosh.io"
 
 ```bash
 # Format
-"[ParaSosh] {Description}"
+"[Lokeet] {Description}"
 
 # Examples
-"[ParaSosh] Rebrand from LoopLocal to ParaSosh"
-"[ParaSosh] Update database naming to parasosh.db"
-"[ParaSosh] Add Phase 0 persistence implementation"
+"[Lokeet] Rebrand from Lokeet to Lokeet"
+"[Lokeet] Update database naming to lokeet.db"
+"[Lokeet] Add Phase 0 persistence implementation"
 ```
 
 ---
@@ -158,17 +158,17 @@ BASE_URL = "https://parasosh.io"
 ### Extension (manifest.json)
 ```json
 {
-  "name": "ParaSosh: Save & Share",
-  "default_title": "ParaSosh",
-  "host_permissions": ["*://parasosh.io/*"]
+  "name": "Lokeet: Save & Share",
+  "default_title": "Lokeet",
+  "host_permissions": ["*://lokeet.io/*"]
 }
 ```
 
 ### Web App PWA (manifest.json)
 ```json
 {
-  "name": "ParaSosh",
-  "short_name": "ParaSosh",
+  "name": "Lokeet",
+  "short_name": "Lokeet",
   "description": "Save and share your favorite local spots"
 }
 ```
@@ -179,7 +179,7 @@ BASE_URL = "https://parasosh.io"
 
 ```bash
 # Backend .env
-BASE_URL=https://parasosh.io
+BASE_URL=https://lokeet.io
 OPENAI_API_KEY=...
 SUPABASE_URL=...
 SUPABASE_SERVICE_KEY=...
@@ -189,25 +189,25 @@ SUPABASE_SERVICE_KEY=...
 
 ## Consistency Rules
 
-### 1. User-Facing → Always "ParaSosh"
-- **Capitalization:** ParaSosh (capital P, capital S)
-- **Never:** parasosh, Parasosh, ParaSosh!, PARASOSH
-- **Always:** ParaSosh
+### 1. User-Facing → Always "Lokeet"
+- **Capitalization:** Lokeet (capital P, capital S)
+- **Never:** lokeet, Parasosh, Lokeet!, PARASOSH
+- **Always:** Lokeet
 
-### 2. Internal Code → Use "parasosh"
-- **Files:** `parasosh-styles.css`, `parasosh.db`
-- **Variables:** `parasosh_session`, `parasosh_backup`
-- **Cache:** `parasosh-v1`
+### 2. Internal Code → Use "lokeet"
+- **Files:** `lokeet-styles.css`, `lokeet.db`
+- **Variables:** `lokeet_session`, `lokeet_backup`
+- **Cache:** `lokeet-v1`
 - **Lowercase with underscores or hyphens**
 
 ### 3. Classes → PascalCase
-- `ParaSoshAPI`
-- `InstagramParaSosh`
-- `TikTokParaSosh`
+- `LokeetAPI`
+- `InstagramLokeet`
+- `TikTokLokeet`
 
 ### 4. URLs → lowercase
-- `parasosh.io`
-- `parasosh.io/share/abc123`
+- `lokeet.io`
+- `lokeet.io/share/abc123`
 
 ---
 
@@ -215,17 +215,17 @@ SUPABASE_SERVICE_KEY=...
 
 ### Chrome Web Store
 ```
-Name: ParaSosh: Save & Share
+Name: Lokeet: Save & Share
 Short Description: Save & share local spots from Instagram & TikTok
 Category: Productivity
-Website: https://parasosh.io
+Website: https://lokeet.io
 ```
 
 ### Social Media
 ```
-Twitter/X: @ParaSosh (if available)
-Instagram: @parasosh (if available)
-Domain: parasosh.io
+Twitter/X: @Lokeet (if available)
+Instagram: @lokeet (if available)
+Domain: lokeet.io
 ```
 
 ---
@@ -234,19 +234,19 @@ Domain: parasosh.io
 
 ### File Headers
 ```markdown
-# ParaSosh {Feature Name}
+# Lokeet {Feature Name}
 
 ## Overview
-ParaSosh is a Chrome extension and web app for...
+Lokeet is a Chrome extension and web app for...
 ```
 
 ### Code Documentation
 ```javascript
 /**
- * ParaSosh API Client
- * Handles communication with the ParaSosh backend
+ * Lokeet API Client
+ * Handles communication with the Lokeet backend
  */
-class ParaSoshAPI {
+class LokeetAPI {
   // ...
 }
 ```
@@ -274,14 +274,14 @@ background: linear-gradient(135deg, #e7ac6d 0%, #db3f1d 100%);
 
 When creating new files, ensure:
 
-- [ ] Display names use "ParaSosh" (capital P, capital S)
-- [ ] File names use lowercase: `parasosh-*`
-- [ ] Code classes use PascalCase: `ParaSosh*`
-- [ ] Internal variables use snake_case: `parasosh_*`
-- [ ] Cache names use kebab-case: `parasosh-v*`
-- [ ] URLs use lowercase: `parasosh.io`
-- [ ] Page titles include "ParaSosh"
-- [ ] Comments reference "ParaSosh"
+- [ ] Display names use "Lokeet" (capital P, capital S)
+- [ ] File names use lowercase: `lokeet-*`
+- [ ] Code classes use PascalCase: `Lokeet*`
+- [ ] Internal variables use snake_case: `lokeet_*`
+- [ ] Cache names use kebab-case: `lokeet-v*`
+- [ ] URLs use lowercase: `lokeet.io`
+- [ ] Page titles include "Lokeet"
+- [ ] Comments reference "Lokeet"
 
 ---
 
@@ -291,17 +291,17 @@ When creating new files, ensure:
 
 ```bash
 # DON'T use
-LoopLocal
-looplocal
+Lokeet
+lokeet
 loop-local
 loop_local
 
 # DO use
-ParaSosh          # For display
-parasosh          # For internal
-parasosh-*        # For file names
-parasosh_*        # For variables
-ParaSosh*         # For classes
+Lokeet          # For display
+lokeet          # For internal
+lokeet-*        # For file names
+lokeet_*        # For variables
+Lokeet*         # For classes
 ```
 
 ---
@@ -310,48 +310,48 @@ ParaSosh*         # For classes
 
 ### HTML
 ```html
-<title>ParaSosh - Dashboard</title>
-<div class="logo">ParaSosh</div>
-<button>Save to ParaSosh</button>
-<link rel="stylesheet" href="parasosh-styles.css">
+<title>Lokeet - Dashboard</title>
+<div class="logo">Lokeet</div>
+<button>Save to Lokeet</button>
+<link rel="stylesheet" href="lokeet-styles.css">
 ```
 
 ### JavaScript
 ```javascript
-// ParaSosh Extension
-const SESSION_KEY = 'parasosh_session';
-class ParaSoshAPI { }
-const cache = 'parasosh-v1';
+// Lokeet Extension
+const SESSION_KEY = 'lokeet_session';
+class LokeetAPI { }
+const cache = 'lokeet-v1';
 ```
 
 ### Python
 ```python
-# ParaSosh Backend
-DB_PATH = 'parasosh.db'
-BACKUP_PREFIX = 'parasosh_backup_'
-app = FastAPI(title="ParaSosh AI Backend")
+# Lokeet Backend
+DB_PATH = 'lokeet.db'
+BACKUP_PREFIX = 'lokeet_backup_'
+app = FastAPI(title="Lokeet AI Backend")
 ```
 
 ### CSS
 ```css
-/* parasosh-styles.css */
-.parasosh-modal { }
-.parasosh-button { }
+/* lokeet-styles.css */
+.lokeet-modal { }
+.lokeet-button { }
 ```
 
 ### JSON
 ```json
 {
-  "name": "ParaSosh",
-  "title": "ParaSosh: Save & Share"
+  "name": "Lokeet",
+  "title": "Lokeet: Save & Share"
 }
 ```
 
 ---
 
-**Remember:** Consistency is key! Always use "ParaSosh" for user-facing elements and "parasosh" (lowercase) for internal code.
+**Remember:** Consistency is key! Always use "Lokeet" for user-facing elements and "lokeet" (lowercase) for internal code.
 
 ---
 
-*ParaSosh Naming Conventions v1.0*
+*Lokeet Naming Conventions v1.0*
 *Updated: 2026-01-10*

@@ -1,5 +1,5 @@
 // popup.js - Complete with Share Functionality & Authentication
-class LokeetPopup {
+class ParaSoshPopup {
   constructor() {
     this.currentUser = null;
     this.savedItems = [];
@@ -382,26 +382,26 @@ class LokeetPopup {
   showConfirm(message) {
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
-      overlay.className = 'lokeet-confirm-overlay';
+      overlay.className = 'looplocal-confirm-overlay';
       overlay.innerHTML = `
-        <div class="lokeet-confirm-modal">
-          <div class="lokeet-confirm-title">Confirm</div>
-          <div class="lokeet-confirm-message">${message}</div>
-          <div class="lokeet-confirm-buttons">
-            <button class="lokeet-confirm-btn lokeet-confirm-btn-cancel">Cancel</button>
-            <button class="lokeet-confirm-btn lokeet-confirm-btn-confirm">Remove</button>
+        <div class="looplocal-confirm-modal">
+          <div class="looplocal-confirm-title">Confirm</div>
+          <div class="looplocal-confirm-message">${message}</div>
+          <div class="looplocal-confirm-buttons">
+            <button class="looplocal-confirm-btn looplocal-confirm-btn-cancel">Cancel</button>
+            <button class="looplocal-confirm-btn looplocal-confirm-btn-confirm">Remove</button>
           </div>
         </div>
       `;
 
       document.body.appendChild(overlay);
 
-      overlay.querySelector('.lokeet-confirm-btn-cancel').addEventListener('click', () => {
+      overlay.querySelector('.looplocal-confirm-btn-cancel').addEventListener('click', () => {
         overlay.remove();
         resolve(false);
       });
 
-      overlay.querySelector('.lokeet-confirm-btn-confirm').addEventListener('click', () => {
+      overlay.querySelector('.looplocal-confirm-btn-confirm').addEventListener('click', () => {
         overlay.remove();
         resolve(true);
       });
@@ -861,7 +861,7 @@ class LokeetPopup {
   renderRecentItems(items) {
     if (items.length === 0) {
       let message = 'No saves yet!';
-      let subMessage = 'Visit Instagram and click Save to Lokeet on posts';
+      let subMessage = 'Visit Instagram and click Save to ParaSosh on posts';
 
       if (this.filterCategories.length > 0) {
         message = 'No items in selected categories';
@@ -1077,19 +1077,19 @@ class LokeetPopup {
 
   showShareSuccess(shareUrl) {
     const overlay = document.createElement('div');
-    overlay.className = 'lokeet-confirm-overlay';
+    overlay.className = 'looplocal-confirm-overlay';
     overlay.innerHTML = `
-      <div class="lokeet-confirm-modal">
-        <div class="lokeet-confirm-title">🎉 Share Link Created!</div>
-        <div class="lokeet-confirm-message" style="margin-bottom: 16px;">
+      <div class="looplocal-confirm-modal">
+        <div class="looplocal-confirm-title">🎉 Share Link Created!</div>
+        <div class="looplocal-confirm-message" style="margin-bottom: 16px;">
           Link copied to clipboard!
         </div>
         <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 16px; word-break: break-all; font-size: 12px;">
           ${shareUrl}
         </div>
-        <div class="lokeet-confirm-buttons">
-          <button class="lokeet-confirm-btn lokeet-confirm-btn-cancel" id="close-share-modal">Close</button>
-          <button class="lokeet-confirm-btn lokeet-confirm-btn-confirm" id="open-share-link">Open Link</button>
+        <div class="looplocal-confirm-buttons">
+          <button class="looplocal-confirm-btn looplocal-confirm-btn-cancel" id="close-share-modal">Close</button>
+          <button class="looplocal-confirm-btn looplocal-confirm-btn-confirm" id="open-share-link">Open Link</button>
         </div>
       </div>
     `;
@@ -1368,7 +1368,7 @@ class LokeetPopup {
     const waitlistBtn = document.getElementById('waitlist-btn');
     if (waitlistBtn) {
       waitlistBtn.addEventListener('click', () => {
-        chrome.tabs.create({ url: 'https://lokeet.io' });
+        chrome.tabs.create({ url: 'https://parasosh.io' });
       });
     }
 
@@ -1839,4 +1839,4 @@ class LokeetPopup {
   }
 }
 
-new LokeetPopup();
+new ParaSoshPopup();

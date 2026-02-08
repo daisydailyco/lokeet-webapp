@@ -1,9 +1,9 @@
-// ParaSosh Authentication Helper
+// Lokeet Authentication Helper
 const API_BASE = 'https://web-production-5630.up.railway.app';
 
 // Session storage keys
-const SESSION_KEY = 'parasosh_session';
-const USER_KEY = 'parasosh_user';
+const SESSION_KEY = 'lokeet_session';
+const USER_KEY = 'lokeet_user';
 
 // ===== API Functions =====
 

@@ -31,12 +31,13 @@
       "Bash(npm --version:*)",
       "Bash(npm install:*)",
       "WebFetch(domain:www.lokeet.io)",
-      "WebFetch(domain:www.parasosh.io)",
+      "WebFetch(domain:www.lokeet.io)",
       "Bash(git pull:*)",
       "Bash(test:*)",
       "Bash(sqlite3:*)",
       "Bash(railway whoami:*)",
-      "Bash(railway login:*)"
+      "Bash(railway login:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

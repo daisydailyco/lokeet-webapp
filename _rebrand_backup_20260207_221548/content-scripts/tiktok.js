@@ -1,18 +1,18 @@
 // content-scripts/tiktok.js
-console.log('[Lokeet] TikTok script loaded!', window.location.href);
+console.log('[ParaSosh] TikTok script loaded!', window.location.href);
 
-class TikTokLokeet {
+class TikTokParaSosh {
   constructor() {
     this.platform = 'tiktok';
     this.customCategories = [];
-    console.log('[Lokeet] TikTokLokeet initialized');
+    console.log('[ParaSosh] TikTokParaSosh initialized');
     this.init();
   }
 
   async init() {
-    console.log('[Lokeet] Init starting...');
+    console.log('[ParaSosh] Init starting...');
     await this.loadCustomCategories();
-    console.log('[Lokeet] Categories loaded, adding buttons in 2s...');
+    console.log('[ParaSosh] Categories loaded, adding buttons in 2s...');
     setTimeout(() => this.addSaveButtons(), 2000);
     this.observeNewVideos();
   }
@@ -44,10 +44,10 @@ class TikTokLokeet {
       'div[class*="DivVideoWrapper"]' // Single video modal
     ].join(', '));
 
-    console.log(`[Lokeet] Found ${videos.length} video containers`);
+    console.log(`[ParaSosh] Found ${videos.length} video containers`);
 
     videos.forEach(video => {
-      if (!video.querySelector('.lokeet-save-btn')) {
+      if (!video.querySelector('.looplocal-save-btn')) {
         this.addSaveButtonToVideo(video);
       }
     });
@@ -62,14 +62,14 @@ class TikTokLokeet {
                             video.querySelector('[data-e2e="video-player-action-bar"]');
 
     if (!actionsContainer) {
-      console.log('[Lokeet] No actions container found for video');
+      console.log('[ParaSosh] No actions container found for video');
       return;
     }
 
-    console.log('[Lokeet] Adding save button to video');
+    console.log('[ParaSosh] Adding save button to video');
 
     const saveBtn = document.createElement('button');
-    saveBtn.className = 'lokeet-save-btn';
+    saveBtn.className = 'looplocal-save-btn';
     saveBtn.style.cssText = `
       background: white;
       border: 2px solid #42a746;
@@ -118,7 +118,7 @@ class TikTokLokeet {
   }
 
   showEditModal(videoData, button) {
-    const existingModal = document.getElementById('lokeet-edit-modal');
+    const existingModal = document.getElementById('looplocal-edit-modal');
     if (existingModal) existingModal.remove();
 
     const categoryOptions = this.customCategories.map(cat =>
@@ -126,7 +126,7 @@ class TikTokLokeet {
     ).join('');
 
     const modal = document.createElement('div');
-    modal.id = 'lokeet-edit-modal';
+    modal.id = 'looplocal-edit-modal';
     modal.innerHTML = `
       <div style="
         position: fixed;
@@ -162,8 +162,8 @@ class TikTokLokeet {
               color: #000000;
               font-size: 20px;
               font-weight: 700;
-            ">Save to Lokeet</h3>
-            <button class="lokeet-modal-close" style="
+            ">Save to ParaSosh</h3>
+            <button class="looplocal-modal-close" style="
               background: white;
               border: none;
               color: #000000;
@@ -189,7 +189,7 @@ class TikTokLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Category</label>
-              <select id="lokeet-category" style="
+              <select id="looplocal-category" style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -206,7 +206,7 @@ class TikTokLokeet {
               </select>
             </div>
 
-            <div id="lokeet-custom-category-container" style="display: none; margin-bottom: 16px;">
+            <div id="looplocal-custom-category-container" style="display: none; margin-bottom: 16px;">
               <label style="
                 display: block;
                 color: #000000;
@@ -215,7 +215,7 @@ class TikTokLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Custom Category Name</label>
-              <input type="text" id="lokeet-custom-category" placeholder="e.g., Brunch Spots, Coffee Shops..." style="
+              <input type="text" id="looplocal-custom-category" placeholder="e.g., Brunch Spots, Coffee Shops..." style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -236,7 +236,7 @@ class TikTokLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Name</label>
-              <input type="text" id="lokeet-name" placeholder="e.g., Bodega on Central, Red Mesa Cantina..." style="
+              <input type="text" id="looplocal-name" placeholder="e.g., Bodega on Central, Red Mesa Cantina..." style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -257,7 +257,7 @@ class TikTokLokeet {
                 margin-bottom: 6px;
                 opacity: 0.8;
               ">Date</label>
-              <input type="date" id="lokeet-date" style="
+              <input type="date" id="looplocal-date" style="
                 width: 100%;
                 padding: 10px;
                 border: 1px solid rgba(0,0,0,0.1);
@@ -288,7 +288,7 @@ class TikTokLokeet {
             display: flex;
             gap: 12px;
           ">
-            <button class="lokeet-btn-cancel" style="
+            <button class="looplocal-btn-cancel" style="
               flex: 1;
               padding: 12px;
               background: white;
@@ -300,7 +300,7 @@ class TikTokLokeet {
               cursor: pointer;
               transition: all 0.2s;
             ">Cancel</button>
-            <button class="lokeet-btn-save" style="
+            <button class="looplocal-btn-save" style="
               flex: 1;
               padding: 12px;
               background: #42a746;
@@ -322,15 +322,15 @@ class TikTokLokeet {
   }
 
   attachModalHandlers(videoData, button) {
-    const closeBtn = document.querySelector('.lokeet-modal-close');
-    const cancelBtn = document.querySelector('.lokeet-btn-cancel');
-    const saveBtn = document.querySelector('.lokeet-btn-save');
-    const categorySelect = document.getElementById('lokeet-category');
-    const customCategoryContainer = document.getElementById('lokeet-custom-category-container');
-    const customCategoryInput = document.getElementById('lokeet-custom-category');
+    const closeBtn = document.querySelector('.looplocal-modal-close');
+    const cancelBtn = document.querySelector('.looplocal-btn-cancel');
+    const saveBtn = document.querySelector('.looplocal-btn-save');
+    const categorySelect = document.getElementById('looplocal-category');
+    const customCategoryContainer = document.getElementById('looplocal-custom-category-container');
+    const customCategoryInput = document.getElementById('looplocal-custom-category');
 
     const closeModal = () => {
-      const modal = document.getElementById('lokeet-edit-modal');
+      const modal = document.getElementById('looplocal-edit-modal');
       if (modal) modal.remove();
     };
 
@@ -366,8 +366,8 @@ class TikTokLokeet {
         return;
       }
 
-      const name = document.getElementById('lokeet-name').value.trim();
-      const date = document.getElementById('lokeet-date').value;
+      const name = document.getElementById('looplocal-name').value.trim();
+      const date = document.getElementById('looplocal-date').value;
 
       const saveData = {
         ...videoData,
@@ -478,7 +478,7 @@ class TikTokLokeet {
       const currentUrl = location.href;
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl;
-        console.log('[Lokeet] URL changed to:', currentUrl);
+        console.log('[ParaSosh] URL changed to:', currentUrl);
         // Give TikTok time to load the new content
         setTimeout(() => this.addSaveButtons(), 1000);
         setTimeout(() => this.addSaveButtons(), 2000);
@@ -495,8 +495,8 @@ class TikTokLokeet {
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    new TikTokLokeet();
+    new TikTokParaSosh();
   });
 } else {
-  new TikTokLokeet();
+  new TikTokParaSosh();
 }

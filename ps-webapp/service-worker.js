@@ -1,5 +1,5 @@
-// ParaSosh Service Worker
-const CACHE_NAME = 'parasosh-v1';
+// Lokeet Service Worker
+const CACHE_NAME = 'lokeet-v1';
 const urlsToCache = [
   '/',
   '/style.css',

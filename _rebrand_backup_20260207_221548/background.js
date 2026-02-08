@@ -4,7 +4,7 @@ importScripts('ext-auth.js');
 // Import migration script (for one-time local data migration)
 importScripts('migrate-local-data.js');
 
-class LokeetAPI {
+class ParaSoshAPI {
   constructor() {
     this.API_BASE = 'https://web-production-5630.up.railway.app/v1';
     this.setupMessageHandlers();
@@ -57,7 +57,7 @@ class LokeetAPI {
         chrome.notifications.create({
           type: 'basic',
           iconUrl: 'icons/icon48.png',
-          title: '🎉 Saved to Lokeet!',
+          title: '🎉 Saved to ParaSosh!',
           message: 'Synced to your dashboard'
         });
 
@@ -241,4 +241,4 @@ async saveLocallyWithAI(postData, aiData) {
   }
 }
 
-new LokeetAPI();
+new ParaSoshAPI();
