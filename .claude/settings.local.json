@@ -18,7 +18,25 @@
       "Bash(curl:*)",
       "Bash(powershell -Command:*)",
       "Bash(powershell -ExecutionPolicy Bypass -File create-package.ps1)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npx shadcn@latest init -y)",
+      "Bash(npx shadcn@latest init)",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(python test_phase0.py:*)",
+      "Bash(python:*)",
+      "Bash(vercel:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:www.lokeet.io)",
+      "WebFetch(domain:www.parasosh.io)",
+      "Bash(git pull:*)",
+      "Bash(test:*)",
+      "Bash(sqlite3:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway login:*)"
     ]
   }
 }

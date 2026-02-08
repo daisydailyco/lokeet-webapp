@@ -1,6 +1,9 @@
 // Import auth module for service worker
 importScripts('ext-auth.js');
 
+// Import migration script (for one-time local data migration)
+importScripts('migrate-local-data.js');
+
 class ParaSoshAPI {
   constructor() {
     this.API_BASE = 'https://web-production-5630.up.railway.app/v1';
@@ -188,8 +191,41 @@ async saveLocallyWithAI(postData, aiData) {
   }
 
   async getSavedItems(filters = {}) {
-    const storage = await chrome.storage.local.get(['savedItems']);
-    return { items: storage.savedItems || [] };
+    try {
+      // Check if user is authenticated
+      const isAuthenticated = await extAuth.isLoggedIn();
+
+      if (isAuthenticated) {
+        // Fetch from backend
+        console.log('📡 Fetching saves from backend...');
+        const headers = await extAuth.getAuthHeaders();
+        const response = await fetch(`${this.API_BASE}/user/saves`, {
+          method: 'GET',
+          headers: headers
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`✅ Fetched ${result.saves.length} saves from backend`);
+          return { items: result.saves || [] };
+        } else {
+          console.error('❌ Failed to fetch from backend, falling back to local storage');
+          // Fall back to local storage
+          const storage = await chrome.storage.local.get(['savedItems']);
+          return { items: storage.savedItems || [] };
+        }
+      } else {
+        // Not authenticated, use local storage
+        console.log('📱 Using local storage (not authenticated)');
+        const storage = await chrome.storage.local.get(['savedItems']);
+        return { items: storage.savedItems || [] };
+      }
+    } catch (error) {
+      console.error('❌ Error fetching saves:', error);
+      // Fall back to local storage on any error
+      const storage = await chrome.storage.local.get(['savedItems']);
+      return { items: storage.savedItems || [] };
+    }
   }
 
   async getSavedItemsCount() {

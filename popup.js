@@ -4,7 +4,7 @@ class ParaSoshPopup {
     this.currentUser = null;
     this.savedItems = [];
     this.sortByDate = 'desc';
-    this.filterCategory = null;
+    this.filterCategories = []; // Changed to array for multiple selection
     this.viewMode = 'saves';
     this.previousView = 'saves';
     this.previewItem = null;
@@ -101,8 +101,15 @@ class ParaSoshPopup {
   showProfilePage() {
     const appContent = document.getElementById('app-content');
     appContent.innerHTML = `
-      <div style="padding: 30px 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
+      <div style="padding: 0 20px 20px 20px;">
+        <!-- Back Button -->
+        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid white;">
+          <button id="back-to-dashboard-btn" style="background: white; border: none; color: #000000; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+            ← Back
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 16px;">
           <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Profile</h2>
           <p style="font-size: 14px; opacity: 0.8;">${this.currentUser?.email || 'user@example.com'}</p>
         </div>
@@ -147,21 +154,7 @@ class ParaSoshPopup {
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
-          margin-bottom: 12px;
         ">Log Out</button>
-
-        <button id="back-to-dashboard-btn" style="
-          width: 100%;
-          padding: 14px;
-          background: white;
-          border: 1px solid rgba(0,0,0,0.2);
-          color: #000000;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        ">Back to Dashboard</button>
       </div>
     `;
 
@@ -176,9 +169,16 @@ class ParaSoshPopup {
     };
 
     // Bind back button
-    document.getElementById('back-to-dashboard-btn').onclick = () => {
+    const backBtn = document.getElementById('back-to-dashboard-btn');
+    backBtn.onclick = () => {
       this.renderDashboard();
     };
+    backBtn.addEventListener('mouseenter', (e) => {
+      e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    });
+    backBtn.addEventListener('mouseleave', (e) => {
+      e.target.style.boxShadow = 'none';
+    });
   }
 
   initializeRadar() {
@@ -344,34 +344,39 @@ class ParaSoshPopup {
 
   sortItems(items) {
     let sorted = [...items];
-    
-    if (this.filterCategory === 'no-category') {
-      sorted = sorted.filter(item => !item.category);
-    } else if (this.filterCategory && this.filterCategory !== 'all') {
-      sorted = sorted.filter(item => item.category === this.filterCategory);
+
+    // Filter by selected categories
+    if (this.filterCategories.length > 0) {
+      sorted = sorted.filter(item => {
+        if (this.filterCategories.includes('no-category')) {
+          if (!item.category) return true;
+        }
+        return item.category && this.filterCategories.includes(item.category);
+      });
     }
-    
+
     sorted.sort((a, b) => {
       const dateA = a.event_date ? new Date(a.event_date) : new Date(a.saved_at);
       const dateB = b.event_date ? new Date(b.event_date) : new Date(b.saved_at);
-      
+
       if (this.sortByDate) {
         return this.sortByDate === 'desc' ? dateB - dateA : dateA - dateB;
       }
-      
+
       return dateB - dateA;
     });
-    
+
     return sorted;
   }
 
   getSectionTitle() {
-    if (this.filterCategory === 'no-category') {
-      return 'No Category';
-    } else if (this.filterCategory && this.filterCategory !== 'all') {
-      return this.filterCategory;
+    if (this.filterCategories.length === 0) {
+      return 'Saved Lists';
+    } else if (this.filterCategories.length === 1) {
+      return this.filterCategories[0] === 'no-category' ? 'No Category' : this.filterCategories[0];
+    } else {
+      return `${this.filterCategories.length} Categories Selected`;
     }
-    return 'Saved Items';
   }
 
   showConfirm(message) {
@@ -433,7 +438,7 @@ class ParaSoshPopup {
       content.innerHTML = `
         <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 8px;">
           <button class="view-btn" data-view="saves" style="flex: 1; background: white; border: none; color: #000000; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
-            📋 Saves
+            📋 List View
           </button>
           <button class="view-btn active" data-view="map" style="flex: 1; background: white; border: none; color: #000000; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
             🧭 Directions
@@ -448,7 +453,7 @@ class ParaSoshPopup {
     content.innerHTML = `
       <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 8px;">
         <button class="view-btn active" data-view="saves" style="flex: 1; background: white; border: none; color: #000000; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-          📋 Saves
+          📋 List View
         </button>
         <button class="view-btn" data-view="map" style="flex: 1; background: white; border: none; color: #000000; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
           🧭 Directions
@@ -467,10 +472,10 @@ class ParaSoshPopup {
     const uncategorizedCount = this.getUncategorizedItems().length;
     const sectionTitle = this.getSectionTitle();
 
-    // Check if we can share (viewing a specific category)
-    const canShare = this.filterCategory && this.filterCategory !== 'all' && this.filterCategory !== 'no-category';
+    // Check if we can share (has categories selected)
+    const canShare = this.filterCategories.length > 0;
 
-    // Get items missing locations (only for current category if filtering)
+    // Get items missing locations (only for filtered items)
     const itemsNeedingLocation = canShare ? sortedItems.filter(item =>
       !item.latitude || !item.longitude
     ) : [];
@@ -478,27 +483,9 @@ class ParaSoshPopup {
     return `
       <div class="recent-saves">
         ${canShare ? `
-          <!-- Category Title with Dropdown -->
-          <div style="text-align: center; margin-bottom: 12px; position: relative;">
-            <select id="category-dropdown" style="
-              appearance: none;
-              -webkit-appearance: none;
-              -moz-appearance: none;
-              background: transparent;
-              border: none;
-              font-size: 16px;
-              font-weight: 600;
-              color: #000000;
-              cursor: pointer;
-              padding: 4px 24px 4px 4px;
-              text-align: center;
-              outline: none;
-            ">
-              ${categories.map(cat => `
-                <option value="${cat}" ${this.filterCategory === cat ? 'selected' : ''}>${cat}</option>
-              `).join('')}
-            </select>
-            <span style="position: absolute; right: 50%; transform: translateX(calc(50% + ${sectionTitle.length * 4}px)); pointer-events: none; font-size: 12px;">▼</span>
+          <!-- Selected Categories Title -->
+          <div style="text-align: center; margin-bottom: 12px;">
+            <div style="font-size: 16px; font-weight: 600;">${sectionTitle}</div>
           </div>
 
           <!-- Share message above the white line -->
@@ -517,29 +504,31 @@ class ParaSoshPopup {
             </button>
           </div>
         ` : `
-          <!-- Section Title with Dropdown (All Items View) -->
-          <div style="text-align: center; margin-bottom: 12px; position: relative;">
-            <select id="all-category-dropdown" style="
-              appearance: none;
-              -webkit-appearance: none;
-              -moz-appearance: none;
-              background: transparent;
-              border: none;
-              font-size: 16px;
-              font-weight: 600;
-              color: #000000;
-              cursor: pointer;
-              padding: 4px 24px 4px 4px;
-              text-align: center;
-              outline: none;
-            ">
-              <option value="all" ${!this.filterCategory || this.filterCategory === 'all' ? 'selected' : ''}>Saved Items</option>
+          <!-- Category Selection Title -->
+          <div style="text-align: center; margin-bottom: 12px;">
+            <div style="font-size: 16px; font-weight: 600;">Select Categories</div>
+          </div>
+
+          <!-- Category Checkboxes -->
+          <div style="background: white; border-radius: 8px; padding: 12px; margin-bottom: 12px; max-height: 200px; overflow-y: auto;">
+            ${categories.length === 0 ? `
+              <div style="text-align: center; padding: 20px; opacity: 0.7; font-size: 13px;">
+                No categories yet. Add categories to your saves to organize them!
+              </div>
+            ` : `
               ${categories.map(cat => `
-                <option value="${cat}">${cat}</option>
+                <label style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" class="category-checkbox" value="${cat}" ${this.filterCategories.includes(cat) ? 'checked' : ''} style="margin-right: 8px; cursor: pointer;">
+                  <span style="font-size: 14px; font-weight: 500;">${cat}</span>
+                </label>
               `).join('')}
-              ${uncategorizedCount > 0 ? `<option value="no-category">No Category</option>` : ''}
-            </select>
-            <span style="position: absolute; right: 50%; transform: translateX(calc(50% + ${sectionTitle.length * 4}px)); pointer-events: none; font-size: 12px;">▼</span>
+              ${uncategorizedCount > 0 ? `
+                <label style="display: flex; align-items: center; padding: 8px; cursor: pointer; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                  <input type="checkbox" class="category-checkbox" value="no-category" ${this.filterCategories.includes('no-category') ? 'checked' : ''} style="margin-right: 8px; cursor: pointer;">
+                  <span style="font-size: 14px; font-weight: 500;">No Category</span>
+                </label>
+              ` : ''}
+            `}
           </div>
         `}
 
@@ -704,6 +693,13 @@ class ParaSoshPopup {
             <input type="date" id="edit-date" value="${this.editingItem.event_date || ''}" style="width: 100%; padding: 10px; border: 1px solid #F0F0F0; border-radius: 6px; background: white; color: #000000; font-size: 13px; box-sizing: border-box;">
           </div>
 
+          <!-- Link Preview Button -->
+          <div style="margin-bottom: 14px;">
+            <button id="open-link-btn" style="width: 100%; background: white; border: 1px solid rgba(0,0,0,0.1); color: #000000; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+              Open in Tab ↗
+            </button>
+          </div>
+
           <!-- Remove and Save Buttons (bottom row) -->
           <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
             <button id="remove-edit-btn" style="background: white; border: none; color: #000000; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
@@ -719,15 +715,8 @@ class ParaSoshPopup {
   }
 
   renderMapView() {
-    // Filter by category first, then by locations with coordinates
-    let itemsToShow = this.savedItems;
-
-    // Apply category filter
-    if (this.filterCategory === 'no-category') {
-      itemsToShow = itemsToShow.filter(item => !item.category);
-    } else if (this.filterCategory && this.filterCategory !== 'all') {
-      itemsToShow = itemsToShow.filter(item => item.category === this.filterCategory);
-    }
+    // Use sortItems to apply the same filtering logic
+    const itemsToShow = this.sortItems(this.savedItems);
 
     // Then filter for items with coordinates (needed for map)
     const locationsWithCoords = itemsToShow.filter(item =>
@@ -739,8 +728,8 @@ class ParaSoshPopup {
       !item.latitude || !item.longitude
     );
 
-    // Check if we can share (viewing a specific category)
-    const canShare = this.filterCategory && this.filterCategory !== 'all' && this.filterCategory !== 'no-category';
+    // Check if we can share (has categories selected)
+    const canShare = this.filterCategories.length > 0;
     const sectionTitle = this.getSectionTitle();
 
     if (locationsWithCoords.length === 0) {
@@ -873,15 +862,12 @@ class ParaSoshPopup {
     if (items.length === 0) {
       let message = 'No saves yet!';
       let subMessage = 'Visit Instagram and click Save to ParaSosh on posts';
-      
-      if (this.filterCategory === 'no-category') {
-        message = 'No uncategorized items';
-        subMessage = 'All your saves have categories! 🎉';
-      } else if (this.filterCategory && this.filterCategory !== 'all') {
-        message = `No items in "${this.filterCategory}"`;
-        subMessage = 'Try selecting a different category';
+
+      if (this.filterCategories.length > 0) {
+        message = 'No items in selected categories';
+        subMessage = 'Try selecting different categories';
       }
-      
+
       return `
         <div class="empty-state">
           <div class="empty-state-icon">📍</div>
@@ -998,13 +984,11 @@ class ParaSoshPopup {
 
   async shareCategory() {
     try {
-      // Get items in current category
-      const categoryItems = this.savedItems.filter(item =>
-        item.category === this.filterCategory
-      );
+      // Get items in selected categories (use sortItems for consistent filtering)
+      const categoryItems = this.sortItems(this.savedItems);
 
       if (categoryItems.length === 0) {
-        alert('No items to share in this category!');
+        alert('No items to share in selected categories!');
         return;
       }
 
@@ -1043,9 +1027,14 @@ class ParaSoshPopup {
         saved_at: item.saved_at || new Date().toISOString()
       }));
 
-      console.log('🚀 Sharing category:', this.filterCategory);
+      console.log('🚀 Sharing categories:', this.filterCategories);
       console.log('📦 Items to share:', formattedItems.length);
       console.log('📍 First item being sent:', formattedItems[0]);
+
+      // Create a combined category name
+      const categoryName = this.filterCategories.length === 1
+        ? this.filterCategories[0]
+        : this.filterCategories.join(' + ');
 
       // Send to backend
       const response = await fetch('https://web-production-5630.up.railway.app/v1/share', {
@@ -1054,7 +1043,7 @@ class ParaSoshPopup {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          category: this.filterCategory,
+          category: categoryName,
           items: formattedItems
         })
       });
@@ -1252,7 +1241,7 @@ class ParaSoshPopup {
     if (viewAllCategoryBtn) {
       viewAllCategoryBtn.addEventListener("click", () => {
         // Set filter to the current item's category
-        this.filterCategory = this.previewItem.category;
+        this.filterCategories = [this.previewItem.category];
         this.viewMode = "saves";
         this.previewItem = null;
         this.renderDashboard();
@@ -1335,6 +1324,19 @@ class ParaSoshPopup {
       });
     }
 
+    const openLinkBtn = document.getElementById('open-link-btn');
+    if (openLinkBtn && this.editingItem) {
+      openLinkBtn.addEventListener('click', () => {
+        chrome.tabs.create({ url: this.editingItem.url });
+      });
+      openLinkBtn.addEventListener('mouseenter', (e) => {
+        e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+      });
+      openLinkBtn.addEventListener('mouseleave', (e) => {
+        e.target.style.boxShadow = 'none';
+      });
+    }
+
     const openNewTabBtn = document.getElementById('open-new-tab-btn');
     if (openNewTabBtn && this.previewItem) {
       openNewTabBtn.addEventListener('click', () => {
@@ -1348,36 +1350,25 @@ class ParaSoshPopup {
       });
     }
 
-    const categoryDropdown = document.getElementById('category-dropdown');
-    if (categoryDropdown) {
-      categoryDropdown.addEventListener('change', (e) => {
+    // Category checkbox listeners
+    document.querySelectorAll('.category-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
         const value = e.target.value;
-        if (value === '' || value === 'all') {
-          this.filterCategory = null;
+        if (e.target.checked) {
+          if (!this.filterCategories.includes(value)) {
+            this.filterCategories.push(value);
+          }
         } else {
-          this.filterCategory = value;
+          this.filterCategories = this.filterCategories.filter(cat => cat !== value);
         }
         this.renderDashboard();
       });
-    }
-
-    const allCategoryDropdown = document.getElementById('all-category-dropdown');
-    if (allCategoryDropdown) {
-      allCategoryDropdown.addEventListener('change', (e) => {
-        const value = e.target.value;
-        if (value === '' || value === 'all') {
-          this.filterCategory = null;
-        } else {
-          this.filterCategory = value;
-        }
-        this.renderDashboard();
-      });
-    }
+    });
 
     const waitlistBtn = document.getElementById('waitlist-btn');
     if (waitlistBtn) {
       waitlistBtn.addEventListener('click', () => {
-        chrome.tabs.create({ url: 'https://looplocal.app' });
+        chrome.tabs.create({ url: 'https://parasosh.io' });
       });
     }
 
@@ -1414,7 +1405,7 @@ class ParaSoshPopup {
     const backToAllBtn = document.getElementById("back-to-all-btn");
     if (backToAllBtn) {
       backToAllBtn.addEventListener("click", () => {
-        this.filterCategory = "all";
+        this.filterCategories = [];
         this.renderDashboard();
       });
 
@@ -1431,14 +1422,8 @@ class ParaSoshPopup {
     const openAllMapsBtn = document.getElementById('open-all-maps-btn');
     if (openAllMapsBtn) {
       openAllMapsBtn.addEventListener('click', () => {
-        // Filter by category first
-        let itemsToShow = this.savedItems;
-
-        if (this.filterCategory === 'no-category') {
-          itemsToShow = itemsToShow.filter(item => !item.category);
-        } else if (this.filterCategory && this.filterCategory !== 'all') {
-          itemsToShow = itemsToShow.filter(item => item.category === this.filterCategory);
-        }
+        // Use sortItems to apply the same filtering logic
+        const itemsToShow = this.sortItems(this.savedItems);
 
         const locations = itemsToShow
           .filter(item => item.address)
@@ -1513,9 +1498,9 @@ class ParaSoshPopup {
         if (savedItem) {
           // Filter by the item's category
           if (savedItem.category) {
-            this.filterCategory = savedItem.category;
+            this.filterCategories = [savedItem.category];
           } else {
-            this.filterCategory = 'no-category';
+            this.filterCategories = ['no-category'];
           }
           this.renderDashboard();
         }
@@ -1613,11 +1598,10 @@ class ParaSoshPopup {
 
       await chrome.storage.local.set({ savedItems });
       this.savedItems = savedItems;
-      this.previewItem = savedItems[itemIndex];
       this.editingItem = null;
 
-      // If we came from map view, go back to map. Otherwise go to preview.
-      this.viewMode = (this.previousView === 'map') ? 'map' : 'preview';
+      // Go back to the previous view (either saves or map)
+      this.viewMode = (this.previousView === 'map') ? 'map' : 'saves';
 
       // Clean up autocomplete
       if (this.autocompleteInstance) {
@@ -1763,7 +1747,7 @@ class ParaSoshPopup {
         venue_name: '',
         address: '',
         coordinates: null,
-        category: this.filterCategory === 'All' ? '' : this.filterCategory,
+        category: this.filterCategories.length === 1 ? this.filterCategories[0] : '',
         saved_at: new Date().toISOString()
       };
       this.renderDashboard();
