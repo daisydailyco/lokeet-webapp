@@ -1,9 +1,9 @@
-// LoopLocal Authentication Helper
+// Lokeet Authentication Helper
 const API_BASE = 'https://web-production-5630.up.railway.app';
 
 // Session storage keys
-const SESSION_KEY = 'looplocal_session';
-const USER_KEY = 'looplocal_user';
+const SESSION_KEY = 'lokeet_session';
+const USER_KEY = 'lokeet_user';
 
 // ===== API Functions =====
 

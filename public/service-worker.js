@@ -1,4 +1,4 @@
-// LoopLocal Service Worker
+// Lokeet Service Worker
 const CACHE_NAME = 'lokeet-v120';
 const urlsToCache = [
   '/',

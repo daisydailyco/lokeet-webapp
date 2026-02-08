@@ -7,7 +7,7 @@ To complete the PWA setup, add these icon files to this directory:
 - `icon-512.png` - 512x512 pixels
 
 ## How to Create:
-1. Use your LoopLocal logo
+1. Use your Lokeet logo
 2. Resize to 192x192 and 512x512 pixels
 3. Save as PNG with transparency
 4. Use tools like:

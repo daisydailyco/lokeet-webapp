@@ -80,7 +80,7 @@ function renderCategoryHeader(data) {
   // Show number of categories
   const categoryCount = allCategories.length;
   document.getElementById('view-count').textContent = `${categoryCount} categor${categoryCount !== 1 ? 'ies' : 'y'}`;
-  document.title = `${data.category} - ParaSosh`; // Cache bust
+  document.title = `${data.category} - Lokeet`; // Cache bust
 }
 
 function updateCounts() {

@@ -1,4 +1,4 @@
-// LoopLocal Dashboard JavaScript
+// Lokeet Dashboard JavaScript
 // Handles user saves management, map view, categories, and all dashboard functionality
 
 // Configuration
