@@ -29,7 +29,7 @@ export default function Home() {
               Try Lokeet instantly - no login required. Log in to save your lists permanently.
             </p>
             <Link
-              href="/login.html"
+              href="/login"
               className="inline-block bg-white text-gray-900 font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all border-2 border-[#42a746] hover:border-[#3a9340]"
             >
               Log in/Sign Up

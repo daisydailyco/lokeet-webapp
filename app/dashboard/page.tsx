@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, Save, User } from '@/lib/api';
 import Link from 'next/link';
+import { Pencil } from 'lucide-react';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -12,13 +13,16 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'category'>('date');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showNewSaveModal, setShowNewSaveModal] = useState(false);
+  const [editingSave, setEditingSave] = useState<Save | null>(null);
 
-  useEffect(() => {
-    checkAuth();
+  const loadSaves = useCallback(async () => {
+    const data = await api.getSaves();
+    setSaves(data);
   }, []);
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const { valid, user: verifiedUser } = await api.verifySession();
 
     if (!valid) {
@@ -29,12 +33,12 @@ export default function Dashboard() {
     setUser(verifiedUser || null);
     await loadSaves();
     setLoading(false);
-  }
+  }, [router, loadSaves]);
 
-  async function loadSaves() {
-    const data = await api.getSaves();
-    setSaves(data);
-  }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkAuth();
+  }, [checkAuth]);
 
   async function handleLogout() {
     await api.logout();
@@ -48,7 +52,9 @@ export default function Dashboard() {
     setSaves(saves.filter(s => s.id !== id));
   }
 
-  async function handleShareCategory(category: string) {
+  async function handleShareCategory(category: string | undefined) {
+    if (!category) return;
+
     const itemsToShare = saves.filter(s => s.category === category);
     if (itemsToShare.length === 0) return;
 
@@ -60,9 +66,25 @@ export default function Dashboard() {
   }
 
   const categories = Array.from(new Set(saves.map(s => s.category).filter(Boolean)));
-  const filteredSaves = filter === 'all'
+
+  // Apply category filter
+  const categoryFilteredSaves = filter === 'all'
     ? saves
     : saves.filter(s => s.category === filter);
+
+  // Apply search filter
+  const filteredSaves = searchQuery.trim() === ''
+    ? categoryFilteredSaves
+    : categoryFilteredSaves.filter(save => {
+        const query = searchQuery.toLowerCase();
+        return (
+          (save.venue_name?.toLowerCase().includes(query)) ||
+          (save.event_name?.toLowerCase().includes(query)) ||
+          (save.content?.toLowerCase().includes(query)) ||
+          (save.category?.toLowerCase().includes(query)) ||
+          save.tags.some(tag => tag.toLowerCase().includes(query))
+        );
+      });
 
   const sortedSaves = [...filteredSaves].sort((a, b) => {
     if (sortBy === 'date') {
@@ -74,8 +96,93 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl">Loading...</div>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Skeleton */}
+        <header className="bg-white border-b">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="flex items-center gap-4">
+                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Skeleton */}
+        <main className="container mx-auto px-4 py-8">
+          {/* Stats Card Skeleton */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+
+            {/* Search and Filters Skeleton */}
+            <div className="mb-4">
+              <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+            <div className="flex gap-4">
+              <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Categories Grid Skeleton */}
+          <div className="mb-6">
+            <div className="h-6 w-24 bg-gray-200 rounded animate-pulse mb-3"></div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white rounded-lg shadow p-4">
+                  <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-3"></div>
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Saves List Skeleton */}
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-5 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div className="h-4 w-full bg-gray-200 rounded animate-pulse mb-1"></div>
+                    <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse mb-3"></div>
+                    <div className="flex gap-2 mb-3">
+                      <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <div className="w-24 h-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-24 h-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-24 h-24 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -121,6 +228,17 @@ export default function Dashboard() {
             >
               + New Save
             </button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search by venue, content, tags, or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
           </div>
 
           {/* Filters */}
@@ -214,7 +332,7 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-3 items-center">
                     <a
                       href={save.url}
                       target="_blank"
@@ -223,6 +341,13 @@ export default function Dashboard() {
                     >
                       View
                     </a>
+                    <button
+                      onClick={() => setEditingSave(save)}
+                      className="text-gray-600 hover:text-gray-900 transition"
+                      title="Edit save"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleDeleteSave(save.id)}
                       className="text-red-600 hover:underline text-sm"
@@ -252,7 +377,7 @@ export default function Dashboard() {
 
       {/* New Save Modal */}
       {showNewSaveModal && (
-        <NewSaveModal
+        <SaveModal
           onClose={() => setShowNewSaveModal(false)}
           onSave={async (save) => {
             const newSave = await api.createSave(save);
@@ -263,20 +388,49 @@ export default function Dashboard() {
           }}
         />
       )}
+
+      {/* Edit Save Modal */}
+      {editingSave && (
+        <SaveModal
+          existingSave={editingSave}
+          onClose={() => setEditingSave(null)}
+          onSave={async (updates) => {
+            const result = await api.updateSave(editingSave.id, updates);
+            if (result.success) {
+              // Update the save in the list
+              setSaves(saves.map(s =>
+                s.id === editingSave.id
+                  ? { ...s, ...updates }
+                  : s
+              ));
+              setEditingSave(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function NewSaveModal({ onClose, onSave }: {
+interface SaveFormData {
+  platform: string;
+  url: string;
+  content: string;
+  author: string;
+  category: string;
+}
+
+function SaveModal({ existingSave, onClose, onSave }: {
+  existingSave?: Save;
   onClose: () => void;
-  onSave: (save: any) => Promise<void>;
+  onSave: (save: SaveFormData) => Promise<void>;
 }) {
   const [formData, setFormData] = useState({
-    platform: 'instagram',
-    url: '',
-    content: '',
-    author: '',
-    category: ''
+    platform: existingSave?.platform || 'instagram',
+    url: existingSave?.url || '',
+    content: existingSave?.content || '',
+    author: existingSave?.author || '',
+    category: existingSave?.category || ''
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -287,7 +441,9 @@ function NewSaveModal({ onClose, onSave }: {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h2 className="text-2xl font-bold mb-4">New Save</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          {existingSave ? 'Edit Save' : 'New Save'}
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

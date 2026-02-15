@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { api, User, Save } from '@/lib/api';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const params = useParams();
-  const router = useRouter();
   const username = (params.username as string)?.replace('@', '');
 
   const [profile, setProfile] = useState<User | null>(null);
@@ -16,11 +15,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadProfile();
-  }, [username]);
-
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     const currentUser = api.getCurrentUser();
 
     // Check if this is the user's own profile
@@ -42,7 +37,12 @@ export default function ProfilePage() {
     }
 
     setLoading(false);
-  }
+  }, [username]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadProfile();
+  }, [loadProfile]);
 
   async function handleSaveProfile(updates: Partial<User>) {
     const result = await api.updateProfile(updates);
@@ -65,7 +65,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Profile Not Found</h1>
-          <p className="text-gray-600 mb-6">User @{username} doesn't exist</p>
+          <p className="text-gray-600 mb-6">User @{username} doesn&apos;t exist</p>
           <Link href="/" className="text-blue-600 hover:underline">
             Go Home
           </Link>
