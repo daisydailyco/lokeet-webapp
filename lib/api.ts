@@ -51,6 +51,66 @@ class LokeetAPI {
     };
   }
 
+  // Exchange the stored refresh token for a fresh access token. Returns the new
+  // token on success, or null. Only clears the session when the refresh token
+  // is definitively rejected (not on transient/5xx/network errors).
+  private async refreshSession(): Promise<string | null> {
+    const refreshToken = localStorage.getItem('lokeet_refresh');
+    if (!refreshToken) return null;
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+
+      if (res.status >= 500) return null; // transient — keep session
+
+      const data = await res.json();
+
+      if (data.success && data.session?.access_token) {
+        localStorage.setItem('lokeet_session', data.session.access_token);
+        if (data.session.refresh_token) {
+          localStorage.setItem('lokeet_refresh', data.session.refresh_token);
+        }
+        if (data.user) {
+          localStorage.setItem('lokeet_user', JSON.stringify(data.user));
+        }
+        return data.session.access_token;
+      }
+
+      // Refresh token invalid/expired — clear the dead session.
+      localStorage.removeItem('lokeet_session');
+      localStorage.removeItem('lokeet_refresh');
+      localStorage.removeItem('lokeet_user');
+      return null;
+    } catch {
+      return null; // network error — transient, keep session
+    }
+  }
+
+  // fetch() wrapper that attaches auth headers and, on a 401, transparently
+  // refreshes the access token and retries the request once.
+  private async authedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    let res = await fetch(url, {
+      ...options,
+      headers: { ...this.getAuthHeaders(), ...(options.headers || {}) }
+    });
+
+    if (res.status === 401) {
+      const newToken = await this.refreshSession();
+      if (newToken) {
+        res = await fetch(url, {
+          ...options,
+          headers: { ...this.getAuthHeaders(), ...(options.headers || {}) }
+        });
+      }
+    }
+
+    return res;
+  }
+
   // Auth endpoints
   async signup(email: string, password: string) {
     const res = await fetch(`${API_BASE}/auth/signup`, {
@@ -62,6 +122,9 @@ class LokeetAPI {
 
     if (data.success && data.session?.access_token) {
       localStorage.setItem('lokeet_session', data.session.access_token);
+      if (data.session.refresh_token) {
+        localStorage.setItem('lokeet_refresh', data.session.refresh_token);
+      }
       localStorage.setItem('lokeet_user', JSON.stringify(data.user));
     }
 
@@ -78,6 +141,9 @@ class LokeetAPI {
 
     if (data.success && data.session?.access_token) {
       localStorage.setItem('lokeet_session', data.session.access_token);
+      if (data.session.refresh_token) {
+        localStorage.setItem('lokeet_refresh', data.session.refresh_token);
+      }
       localStorage.setItem('lokeet_user', JSON.stringify(data.user));
     }
 
@@ -98,11 +164,26 @@ class LokeetAPI {
 
   async verifySession(): Promise<{ valid: boolean; user?: User }> {
     try {
-      const res = await fetch(`${API_BASE}/auth/verify`, {
+      let res = await fetch(`${API_BASE}/auth/verify`, {
         method: 'POST',
         headers: this.getAuthHeaders()
       });
-      return await res.json();
+      let data = await res.json();
+
+      // /auth/verify returns 200 {valid:false} on an expired token (not 401),
+      // so authedFetch can't catch it — refresh and re-verify once here.
+      if (!data.valid) {
+        const newToken = await this.refreshSession();
+        if (newToken) {
+          res = await fetch(`${API_BASE}/auth/verify`, {
+            method: 'POST',
+            headers: this.getAuthHeaders()
+          });
+          data = await res.json();
+        }
+      }
+
+      return data;
     } catch {
       return { valid: false };
     }
@@ -110,9 +191,7 @@ class LokeetAPI {
 
   // Profile endpoints
   async getProfile(): Promise<User | null> {
-    const res = await fetch(`${API_BASE}/user/profile`, {
-      headers: this.getAuthHeaders()
-    });
+    const res = await this.authedFetch(`${API_BASE}/user/profile`);
 
     if (!res.ok) return null;
 
@@ -121,9 +200,8 @@ class LokeetAPI {
   }
 
   async updateProfile(updates: Partial<User>) {
-    const res = await fetch(`${API_BASE}/user/profile`, {
+    const res = await this.authedFetch(`${API_BASE}/user/profile`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
       body: JSON.stringify(updates)
     });
 
@@ -131,9 +209,7 @@ class LokeetAPI {
   }
 
   async checkUsernameAvailability(username: string): Promise<boolean> {
-    const res = await fetch(`${API_BASE}/user/username/check?username=${encodeURIComponent(username)}`, {
-      headers: this.getAuthHeaders()
-    });
+    const res = await this.authedFetch(`${API_BASE}/user/username/check?username=${encodeURIComponent(username)}`);
 
     const data = await res.json();
     return data.available;
@@ -154,9 +230,7 @@ class LokeetAPI {
 
   // Saves endpoints
   async getSaves(): Promise<Save[]> {
-    const res = await fetch(`${API_BASE}/user/saves`, {
-      headers: this.getAuthHeaders()
-    });
+    const res = await this.authedFetch(`${API_BASE}/user/saves`);
 
     if (!res.ok) return [];
 
@@ -172,9 +246,8 @@ class LokeetAPI {
     author: string;
     category?: string;
   }): Promise<Save | null> {
-    const res = await fetch(`${API_BASE}/user/saves`, {
+    const res = await this.authedFetch(`${API_BASE}/user/saves`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
       body: JSON.stringify(save)
     });
 
@@ -185,9 +258,8 @@ class LokeetAPI {
   }
 
   async updateSave(id: string, updates: Partial<Save>) {
-    const res = await fetch(`${API_BASE}/user/saves/${id}`, {
+    const res = await this.authedFetch(`${API_BASE}/user/saves/${id}`, {
       method: 'PATCH',
-      headers: this.getAuthHeaders(),
       body: JSON.stringify(updates)
     });
 
@@ -195,9 +267,8 @@ class LokeetAPI {
   }
 
   async deleteSave(id: string) {
-    const res = await fetch(`${API_BASE}/user/saves/${id}`, {
-      method: 'DELETE',
-      headers: this.getAuthHeaders()
+    const res = await this.authedFetch(`${API_BASE}/user/saves/${id}`, {
+      method: 'DELETE'
     });
 
     return await res.json();
@@ -205,9 +276,8 @@ class LokeetAPI {
 
   // Share endpoints
   async shareCategory(category: string, items: Save[]) {
-    const res = await fetch(`${API_BASE}/share`, {
+    const res = await this.authedFetch(`${API_BASE}/share`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
       body: JSON.stringify({ category, items })
     });
 
