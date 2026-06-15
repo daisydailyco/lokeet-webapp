@@ -45,8 +45,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-[#f9f8e5] flex items-center justify-center p-4">
+      <div className="bg-white border-2 border-black rounded-3xl shadow-lg p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-4xl font-bold">Lokeet</Link>
           <p className="text-gray-600 mt-2">Create your account</p>
@@ -59,7 +59,7 @@ export default function SignupPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#42a746] focus:border-transparent"
               placeholder="your@email.com"
               required
             />
@@ -71,7 +71,7 @@ export default function SignupPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#42a746] focus:border-transparent"
               placeholder="••••••••"
               minLength={8}
               required
@@ -84,7 +84,7 @@ export default function SignupPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#42a746] focus:border-transparent"
               placeholder="••••••••"
               minLength={8}
               required
@@ -100,7 +100,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-orange-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50"
+            className="w-full bg-[#42a746] hover:bg-[#3a9340] text-white py-3 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50"
           >
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
@@ -108,7 +108,7 @@ export default function SignupPage() {
 
         <div className="mt-6 text-center text-sm">
           <span className="text-gray-600">Already have an account? </span>
-          <Link href="/login" className="text-orange-600 font-semibold hover:underline">
+          <Link href="/login" className="text-[#42a746] font-semibold hover:underline">
             Log In
           </Link>
         </div>
