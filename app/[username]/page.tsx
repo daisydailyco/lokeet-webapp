@@ -98,7 +98,7 @@ export default function ProfilePage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-start gap-8">
             {/* Profile Picture Placeholder */}
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-pink-600 flex items-center justify-center text-white text-4xl font-bold flex-shrink-0">
+            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#42a746] to-[#3a9340] flex items-center justify-center text-white text-4xl font-bold flex-shrink-0">
               {profile.display_name?.[0] || username[0].toUpperCase()}
             </div>
 
