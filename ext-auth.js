@@ -108,6 +108,80 @@ class ExtensionAuth {
     return !!(session && session.access_token);
   }
 
+  // Exchange the stored refresh token for a fresh session.
+  // Returns the new session on success, or null. Only logs out when the
+  // refresh token is definitively rejected (not on transient/network errors),
+  // so a brief backend hiccup doesn't kick the user out.
+  async refreshSession() {
+    const { lokeet_session } = await chrome.storage.sync.get(['lokeet_session']);
+
+    if (!lokeet_session || !lokeet_session.refresh_token) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/v1/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: lokeet_session.refresh_token })
+      });
+
+      // 5xx (incl. 503 when Supabase is unreachable) is transient — keep the
+      // session and let the caller fall back, rather than logging out.
+      if (response.status >= 500) {
+        console.warn('[Auth] Refresh unavailable (server error), keeping session');
+        return null;
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.session) {
+        await chrome.storage.sync.set({
+          lokeet_session: data.session,
+          lokeet_user: data.user
+        });
+        this.session = data.session;
+        this.user = data.user;
+        console.log('[Auth] Session refreshed');
+        return data.session;
+      }
+
+      // Refresh token invalid/expired — session is unrecoverable.
+      console.warn('[Auth] Refresh token rejected, logging out');
+      await this.logout();
+      return null;
+    } catch (error) {
+      // Network error — transient, keep the session.
+      console.error('[Auth] Refresh error (network):', error);
+      return null;
+    }
+  }
+
+  // fetch() wrapper that attaches auth headers and, on a 401, transparently
+  // refreshes the access token and retries the request once.
+  async authedFetch(url, options = {}) {
+    const headers = await this.getAuthHeaders();
+    let response = await fetch(url, {
+      ...options,
+      headers: { ...headers, ...(options.headers || {}) }
+    });
+
+    if (response.status === 401) {
+      console.log('[Auth] 401 received — attempting token refresh and retry...');
+      const newSession = await this.refreshSession();
+
+      if (newSession && newSession.access_token) {
+        const retryHeaders = await this.getAuthHeaders();
+        response = await fetch(url, {
+          ...options,
+          headers: { ...retryHeaders, ...(options.headers || {}) }
+        });
+      }
+    }
+
+    return response;
+  }
+
   // Verify session with backend
   async verifySession() {
     try {
@@ -117,14 +191,29 @@ class ExtensionAuth {
         return { valid: false };
       }
 
-      const response = await fetch(`${API_BASE}/v1/auth/verify`, {
+      let response = await fetch(`${API_BASE}/v1/auth/verify`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
       });
 
-      const data = await response.json();
+      let data = await response.json();
+
+      // Access token likely expired — try a refresh and re-verify once before
+      // giving up, so the user isn't logged out every time the token expires.
+      if (!data.valid) {
+        const refreshed = await this.refreshSession();
+        if (refreshed && refreshed.access_token) {
+          response = await fetch(`${API_BASE}/v1/auth/verify`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${refreshed.access_token}`
+            }
+          });
+          data = await response.json();
+        }
+      }
 
       if (data.valid && data.user) {
         // Update stored user info

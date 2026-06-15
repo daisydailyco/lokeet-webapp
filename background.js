@@ -89,13 +89,10 @@ class LokeetAPI {
 
   async saveToBackend(postData) {
     try {
-      // Get auth headers
-      const headers = await extAuth.getAuthHeaders();
-
-      // Call POST /v1/user/saves (backend will do AI analysis automatically)
-      const response = await fetch(`${this.API_BASE}/user/saves`, {
+      // Call POST /v1/user/saves (backend will do AI analysis automatically).
+      // authedFetch attaches auth headers and auto-refreshes the token on 401.
+      const response = await extAuth.authedFetch(`${this.API_BASE}/user/saves`, {
         method: 'POST',
-        headers: headers,
         body: JSON.stringify({
           platform: postData.platform,
           url: postData.url,
@@ -196,12 +193,11 @@ async saveLocallyWithAI(postData, aiData) {
       const isAuthenticated = await extAuth.isLoggedIn();
 
       if (isAuthenticated) {
-        // Fetch from backend
+        // Fetch from backend. authedFetch attaches auth headers and
+        // auto-refreshes the token on 401 before falling back to local.
         console.log('📡 Fetching saves from backend...');
-        const headers = await extAuth.getAuthHeaders();
-        const response = await fetch(`${this.API_BASE}/user/saves`, {
-          method: 'GET',
-          headers: headers
+        const response = await extAuth.authedFetch(`${this.API_BASE}/user/saves`, {
+          method: 'GET'
         });
 
         if (response.ok) {
