@@ -30,7 +30,7 @@ export default function Home() {
             </p>
             <Link
               href="/login"
-              className="inline-block bg-white text-gray-900 font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all border-2 border-[#42a746] hover:border-[#3a9340]"
+              className="inline-block bg-white text-gray-900 font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all border-2 border-black hover:border-black"
             >
               Log in/Sign Up
             </Link>

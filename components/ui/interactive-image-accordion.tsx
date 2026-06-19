@@ -125,12 +125,10 @@ export function LandingAccordionItem() {
                 Get Chrome Extension
               </a>
               <a
-                href="https://lokeet.io"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="https://lokeet.io/login"
                 className="inline-block bg-gray-900 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:bg-gray-800 transition-colors duration-300"
               >
-                Join the App Waitlist!
+                Log In/Sign Up
               </a>
             </div>
           </div>
