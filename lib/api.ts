@@ -32,6 +32,8 @@ export interface Save {
   state?: string;
   coordinates?: { lat: number; lng: number };
   event_date?: string;
+  event_end_date?: string;
+  event_extra_dates?: string[];
   start_time?: string;
   end_time?: string;
   event_type?: string;
@@ -43,8 +45,26 @@ export interface Save {
 }
 
 class LokeetAPI {
+  // Routes storage to localStorage (remember me) or sessionStorage (session only).
+  private store(): Storage {
+    if (typeof window === 'undefined') return localStorage;
+    return localStorage.getItem('lokeet_remember') === 'true'
+      ? localStorage
+      : sessionStorage;
+  }
+
+  private getItem(key: string): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+  }
+
+  private removeItem(key: string): void {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  }
+
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('lokeet_session');
+    const token = this.getItem('lokeet_session');
     return {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -55,7 +75,7 @@ class LokeetAPI {
   // token on success, or null. Only clears the session when the refresh token
   // is definitively rejected (not on transient/5xx/network errors).
   private async refreshSession(): Promise<string | null> {
-    const refreshToken = localStorage.getItem('lokeet_refresh');
+    const refreshToken = this.getItem('lokeet_refresh');
     if (!refreshToken) return null;
 
     try {
@@ -70,20 +90,20 @@ class LokeetAPI {
       const data = await res.json();
 
       if (data.success && data.session?.access_token) {
-        localStorage.setItem('lokeet_session', data.session.access_token);
+        this.store().setItem('lokeet_session', data.session.access_token);
         if (data.session.refresh_token) {
-          localStorage.setItem('lokeet_refresh', data.session.refresh_token);
+          this.store().setItem('lokeet_refresh', data.session.refresh_token);
         }
         if (data.user) {
-          localStorage.setItem('lokeet_user', JSON.stringify(data.user));
+          this.store().setItem('lokeet_user', JSON.stringify(data.user));
         }
         return data.session.access_token;
       }
 
       // Refresh token invalid/expired — clear the dead session.
-      localStorage.removeItem('lokeet_session');
-      localStorage.removeItem('lokeet_refresh');
-      localStorage.removeItem('lokeet_user');
+      this.removeItem('lokeet_session');
+      this.removeItem('lokeet_refresh');
+      this.removeItem('lokeet_user');
       return null;
     } catch {
       return null; // network error — transient, keep session
@@ -112,7 +132,8 @@ class LokeetAPI {
   }
 
   // Auth endpoints
-  async signup(email: string, password: string) {
+  async signup(email: string, password: string, rememberMe = false) {
+    localStorage.setItem('lokeet_remember', rememberMe ? 'true' : 'false');
     const res = await fetch(`${API_BASE}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -121,17 +142,18 @@ class LokeetAPI {
     const data = await res.json();
 
     if (data.success && data.session?.access_token) {
-      localStorage.setItem('lokeet_session', data.session.access_token);
+      this.store().setItem('lokeet_session', data.session.access_token);
       if (data.session.refresh_token) {
-        localStorage.setItem('lokeet_refresh', data.session.refresh_token);
+        this.store().setItem('lokeet_refresh', data.session.refresh_token);
       }
-      localStorage.setItem('lokeet_user', JSON.stringify(data.user));
+      this.store().setItem('lokeet_user', JSON.stringify(data.user));
     }
 
     return data;
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, rememberMe = false) {
+    localStorage.setItem('lokeet_remember', rememberMe ? 'true' : 'false');
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -140,11 +162,11 @@ class LokeetAPI {
     const data = await res.json();
 
     if (data.success && data.session?.access_token) {
-      localStorage.setItem('lokeet_session', data.session.access_token);
+      this.store().setItem('lokeet_session', data.session.access_token);
       if (data.session.refresh_token) {
-        localStorage.setItem('lokeet_refresh', data.session.refresh_token);
+        this.store().setItem('lokeet_refresh', data.session.refresh_token);
       }
-      localStorage.setItem('lokeet_user', JSON.stringify(data.user));
+      this.store().setItem('lokeet_user', JSON.stringify(data.user));
     }
 
     return data;
@@ -157,8 +179,10 @@ class LokeetAPI {
         headers: this.getAuthHeaders()
       });
     } finally {
-      localStorage.removeItem('lokeet_session');
-      localStorage.removeItem('lokeet_user');
+      this.removeItem('lokeet_session');
+      this.removeItem('lokeet_refresh');
+      this.removeItem('lokeet_user');
+      localStorage.removeItem('lokeet_remember');
     }
   }
 
@@ -245,13 +269,27 @@ class LokeetAPI {
     images?: string[];
     author: string;
     category?: string;
+    event_type?: string;
+    tags?: string[];
+    city?: string;
+    state?: string;
+    event_name?: string;
+    venue_name?: string;
+    address?: string;
+    event_date?: string;
+    event_end_date?: string;
+    event_extra_dates?: string[];
   }): Promise<Save | null> {
     const res = await this.authedFetch(`${API_BASE}/user/saves`, {
       method: 'POST',
       body: JSON.stringify(save)
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.error('[createSave] failed', res.status, errText);
+      return null;
+    }
 
     const data = await res.json();
     return data.item;
@@ -274,6 +312,18 @@ class LokeetAPI {
     return await res.json();
   }
 
+  async fetchMeta(url: string): Promise<{ author: string; content: string }> {
+    try {
+      const res = await this.authedFetch(
+        `${API_BASE}/fetch-meta?url=${encodeURIComponent(url)}`
+      );
+      if (!res.ok) return { author: '', content: '' };
+      return await res.json();
+    } catch {
+      return { author: '', content: '' };
+    }
+  }
+
   // Share endpoints
   async shareCategory(category: string, items: Save[]) {
     const res = await this.authedFetch(`${API_BASE}/share`, {
@@ -291,11 +341,11 @@ class LokeetAPI {
 
   // Helper methods
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('lokeet_session');
+    return !!this.getItem('lokeet_session');
   }
 
   getCurrentUser(): User | null {
-    const userStr = localStorage.getItem('lokeet_user');
+    const userStr = this.getItem('lokeet_user');
     if (!userStr) return null;
 
     try {
