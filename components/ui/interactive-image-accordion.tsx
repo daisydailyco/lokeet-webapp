@@ -20,27 +20,27 @@ const accordionItems: AccordionItemData[] = [
   {
     id: 1,
     title: 'Cafes & Coffee Shops',
-    imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=2078&auto=format&fit=crop',
+    imageUrl: '/images/cafes.jpg',
   },
   {
     id: 2,
     title: 'Restaurants & Dining',
-    imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop',
+    imageUrl: '/images/restaurants.jpg',
   },
   {
     id: 3,
     title: 'Events & Nightlife',
-    imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1974&auto=format&fit=crop',
+    imageUrl: '/images/events.jpg',
   },
   {
     id: 4,
     title: 'Hidden Gems',
-    imageUrl: 'https://images.unsplash.com/photo-1533854775446-95c4609da544?q=80&w=2070&auto=format&fit=crop',
+    imageUrl: '/images/hidden-gems.jpg',
   },
   {
     id: 5,
     title: 'Local Attractions',
-    imageUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=2144&auto=format&fit=crop',
+    imageUrl: '/images/local-attractions.jpg',
   },
 ];
 
@@ -67,7 +67,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({ item, isActive, onMouseEn
         }}
       />
       {/* Dark overlay for better text readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+      <div className="absolute inset-0 bg-black/40"></div>
 
       {/* Caption Text */}
       <span
@@ -125,7 +125,7 @@ export function LandingAccordionItem() {
                 Get Chrome Extension
               </a>
               <a
-                href="https://lokeet.io/login"
+                href="/login"
                 className="inline-block bg-gray-900 text-white font-semibold px-8 py-3 rounded-lg shadow-lg hover:bg-gray-800 transition-colors duration-300"
               >
                 Log In/Sign Up

@@ -2,26 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { api, User } from '@/lib/api';
+import { api, User, PortalEvent } from '@/lib/api';
+import ProfilePanel from '@/components/ProfilePanel';
 import Link from 'next/link';
 import { Pencil, Calendar, Mail } from 'lucide-react';
 import { RadarAddressInput } from '@/components/ui/radar-address-input';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-
-interface PortalEvent {
-  id: string;
-  name: string;
-  address: string;
-  city: string;
-  state?: string;
-  date: string;
-  recurring: string;
-  category?: string;
-  tags?: string[];
-  created_at: string;
-}
 
 interface EventFormData {
   name: string;
@@ -39,8 +27,9 @@ interface EventFormData {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = (uid: string) => `lokeet_portal_events_${uid}`;
-const CUSTOM_CATS_KEY = (uid: string) => `lokeet_portal_custom_categories_${uid}`;
-const CUSTOM_TAGS_KEY = (uid: string) => `lokeet_portal_custom_tags_${uid}`;
+const CUSTOM_CATS_KEY = (uid: string) => `lokeet_custom_categories_${uid}`;
+const CUSTOM_TAGS_KEY = (uid: string) => `lokeet_custom_tags_${uid}`;
+const CUSTOM_CITIES_KEY = (uid: string) => `lokeet_custom_cities_${uid}`;
 const DELETE_PREF_KEY = 'lokeet_skip_delete_confirm';
 
 const STATIC_CATEGORIES = ['Markets', 'Networking', 'Meet Ups', 'Workshops'];
@@ -85,13 +74,20 @@ export default function Portal() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showNavMenu, setShowNavMenu] = useState(false);
-  useEffect(() => { setShowNavMenu(sessionStorage.getItem('lokeet_nav_open') === 'true'); }, []);
+  const [navTransition, setNavTransition] = useState(false);
+  useEffect(() => {
+    setShowNavMenu(sessionStorage.getItem('lokeet_nav_open') === 'true');
+    requestAnimationFrame(() => requestAnimationFrame(() => setNavTransition(true)));
+  }, []);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
   const [events, setEvents] = useState<PortalEvent[]>([]);
+  const [pendingDeleteEvent, setPendingDeleteEvent] = useState<{ id: string; name: string } | null>(null);
   const [showNewEventModal, setShowNewEventModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<PortalEvent | null>(null);
   const [invitingEvent, setInvitingEvent] = useState<PortalEvent | null>(null);
 
+  const [portalView, setPortalView] = useState<'list' | 'calendar' | 'map'>('list');
+  const [portalCalMonth, setPortalCalMonth] = useState(() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; });
   // Filter state
   const [cityFilter, setCityFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -117,6 +113,7 @@ export default function Portal() {
   const [showDateMenu, setShowDateMenu] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showEditFilters, setShowEditFilters] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [dateMenuTop, setDateMenuTop] = useState(0);
   const [sortMenuTop, setSortMenuTop] = useState(0);
   const [editFiltersTop, setEditFiltersTop] = useState(0);
@@ -140,15 +137,32 @@ export default function Portal() {
     async function checkAuth() {
       const { valid, user: verifiedUser } = await api.verifySession();
       if (!valid) { router.push('/login'); return; }
-      setUser(verifiedUser || null);
-      if (verifiedUser?.id) {
+      let fullUser = verifiedUser || null;
+      if (fullUser?.id) {
+        const profile = await api.getProfile();
+        if (profile) fullUser = profile;
+      }
+      setUser(fullUser);
+      if (fullUser?.id) {
+        const verifiedUser = fullUser;
         try {
           const stored = localStorage.getItem(STORAGE_KEY(verifiedUser.id));
-          if (stored) setEvents(JSON.parse(stored));
+          const localEvts: PortalEvent[] = stored ? JSON.parse(stored) : [];
+          const remoteEvts = await api.getPortalEvents();
+          // Prefer remote if it has data, else fall back to local; then sync local-only events up
+          if (remoteEvts.length > 0) {
+            setEvents(remoteEvts);
+            localStorage.setItem(STORAGE_KEY(verifiedUser.id), JSON.stringify(remoteEvts));
+          } else if (localEvts.length > 0) {
+            setEvents(localEvts);
+            api.savePortalEvents(localEvts);
+          }
           const cc = localStorage.getItem(CUSTOM_CATS_KEY(verifiedUser.id));
           if (cc) setCustomCategories(JSON.parse(cc));
           const ct = localStorage.getItem(CUSTOM_TAGS_KEY(verifiedUser.id));
           if (ct) setCustomTags(JSON.parse(ct));
+          const cci = localStorage.getItem(CUSTOM_CITIES_KEY(verifiedUser.id));
+          if (cci) setCustomCities(JSON.parse(cci));
         } catch {}
       }
       setLoading(false);
@@ -159,6 +173,7 @@ export default function Portal() {
   function persistEvents(evts: PortalEvent[]) {
     setEvents(evts);
     if (user?.id) localStorage.setItem(STORAGE_KEY(user.id), JSON.stringify(evts));
+    api.savePortalEvents(evts);
   }
 
   function persistCustomCategories(cats: string[]) {
@@ -171,8 +186,12 @@ export default function Portal() {
     if (user?.id) localStorage.setItem(CUSTOM_TAGS_KEY(user.id), JSON.stringify(tags));
   }
 
+  function persistCustomCities(cities: string[]) {
+    setCustomCities(cities);
+    if (user?.id) localStorage.setItem(CUSTOM_CITIES_KEY(user.id), JSON.stringify(cities));
+  }
+
   function handleDeleteEvent(id: string) {
-    if (!confirm('Delete this event?')) return;
     persistEvents(events.filter(e => e.id !== id));
   }
 
@@ -254,14 +273,43 @@ export default function Portal() {
         <header className="bg-white border-b border-black/10 sticky top-0 z-30">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+              <span className="text-3xl font-bold">Lokeet</span>
               <div className="flex items-center gap-4">
-                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                <div className="h-6 w-6 bg-gray-200 rounded animate-pulse" />
+                <div className={`overflow-hidden whitespace-nowrap ${navTransition ? 'transition-all duration-300 ease-in-out' : ''} ${showNavMenu ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
+                  <div className="flex items-center gap-3 pr-1">
+                    <Link href="/dashboard" className={`flex-shrink-0 text-sm font-medium text-gray-900 ${pathname === '/dashboard' ? 'px-3 py-1 border-2 border-gray-900 rounded-full' : 'hover:underline'}`}>Dashboard</Link>
+                    <Link href="/portal" className={`flex-shrink-0 text-sm font-medium text-gray-900 ${pathname === '/portal' ? 'px-3 py-1 border-2 border-gray-900 rounded-full' : 'hover:underline'}`}>Portal</Link>
+                  </div>
+                </div>
+                <button className="text-sm hover:underline">Profile</button>
+                <button onClick={() => setShowNavMenu(p => { const next = !p; sessionStorage.setItem('lokeet_nav_open', String(next)); return next; })} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Menu">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
         </header>
+        <main className="container mx-auto px-4 py-8">
+          <div className="bg-white rounded-lg shadow p-6 mb-6 animate-pulse">
+            <div className="h-4 w-32 bg-gray-200 rounded mb-3" />
+            <div className="flex gap-2">
+              <div className="h-9 w-28 bg-gray-200 rounded-lg" />
+              <div className="h-9 w-28 bg-gray-200 rounded-lg" />
+              <div className="h-9 w-28 bg-gray-200 rounded-lg" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+                <div className="h-5 w-48 bg-gray-200 rounded mb-2" />
+                <div className="h-4 w-32 bg-gray-200 rounded mb-2" />
+                <div className="h-4 w-40 bg-gray-200 rounded" />
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -272,9 +320,9 @@ export default function Portal() {
       <header className="bg-white border-b border-black/10 sticky top-0 z-30">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="text-3xl font-bold">Lokeet</Link>
+            <span className="text-3xl font-bold">Lokeet</span>
             <div className="flex items-center gap-4">
-              <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${showNavMenu ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
+              <div className={`overflow-hidden whitespace-nowrap ${navTransition ? 'transition-all duration-300 ease-in-out' : ''} ${showNavMenu ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
                 <div className="flex items-center gap-3 pr-1">
                   <Link href="/dashboard" className={`flex-shrink-0 text-sm font-medium text-gray-900 ${pathname === '/dashboard' ? 'px-3 py-1 border-2 border-gray-900 rounded-full' : 'hover:underline'}`}>
                     Dashboard
@@ -284,14 +332,7 @@ export default function Portal() {
                   </Link>
                 </div>
               </div>
-              <button onClick={() => setShowProfilePanel(true)} className="text-sm hover:underline">
-                {user?.username ? (
-                  <span className="flex items-baseline gap-1">
-                    <span className="font-bold">{user.display_name || user.username}</span>
-                    <span className="text-gray-400">@{user.username}</span>
-                  </span>
-                ) : 'Profile'}
-              </button>
+              <button onClick={() => setShowProfilePanel(true)} className="text-sm hover:underline">Profile</button>
               <button onClick={() => setShowNavMenu(p => { const next = !p; sessionStorage.setItem('lokeet_nav_open', String(next)); return next; })} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Menu">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="3" y1="6" x2="21" y2="6"/>
@@ -320,15 +361,17 @@ export default function Portal() {
           )}
 
           {/* Row 1: filters + button */}
-          <div className="flex gap-3 flex-wrap items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <div className="flex gap-2 sm:contents">
             <DeletableSelect
               value={cityFilter}
               onChange={setCityFilter}
               defaultLabel="All Cities"
               options={displayCities.map(c => ({ value: c, label: c, deletable: customCities.includes(c) }))}
-              onDelete={(c) => { setCustomCities(p => p.filter(x => x !== c)); if (cityFilter === c) setCityFilter('all'); }}
+              onDelete={(c) => { persistCustomCities(customCities.filter(x => x !== c)); if (cityFilter === c) setCityFilter('all'); }}
               addNewLabel="+ Add new city…"
               onAddNew={() => { setShowCityInput(true); setShowCategoryInput(false); setShowTagInput(false); }}
+              className="flex-1 sm:flex-none"
             />
             <DeletableSelect
               value={categoryFilter}
@@ -338,6 +381,7 @@ export default function Portal() {
               onDelete={(c) => { persistCustomCategories(customCategories.filter(x => x !== c)); if (categoryFilter === c) { setCategoryFilter('all'); setTagFilter('all'); } }}
               addNewLabel="+ Add new category…"
               onAddNew={() => { setShowCategoryInput(true); setShowCityInput(false); setShowTagInput(false); }}
+              className="flex-1 sm:flex-none"
             />
             <DeletableSelect
               value={tagFilter}
@@ -347,8 +391,10 @@ export default function Portal() {
               onDelete={(t) => { persistCustomTags(customTags.filter(x => x !== t)); if (tagFilter === t) setTagFilter('all'); }}
               addNewLabel="+ Add new tag…"
               onAddNew={() => { setShowTagInput(true); setShowCityInput(false); setShowCategoryInput(false); }}
+              className="flex-1 sm:flex-none"
             />
-
+            </div>
+            <div className="flex gap-3 items-center sm:contents">
             {/* Date filter */}
             <div ref={dateMenuRef} className="relative">
               <button
@@ -414,10 +460,10 @@ export default function Portal() {
                 <EditFiltersPopup
                   cities={displayCities} categories={displayCategories} tags={displayTags}
                   customCities={customCities} customCategories={customCategories} customTags={customTags}
-                  onDeleteCity={(v) => { setCustomCities(p => p.filter(x => x !== v)); if (cityFilter === v) setCityFilter('all'); }}
+                  onDeleteCity={(v) => { persistCustomCities(customCities.filter(x => x !== v)); if (cityFilter === v) setCityFilter('all'); }}
                   onDeleteCategory={(v) => { persistCustomCategories(customCategories.filter(x => x !== v)); if (categoryFilter === v) { setCategoryFilter('all'); setTagFilter('all'); } }}
                   onDeleteTag={(v) => { persistCustomTags(customTags.filter(x => x !== v)); if (tagFilter === v) setTagFilter('all'); }}
-                  onAddCity={(v) => setCustomCities(p => [...p, v])}
+                  onAddCity={(v) => persistCustomCities([...customCities, v])}
                   onAddCategory={(v) => persistCustomCategories([...customCategories, v])}
                   onAddTag={(v) => persistCustomTags([...customTags, v])}
                   onSave={(cities, categories, tags) => { setManagedCityOrder(cities); setManagedCategoryOrder(categories); setManagedTagOrder(tags); }}
@@ -468,6 +514,20 @@ export default function Portal() {
               )}
             </div>
 
+            {/* Share */}
+            <button
+              type="button"
+              onClick={() => setShowShareModal(true)}
+              className="p-2 border rounded-lg hover:bg-gray-50 transition-colors"
+              title="Share & Embed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </button>
+
             {/* New Event button — pill, inline with filters */}
             <button
               onClick={() => setShowNewEventModal(true)}
@@ -475,6 +535,7 @@ export default function Portal() {
             >
               + New Event
             </button>
+            </div>
           </div>
 
           {/* Row 2: add-new inputs */}
@@ -483,7 +544,7 @@ export default function Portal() {
               <input type="text" value={newCityInput} onChange={e => setNewCityInput(e.target.value)}
                 placeholder="City, State (e.g. Orlando, FL)" autoFocus
                 className="flex-1 px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#42a746] focus:border-transparent" />
-              <button type="button" onClick={() => { const v = newCityInput.trim(); if (v) setCustomCities(p => [...p, v]); setNewCityInput(''); setShowCityInput(false); }}
+              <button type="button" onClick={() => { const v = newCityInput.trim(); if (v) persistCustomCities([...customCities, v]); setNewCityInput(''); setShowCityInput(false); }}
                 className="px-3 py-1.5 border-2 border-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-50">Add</button>
               <button type="button" onClick={() => { setShowCityInput(false); setNewCityInput(''); }}
                 className="px-3 py-1.5 text-sm text-gray-400 hover:text-gray-600">Cancel</button>
@@ -535,13 +596,79 @@ export default function Portal() {
         </div>
 
         {/* My Portal heading + count */}
-        <div className="flex items-baseline gap-3 mb-3">
-          <h2 className="text-xl font-bold">My Portal</h2>
-          <span className="text-sm text-gray-500">{events.length} event{events.length !== 1 ? 's' : ''}</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-xl font-bold">All Events</h2>
+            <span className="text-sm text-gray-500">{events.length} event{events.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button type="button" title="List view" onClick={() => setPortalView('list')} className={`p-1.5 rounded transition-colors ${portalView === 'list' ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-700'}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <button type="button" title="Calendar view" onClick={() => setPortalView('calendar')} className={`p-1.5 rounded transition-colors ${portalView === 'calendar' ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-700'}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </button>
+            <button type="button" title="Map view" onClick={() => setPortalView('map')} className={`p-1.5 rounded transition-colors ${portalView === 'map' ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-700'}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            </button>
+          </div>
         </div>
 
+        {portalView === 'calendar' && (() => {
+          const cy = portalCalMonth.getFullYear(), cm = portalCalMonth.getMonth();
+          const daysInMonth = new Date(cy, cm + 1, 0).getDate();
+          const startDow = new Date(cy, cm, 1).getDay();
+          const byDate: Record<string, typeof sortedEvents> = {};
+          sortedEvents.forEach(e => { const d = e.date?.slice(0,10); if (d) { byDate[d] = [...(byDate[d]||[]), e]; } });
+          const todayStr = new Date().toISOString().slice(0,10);
+          const monthLabel = portalCalMonth.toLocaleString('default', {month:'long', year:'numeric'});
+          return (
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <button type="button" onClick={() => setPortalCalMonth(new Date(cy, cm-1, 1))} className="p-1.5 rounded hover:bg-gray-100 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span className="font-semibold text-sm">{monthLabel}</span>
+                <button type="button" onClick={() => setPortalCalMonth(new Date(cy, cm+1, 1))} className="p-1.5 rounded hover:bg-gray-100 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
+              <div className="grid grid-cols-7 text-center text-xs text-gray-400 mb-1">
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} className="py-1 font-medium">{d}</div>)}
+              </div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {Array.from({length: startDow}).map((_,i) => <div key={`e${i}`} />)}
+                {Array.from({length: daysInMonth}).map((_,i) => {
+                  const day = i+1;
+                  const k = `${cy}-${String(cm+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                  const items = byDate[k] || [];
+                  const isToday = k === todayStr;
+                  return (
+                    <div key={day} className={`min-h-[3.5rem] p-1 rounded-lg ${isToday ? 'bg-gray-50' : ''}`}>
+                      <div className={`text-xs mb-0.5 w-5 h-5 flex items-center justify-center mx-auto rounded-full ${isToday ? 'bg-gray-900 text-white font-bold' : 'text-gray-500'}`}>{day}</div>
+                      {items.slice(0,2).map((evt,idx) => (
+                        <div key={idx} title={evt.name} className="truncate text-[10px] bg-gray-800 text-white rounded px-1 mb-0.5 leading-4">{evt.name||'—'}</div>
+                      ))}
+                      {items.length > 2 && <div className="text-[10px] text-gray-400 text-center">+{items.length-2}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {portalView === 'map' && (
+          <div className="bg-white rounded-lg shadow p-12 text-center mb-4">
+            <svg className="mx-auto mb-3 text-gray-300" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+            </svg>
+            <p className="text-gray-400 text-sm">Map view coming soon</p>
+          </div>
+        )}
+
         {/* Events List */}
-        <div className="space-y-4">
+        {portalView === 'list' && (<div className="space-y-4">
           {sortedEvents.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">
               <p className="text-xl text-gray-500 mb-4">{events.length === 0 ? 'No events yet' : 'No events match your filters'}</p>
@@ -582,7 +709,13 @@ export default function Portal() {
                     <button onClick={() => setEditingEvent(evt)} className="text-gray-400 hover:text-gray-700 transition" title="Edit event">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDeleteEvent(evt.id)} className="text-red-500 hover:text-red-700 transition" title="Delete event">
+                    <button onClick={() => {
+                      if (localStorage.getItem(DELETE_PREF_KEY) === 'true') {
+                        handleDeleteEvent(evt.id);
+                      } else {
+                        setPendingDeleteEvent({ id: evt.id, name: evt.name || 'Untitled' });
+                      }
+                    }} className="text-red-500 hover:text-red-700 transition" title="Delete event">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                       </svg>
@@ -592,7 +725,7 @@ export default function Portal() {
               </div>
             ))
           )}
-        </div>
+        </div>)}
       </main>
 
       {/* Footer */}
@@ -601,6 +734,96 @@ export default function Portal() {
           <p className="text-sm opacity-70">Made with ❤️ for Locals</p>
         </div>
       </footer>
+
+      {showShareModal && (() => {
+        const username = user?.username || '';
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://lokeet.io';
+        const base = `${origin}/${username}/events`;
+
+        // Build filtered URL with all active filters
+        const fp = new URLSearchParams();
+        if (cityFilter !== 'all') fp.set('city', cityFilter);
+        if (categoryFilter !== 'all') fp.set('category', categoryFilter);
+        if (tagFilter !== 'all') fp.set('tag', tagFilter);
+        if (customDateFrom) fp.set('dateFrom', customDateFrom);
+        if (customDateTo) fp.set('dateTo', customDateTo);
+        if (sortBy !== 'date') fp.set('sort', sortBy);
+        if (sortDirection !== 'asc') fp.set('dir', sortDirection);
+        const filteredUrl = `${base}${fp.toString() ? '?' + fp.toString() : ''}`;
+
+        const selectionPills = [
+          cityFilter !== 'all' ? `City: ${cityFilter}` : 'All Cities',
+          categoryFilter !== 'all' ? `Category: ${categoryFilter}` : 'All Categories',
+          tagFilter !== 'all' ? `Tag: ${tagFilter}` : 'All Tags',
+          (customDateFrom || customDateTo)
+            ? `Dates: ${customDateFrom || '…'} – ${customDateTo || '…'}`
+            : 'All Dates',
+          sortBy !== 'date' ? `Sort: ${sortBy}` : null,
+          sortDirection !== 'asc' ? '↓ Descending' : null,
+        ].filter(Boolean) as string[];
+
+        function copyText(text: string, btn: HTMLButtonElement) {
+          navigator.clipboard.writeText(text);
+          const orig = btn.textContent; btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = orig; }, 1500);
+        }
+        function embedFor(url: string) {
+          return `<iframe src="${url}" width="100%" height="600" style="border:none;border-radius:12px;" title="${username}'s Events on Lokeet" loading="lazy"></iframe>`;
+        }
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowShareModal(false)} />
+            <div className="relative bg-white border-2 border-black rounded-3xl shadow-lg p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setShowShareModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <h2 className="text-2xl font-bold mb-1">Share Events</h2>
+              <p className="text-sm text-gray-500 mb-6">Share a live view of your events to your website or anywhere you can add a link! Updates automatically as you add or edit on Lokeet.</p>
+
+              {!username ? (
+                <p className="text-sm text-red-500">Set a username in your profile to enable sharing.</p>
+              ) : (
+                <>
+                  {/* Current selection */}
+                  <div className="mb-6">
+                    <p className="text-sm font-semibold mb-2">Current Selection</p>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {selectionPills.map(f => (
+                        <span key={f} className="px-2.5 py-1 text-xs rounded-full bg-gray-100 border border-gray-200 text-gray-600">{f}</span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input readOnly value={filteredUrl} className="flex-1 px-3 py-2 border rounded-lg text-sm bg-gray-50 text-gray-700 truncate" />
+                      <button type="button" onClick={(e) => copyText(filteredUrl, e.currentTarget)}
+                        className="px-4 py-2 border-2 border-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-50 flex-shrink-0">Copy</button>
+                    </div>
+                  </div>
+
+                  {/* Embed code */}
+                  <div className="border-t border-gray-100 pt-5">
+                    <p className="text-sm font-semibold mb-2">Embed Code</p>
+                    <div className="flex gap-2 items-start">
+                      <textarea readOnly value={embedFor(filteredUrl)} rows={3} className="flex-1 px-3 py-2 border rounded-lg text-xs bg-gray-50 text-gray-600 resize-none font-mono" />
+                      <button type="button" onClick={(e) => copyText(embedFor(filteredUrl), e.currentTarget as HTMLButtonElement)}
+                        className="px-4 py-2 border-2 border-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-50 flex-shrink-0">Copy</button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Paste into any website to embed your live events.</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {pendingDeleteEvent && (
+        <DeleteConfirmPopup
+          itemName={pendingDeleteEvent.name}
+          onConfirm={() => { handleDeleteEvent(pendingDeleteEvent.id); setPendingDeleteEvent(null); }}
+          onCancel={() => setPendingDeleteEvent(null)}
+        />
+      )}
 
       {/* New Event Modal */}
       {showNewEventModal && (
@@ -651,50 +874,12 @@ export default function Portal() {
 
       {/* Profile panel */}
       {showProfilePanel && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/20" onClick={() => setShowProfilePanel(false)} />
-          <div className="relative w-full max-w-sm bg-white h-full shadow-2xl flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold">Profile</h2>
-              <button onClick={() => setShowProfilePanel(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 px-6 py-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center text-white text-2xl font-bold">
-                  {(user?.display_name?.[0] || user?.email?.[0] || '?').toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900">{user?.display_name || user?.email}</p>
-                  {user?.username ? <p className="text-sm text-gray-500">@{user.username}</p> : <p className="text-xs text-amber-600">No username set</p>}
-                </div>
-              </div>
-              <div className="space-y-0 mb-6 rounded-xl border border-gray-100 overflow-hidden">
-                {[
-                  { label: 'Email', value: user?.email },
-                  { label: 'Display name', value: user?.display_name },
-                  { label: 'Username', value: user?.username ? `@${user.username}` : undefined },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0">
-                    <span className="text-sm text-gray-500">{label}</span>
-                    <span className="text-sm font-medium text-gray-900">{value ?? <span className="text-gray-300 italic text-xs">not set</span>}</span>
-                  </div>
-                ))}
-              </div>
-              <Link href="/dashboard">
-                <button className="w-full bg-white text-gray-900 font-semibold py-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors duration-300 border-2 border-gray-900">
-                  Go to Dashboard
-                </button>
-              </Link>
-              <button onClick={handleLogout} className="w-full mt-3 text-center text-red-600 text-sm hover:underline">
-                Log Out
-              </button>
-            </div>
-          </div>
-        </div>
+        <ProfilePanel
+          user={user}
+          onClose={() => setShowProfilePanel(false)}
+          onLogout={handleLogout}
+          onProfileUpdate={(u) => setUser(u)}
+        />
       )}
     </div>
   );
@@ -1388,6 +1573,26 @@ function PublicFormBuilder({ event, displayName }: { event: PortalEvent; display
               const typeMeta = FIELD_TYPES.find(t => t.type === f.type);
               return (
                 <div key={f.id} className="flex items-center gap-2 px-3 py-2.5 bg-white border rounded-lg">
+                  {customFields.length >= 2 && (
+                    <div className="flex flex-col flex-shrink-0">
+                      <button
+                        type="button"
+                        disabled={i === 0}
+                        onClick={() => setCustomFields(p => { const a = [...p]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; return a; })}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === customFields.length - 1}
+                        onClick={() => setCustomFields(p => { const a = [...p]; [a[i], a[i + 1]] = [a[i + 1], a[i]]; return a; })}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <span className="text-sm text-gray-800">{f.label}</span>
                     <span className="ml-2 text-xs text-gray-400">{typeMeta?.label ?? 'Short Answer'}</span>

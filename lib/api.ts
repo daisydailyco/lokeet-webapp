@@ -44,6 +44,19 @@ export interface Save {
   saved_at: string;
 }
 
+export interface PortalEvent {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state?: string;
+  date: string;
+  recurring: string;
+  category?: string;
+  tags?: string[];
+  created_at: string;
+}
+
 class LokeetAPI {
   // Routes storage to localStorage (remember me) or sessionStorage (session only).
   private store(): Storage {
@@ -337,6 +350,34 @@ class LokeetAPI {
   async getSharedList(shareId: string) {
     const res = await fetch(`${API_BASE}/api/share/${shareId}`);
     return await res.json();
+  }
+
+  async getPortalEvents(): Promise<PortalEvent[]> {
+    try {
+      const res = await this.authedFetch(`${API_BASE}/portal/events`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.events || [];
+    } catch { return []; }
+  }
+
+  async savePortalEvents(events: PortalEvent[]): Promise<void> {
+    try {
+      await this.authedFetch(`${API_BASE}/portal/events`, {
+        method: 'PUT',
+        body: JSON.stringify({ events }),
+      });
+    } catch {}
+  }
+
+  async getPublicPortalEvents(username: string): Promise<PortalEvent[]> {
+    try {
+      const base = API_BASE.replace('/v1', '');
+      const res = await fetch(`${base}/public/portal/${username}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.events || [];
+    } catch { return []; }
   }
 
   // Helper methods

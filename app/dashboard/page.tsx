@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Pencil, Calendar } from 'lucide-react';
 import { RadarAddressInput } from '@/components/ui/radar-address-input';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import ProfilePanel from '@/components/ProfilePanel';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -27,7 +28,11 @@ export default function Dashboard() {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
   const [showNavMenu, setShowNavMenu] = useState(false);
-  useEffect(() => { setShowNavMenu(sessionStorage.getItem('lokeet_nav_open') === 'true'); }, []);
+  const [navTransition, setNavTransition] = useState(false);
+  useEffect(() => {
+    setShowNavMenu(sessionStorage.getItem('lokeet_nav_open') === 'true');
+    requestAnimationFrame(() => requestAnimationFrame(() => setNavTransition(true)));
+  }, []);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showDateMenu, setShowDateMenu] = useState(false);
   const dateMenuRef = useRef<HTMLDivElement>(null);
@@ -48,20 +53,6 @@ export default function Dashboard() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
   const [showProfilePanel, setShowProfilePanel] = useState(false);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showHexInput, setShowHexInput] = useState(false);
-  const [showGradientPicker, setShowGradientPicker] = useState(false);
-  const [avatarColor, setAvatarColor] = useState<string>(() => {
-    if (typeof window === 'undefined') return '#000000';
-    const stored = localStorage.getItem('lokeet_avatar_color');
-    // Migrate old green default to black
-    if (!stored || stored === '#42a746') {
-      localStorage.setItem('lokeet_avatar_color', '#000000');
-      return '#000000';
-    }
-    return stored;
-  });
   const [activeQuickDate, setActiveQuickDate] = useState('all');
 
   const applyQuickDate = (value: string) => {
@@ -92,11 +83,17 @@ export default function Dashboard() {
       setDateFilter('all'); setCustomDateFrom(fmt(first)); setCustomDateTo(fmt(last));
     }
   };
+  const [pendingDeleteSave, setPendingDeleteSave] = useState<{ id: string; name: string } | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const toggleActiveFilter = (key: string) =>
     setActiveFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  const [savesView, setSavesView] = useState<'list' | 'calendar' | 'map'>('list');
+  const [savesCalMonth, setSavesCalMonth] = useState(() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; });
   const [editingCategories, setEditingCategories] = useState(false);
-  const [pinnedCategories, setPinnedCategories] = useState<string[]>([]);
+  const [topViewType, setTopViewType] = useState<string>('categories');
+  const [pinnedByType, setPinnedByType] = useState<Record<string, string[]>>({});
+  const [showTopAddInput, setShowTopAddInput] = useState(false);
+  const [topAddInputVal, setTopAddInputVal] = useState('');
   const [customContentTypes, setCustomContentTypes] = useState<string[]>([]);
   const [showContentInput, setShowContentInput] = useState(false);
   const [newContentInput, setNewContentInput] = useState('');
@@ -132,7 +129,11 @@ export default function Dashboard() {
       return;
     }
 
-    const u = verifiedUser || null;
+    let u = verifiedUser || null;
+    if (u?.id) {
+      const profile = await api.getProfile();
+      if (profile) u = profile;
+    }
     setUser(u);
     if (u?.id) {
       try {
@@ -140,6 +141,28 @@ export default function Dashboard() {
         if (cf) setCustomFields(JSON.parse(cf));
         const cd = localStorage.getItem(`lokeet_save_fields_${u.id}`);
         if (cd) setSaveCustomData(JSON.parse(cd));
+        const cc = localStorage.getItem(`lokeet_custom_categories_${u.id}`);
+        if (cc) setCustomCategories(JSON.parse(cc));
+        const ct = localStorage.getItem(`lokeet_custom_tags_${u.id}`);
+        if (ct) setCustomTags(JSON.parse(ct));
+        const cci = localStorage.getItem(`lokeet_custom_cities_${u.id}`);
+        if (cci) setCustomCities(JSON.parse(cci));
+        const tvt = localStorage.getItem(`lokeet_top_view_type_${u.id}`);
+        if (tvt) setTopViewType(tvt);
+        const pbt = localStorage.getItem(`lokeet_pinned_by_type_${u.id}`);
+        const parsed: Record<string, string[]> = pbt ? JSON.parse(pbt) : {};
+        // migrate legacy pinnedCategories key
+        if (!parsed.categories) {
+          const legacy = localStorage.getItem(`lokeet_pinned_categories_${u.id}`);
+          if (legacy) parsed.categories = JSON.parse(legacy);
+        }
+        if (Object.keys(parsed).length > 0) setPinnedByType(parsed);
+        const mco = localStorage.getItem(`lokeet_managed_category_order_${u.id}`);
+        if (mco) setManagedCategoryOrder(JSON.parse(mco));
+        const mto = localStorage.getItem(`lokeet_managed_tag_order_${u.id}`);
+        if (mto) setManagedTagOrder(JSON.parse(mto));
+        const mcio = localStorage.getItem(`lokeet_managed_city_order_${u.id}`);
+        if (mcio) setManagedCityOrder(JSON.parse(mcio));
       } catch {}
     }
     await loadSaves();
@@ -165,6 +188,7 @@ export default function Dashboard() {
 
   function handleDeleteCategory(v: string) {
     setCustomCategories(p => p.filter(x => x !== v));
+    setPinnedByType(prev => ({ ...prev, categories: (prev.categories || []).filter(x => x !== v) }));
     if (eventTypeFilter === v) { setEventTypeFilter('all'); setTagFilter('all'); }
     const affected = saves.filter(s => s.event_type === v || s.category === v);
     if (affected.length > 0) {
@@ -175,9 +199,30 @@ export default function Dashboard() {
     }
   }
 
-  async function handleDeleteSave(id: string) {
-    if (!confirm('Delete this save?')) return;
+  function handleTopAdd() {
+    const v = topAddInputVal.trim();
+    if (!v) return;
+    if (topViewType === 'categories') {
+      setCustomCategories(prev => prev.includes(v) ? prev : [...prev, v]);
+    } else if (topViewType === 'cities') {
+      setCustomCities(prev => prev.includes(v) ? prev : [...prev, v]);
+    } else if (topViewType === 'tags') {
+      setCustomTags(prev => prev.includes(v) ? prev : [...prev, v]);
+    } else {
+      persistCustomFields(customFields.map(f =>
+        f.name === topViewType ? { ...f, options: Array.from(new Set([...(f.options || []), v])) } : f
+      ));
+    }
+    setPinnedByType(prev => {
+      const current = prev[topViewType] || [];
+      if (current.length < 4 && !current.includes(v)) return { ...prev, [topViewType]: [...current, v] };
+      return prev;
+    });
+    setTopAddInputVal('');
+    setShowTopAddInput(false);
+  }
 
+  async function handleDeleteSave(id: string) {
     await api.deleteSave(id);
     setSaves(saves.filter(s => s.id !== id));
   }
@@ -273,6 +318,15 @@ export default function Dashboard() {
     if (user?.id) localStorage.setItem(`lokeet_save_fields_${user.id}`, JSON.stringify(data));
   }
 
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_custom_categories_${user.id}`, JSON.stringify(customCategories)); }, [customCategories, user?.id]);
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_custom_tags_${user.id}`, JSON.stringify(customTags)); }, [customTags, user?.id]);
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_custom_cities_${user.id}`, JSON.stringify(customCities)); }, [customCities, user?.id]);
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_top_view_type_${user.id}`, topViewType); }, [topViewType, user?.id]);
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_pinned_by_type_${user.id}`, JSON.stringify(pinnedByType)); }, [pinnedByType, user?.id]);
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_managed_category_order_${user.id}`, JSON.stringify(managedCategoryOrder)); }, [managedCategoryOrder, user?.id]);
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_managed_tag_order_${user.id}`, JSON.stringify(managedTagOrder)); }, [managedTagOrder, user?.id]);
+  useEffect(() => { if (user?.id) localStorage.setItem(`lokeet_managed_city_order_${user.id}`, JSON.stringify(managedCityOrder)); }, [managedCityOrder, user?.id]);
+
   const tagsByCategory = useMemo(() => {
     const map: Record<string, string[]> = {};
     for (const s of saves) {
@@ -322,14 +376,23 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-[#f9f8e5]">
-        {/* Header Skeleton */}
         <header className="bg-white border-b border-black/10 sticky top-0 z-30">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+              <span className="text-3xl font-bold">Lokeet</span>
               <div className="flex items-center gap-4">
-                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                <div className={`overflow-hidden whitespace-nowrap ${navTransition ? 'transition-all duration-300 ease-in-out' : ''} ${showNavMenu ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
+                  <div className="flex items-center gap-3 pr-1">
+                    <Link href="/dashboard" className={`flex-shrink-0 text-sm font-medium text-gray-900 ${pathname === '/dashboard' ? 'px-3 py-1 border-2 border-gray-900 rounded-full' : 'hover:underline'}`}>Dashboard</Link>
+                    <Link href="/portal" className={`flex-shrink-0 text-sm font-medium text-gray-900 ${pathname === '/portal' ? 'px-3 py-1 border-2 border-gray-900 rounded-full' : 'hover:underline'}`}>Portal</Link>
+                  </div>
+                </div>
+                <button className="text-sm hover:underline">Profile</button>
+                <button onClick={() => setShowNavMenu(p => { const next = !p; sessionStorage.setItem('lokeet_nav_open', String(next)); return next; })} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Menu">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -418,10 +481,10 @@ export default function Dashboard() {
       <header className="bg-white border-b border-black/10 sticky top-0 z-30">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="text-3xl font-bold">Lokeet</Link>
+            <span className="text-3xl font-bold">Lokeet</span>
 
             <div className="flex items-center gap-4">
-              <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${showNavMenu ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
+              <div className={`overflow-hidden whitespace-nowrap ${navTransition ? 'transition-all duration-300 ease-in-out' : ''} ${showNavMenu ? 'max-w-xs opacity-100' : 'max-w-0 opacity-0'}`}>
                 <div className="flex items-center gap-3 pr-1">
                   <Link href="/dashboard" className={`flex-shrink-0 text-sm font-medium text-gray-900 ${pathname === '/dashboard' ? 'px-3 py-1 border-2 border-gray-900 rounded-full' : 'hover:underline'}`}>
                     Dashboard
@@ -432,15 +495,10 @@ export default function Dashboard() {
                 </div>
               </div>
               <button
-                onClick={() => { setShowProfilePanel(true); setIsEditingProfile(false); }}
+                onClick={() => setShowProfilePanel(true)}
                 className="text-sm hover:underline"
               >
-                {user?.username ? (
-                  <span className="flex items-baseline gap-1">
-                    <span className="font-bold">{user.display_name || user.username}</span>
-                    <span className="text-gray-400">@{user.username}</span>
-                  </span>
-                ) : 'Profile'}
+                Profile
               </button>
               <button
                 onClick={() => setShowNavMenu(p => { const next = !p; sessionStorage.setItem('lokeet_nav_open', String(next)); return next; })}
@@ -475,7 +533,8 @@ export default function Dashboard() {
           {/* Filters */}
           <div className="flex flex-col gap-2">
             {/* Row 1: dropdowns — never moves */}
-            <div className="flex gap-3 flex-wrap items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+              <div className="flex gap-2 sm:contents">
               <DeletableSelect
                 value={cityFilter}
                 onChange={setCityFilter}
@@ -484,6 +543,7 @@ export default function Dashboard() {
                 onDelete={(c) => { setCustomCities(p => p.filter(x => x !== c)); if (cityFilter === c) setCityFilter('all'); }}
                 addNewLabel="+ Add new city…"
                 onAddNew={() => { setShowCityInput(true); setShowCategoryInput(false); setShowTagInput(false); setShowCustomFieldInput(null); }}
+                className="flex-1 sm:flex-none"
               />
               <DeletableSelect
                 value={eventTypeFilter}
@@ -494,6 +554,7 @@ export default function Dashboard() {
                 deleteWarning={getCategoryDeleteWarning}
                 addNewLabel="+ Add new category…"
                 onAddNew={() => { setShowCategoryInput(true); setShowCityInput(false); setShowTagInput(false); setShowCustomFieldInput(null); }}
+                className="flex-1 sm:flex-none"
               />
               <DeletableSelect
                 value={tagFilter}
@@ -503,6 +564,7 @@ export default function Dashboard() {
                 onDelete={(t) => { setCustomTags(p => p.filter(x => x !== t)); if (tagFilter === t) setTagFilter('all'); }}
                 addNewLabel="+ Add new tag…"
                 onAddNew={() => { setShowTagInput(true); setShowCityInput(false); setShowCategoryInput(false); setShowCustomFieldInput(null); }}
+                className="flex-1 sm:flex-none"
               />
 
               {/* Custom field filters */}
@@ -520,7 +582,8 @@ export default function Dashboard() {
                   />
                 );
               })}
-
+              </div>
+            <div className="flex gap-3 items-center sm:contents">
             {/* Calendar / date popup */}
             <div ref={dateMenuRef} className="relative">
               <button
@@ -661,6 +724,7 @@ export default function Dashboard() {
             >
               + New Save
             </button>
+            </div>
             </div>{/* end Row 1 */}
 
             {/* Row 2: add-new inputs — appears below without shifting Row 1 */}
@@ -719,23 +783,56 @@ export default function Dashboard() {
           </div>{/* end Filters flex-col */}
         </div>
 
-        {/* Categories Preview */}
+        {/* Top [type] Preview */}
         {(() => {
-          const defaultTop4 = STATIC_CATEGORIES.slice(0, 4);
-          const displayed = pinnedCategories.length > 0 ? pinnedCategories : defaultTop4;
-          const togglePin = (cat: string) => {
-            setPinnedCategories(prev =>
-              prev.includes(cat)
-                ? prev.filter(c => c !== cat)
-                : prev.length < 4 ? [...prev, cat] : prev
-            );
+          const typeOptions = [
+            { value: 'categories', label: 'Categories' },
+            { value: 'cities', label: 'Cities' },
+            { value: 'tags', label: 'Tags' },
+            ...customFields.map(f => ({ value: f.name, label: f.name })),
+          ];
+          const topViewLabel = typeOptions.find(o => o.value === topViewType)?.label ?? topViewType;
+          const topViewSingular = topViewType === 'categories' ? 'category' : topViewType === 'cities' ? 'city' : topViewType === 'tags' ? 'tag' : topViewLabel;
+
+          function getAllOptions(): string[] {
+            if (topViewType === 'categories') return displayCategories;
+            if (topViewType === 'cities') return allCities;
+            if (topViewType === 'tags') return displayTags;
+            const field = customFields.find(f => f.name === topViewType);
+            if (field) {
+              const fromData = saves.flatMap(s => { const v = saveCustomData[s.id]?.[topViewType]; return v ? [v] : []; });
+              return Array.from(new Set([...(field.options || []), ...fromData]));
+            }
+            return [];
+          }
+          const allOptions = getAllOptions();
+          const pinnedForType = pinnedByType[topViewType] || [];
+          const validPinned = pinnedForType.filter(v => allOptions.includes(v));
+          const displayed = validPinned.length > 0 ? validPinned : allOptions.slice(0, 4);
+
+          function getCount(value: string): number {
+            if (topViewType === 'categories') return saves.filter(s => s.event_type === value || s.category === value).length;
+            if (topViewType === 'cities') return saves.filter(s => s.city === value).length;
+            if (topViewType === 'tags') return saves.filter(s => (s.tags || []).includes(value)).length;
+            return saves.filter(s => saveCustomData[s.id]?.[topViewType] === value).length;
+          }
+
+          const togglePin = (value: string) => {
+            setPinnedByType(prev => {
+              const current = prev[topViewType] || [];
+              const updated = current.includes(value)
+                ? current.filter(v => v !== value)
+                : current.length < 4 ? [...current, value] : current;
+              return { ...prev, [topViewType]: updated };
+            });
           };
+
           return (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-bold">Top Categories</h2>
+                <h2 className="text-xl font-bold">Top {topViewLabel}</h2>
                 <button
-                  onClick={() => setEditingCategories(e => !e)}
+                  onClick={() => { setEditingCategories(e => !e); setShowTopAddInput(false); setTopAddInputVal(''); }}
                   className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   {editingCategories ? 'Done' : 'Edit'}
@@ -744,57 +841,99 @@ export default function Dashboard() {
 
               {editingCategories ? (
                 <div className="bg-white rounded-lg shadow p-4">
-                  <p className="text-sm text-gray-500 mb-3">Select up to 4 categories to feature. ({pinnedCategories.length}/4 selected)</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {STATIC_CATEGORIES.map(cat => {
-                      const selected = pinnedCategories.includes(cat);
-                      const disabled = !selected && pinnedCategories.length >= 4;
-                      return (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => !disabled && togglePin(cat)}
-                          className={`px-3 py-2 rounded-lg text-sm border text-left transition-colors ${
-                            selected
-                              ? 'border-gray-900 bg-gray-100 font-semibold'
-                              : disabled
-                              ? 'border-gray-100 text-gray-300 cursor-not-allowed'
-                              : 'border-gray-200 hover:bg-gray-50'
-                          }`}
-                        >
-                          {selected && <span className="mr-1">✓</span>}{cat}
-                        </button>
-                      );
-                    })}
+                  {/* View type switcher */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {typeOptions.map(opt => (
+                      <button key={opt.value} type="button"
+                        onClick={() => { setTopViewType(opt.value); setShowTopAddInput(false); setTopAddInputVal(''); }}
+                        className={`px-3 py-1 rounded-full text-sm border transition-colors ${topViewType === opt.value ? 'border-gray-900 bg-gray-100 font-semibold' : 'border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
+
+                  <p className="text-sm text-gray-500 mb-3">Select up to 4 to feature. ({pinnedForType.length}/4 selected)</p>
+
+                  {allOptions.length === 0 ? (
+                    <p className="text-sm text-gray-400 mb-3">No {topViewLabel.toLowerCase()} yet — add one below.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                      {allOptions.map(opt => {
+                        const selected = pinnedForType.includes(opt);
+                        const disabled = !selected && pinnedForType.length >= 4;
+                        return (
+                          <button key={opt} type="button"
+                            onClick={() => !disabled && togglePin(opt)}
+                            className={`px-3 py-2 rounded-lg text-sm border text-left transition-colors ${
+                              selected ? 'border-gray-900 bg-gray-100 font-semibold'
+                              : disabled ? 'border-gray-100 text-gray-300 cursor-not-allowed'
+                              : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            {selected && <span className="mr-1">✓</span>}{opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Add new inline */}
+                  {showTopAddInput ? (
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        autoFocus
+                        value={topAddInputVal}
+                        onChange={e => setTopAddInputVal(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleTopAdd(); if (e.key === 'Escape') { setShowTopAddInput(false); setTopAddInputVal(''); } }}
+                        placeholder={`New ${topViewSingular}…`}
+                        className="flex-1 px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#42a746] focus:border-transparent"
+                      />
+                      <button type="button" onClick={handleTopAdd}
+                        className="px-3 py-1.5 border-2 border-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-50">Add</button>
+                      <button type="button" onClick={() => { setShowTopAddInput(false); setTopAddInputVal(''); }}
+                        className="px-3 py-1.5 border rounded-lg text-sm text-gray-500 hover:bg-gray-50">Cancel</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setShowTopAddInput(true)}
+                      className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                      + Add new {topViewSingular}…
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {displayed.map(cat => {
-                    const count = saves.filter(s => s.event_type === cat || s.category === cat).length;
+                  {displayed.map(val => {
+                    const count = getCount(val);
                     return (
-                      <div key={cat} className="bg-white rounded-lg shadow p-4">
-                        <h3 className="font-semibold mb-2">{cat}</h3>
+                      <div key={val} className="bg-white rounded-lg shadow p-4">
+                        <h3 className="font-semibold mb-2">{val}</h3>
                         <p className="text-sm text-gray-600 mb-3">{count} saves</p>
-                        {count > 0 ? (
-                          <button
-                            onClick={() => handleShareCategory(cat)}
-                            className="text-sm text-gray-900 font-semibold hover:underline"
-                          >
-                            Share →
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm text-gray-900 font-semibold">Share</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 flex-shrink-0">
-                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            </svg>
-                            <span className="text-xs text-gray-400">save to share</span>
-                          </div>
+                        {topViewType === 'categories' && (
+                          count > 0 ? (
+                            <button onClick={() => handleShareCategory(val)} className="text-sm text-gray-900 font-semibold hover:underline">Share →</button>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm text-gray-900 font-semibold">Share</span>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 flex-shrink-0">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                              </svg>
+                              <span className="text-xs text-gray-400">save to share</span>
+                            </div>
+                          )
                         )}
                       </div>
                     );
                   })}
+                  {Array.from({ length: Math.max(0, 4 - displayed.length) }).map((_, i) => (
+                    <button key={`placeholder-${i}`} type="button"
+                      onClick={() => setEditingCategories(true)}
+                      className="bg-white rounded-lg shadow p-4 border-2 border-dashed border-gray-200 text-left hover:border-gray-400 transition-colors group"
+                    >
+                      <h3 className="font-semibold text-gray-300 group-hover:text-gray-500 transition-colors mb-2">+ Add New</h3>
+                      <p className="text-sm text-gray-200 group-hover:text-gray-400 transition-colors">{topViewSingular}</p>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -802,11 +941,78 @@ export default function Dashboard() {
         })()}
 
         {/* Saves List */}
-        <div className="flex items-baseline gap-3 mb-3">
-          <h2 className="text-xl font-bold">My Saves</h2>
-          <span className="text-sm text-gray-500">{saves.length} saves</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-xl font-bold">All Saves</h2>
+            <span className="text-sm text-gray-500">{saves.length} saves</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button type="button" title="List view" onClick={() => setSavesView('list')} className={`p-1.5 rounded transition-colors ${savesView === 'list' ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-700'}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <button type="button" title="Calendar view" onClick={() => setSavesView('calendar')} className={`p-1.5 rounded transition-colors ${savesView === 'calendar' ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-700'}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </button>
+            <button type="button" title="Map view" onClick={() => setSavesView('map')} className={`p-1.5 rounded transition-colors ${savesView === 'map' ? 'text-gray-900 bg-gray-100' : 'text-gray-400 hover:text-gray-700'}`}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            </button>
+          </div>
         </div>
-        <div className="space-y-4">
+
+        {savesView === 'calendar' && (() => {
+          const cy = savesCalMonth.getFullYear(), cm = savesCalMonth.getMonth();
+          const daysInMonth = new Date(cy, cm + 1, 0).getDate();
+          const startDow = new Date(cy, cm, 1).getDay();
+          const byDate: Record<string, typeof sortedSaves> = {};
+          sortedSaves.forEach(s => { const d = s.event_date?.slice(0,10); if (d) { byDate[d] = [...(byDate[d]||[]), s]; } });
+          const todayStr = new Date().toISOString().slice(0,10);
+          const monthLabel = savesCalMonth.toLocaleString('default', {month:'long', year:'numeric'});
+          return (
+            <div className="bg-white rounded-lg shadow p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <button type="button" onClick={() => setSavesCalMonth(new Date(cy, cm-1, 1))} className="p-1.5 rounded hover:bg-gray-100 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span className="font-semibold text-sm">{monthLabel}</span>
+                <button type="button" onClick={() => setSavesCalMonth(new Date(cy, cm+1, 1))} className="p-1.5 rounded hover:bg-gray-100 transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
+              <div className="grid grid-cols-7 text-center text-xs text-gray-400 mb-1">
+                {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} className="py-1 font-medium">{d}</div>)}
+              </div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {Array.from({length: startDow}).map((_,i) => <div key={`e${i}`} />)}
+                {Array.from({length: daysInMonth}).map((_,i) => {
+                  const day = i+1;
+                  const k = `${cy}-${String(cm+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                  const items = byDate[k] || [];
+                  const isToday = k === todayStr;
+                  return (
+                    <div key={day} className={`min-h-[3.5rem] p-1 rounded-lg ${isToday ? 'bg-gray-50' : ''}`}>
+                      <div className={`text-xs mb-0.5 w-5 h-5 flex items-center justify-center mx-auto rounded-full ${isToday ? 'bg-gray-900 text-white font-bold' : 'text-gray-500'}`}>{day}</div>
+                      {items.slice(0,2).map((s,idx) => (
+                        <div key={idx} title={s.event_name||s.venue_name} className="truncate text-[10px] bg-gray-800 text-white rounded px-1 mb-0.5 leading-4">{s.event_name||s.venue_name||'—'}</div>
+                      ))}
+                      {items.length > 2 && <div className="text-[10px] text-gray-400 text-center">+{items.length-2}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {savesView === 'map' && (
+          <div className="bg-white rounded-lg shadow p-12 text-center mb-4">
+            <svg className="mx-auto mb-3 text-gray-300" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+            </svg>
+            <p className="text-gray-400 text-sm">Map view coming soon</p>
+          </div>
+        )}
+
+        {savesView === 'list' && (<div className="space-y-4">
           {sortedSaves.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">
               <p className="text-xl text-gray-500 mb-4">No saves yet</p>
@@ -888,7 +1094,14 @@ export default function Dashboard() {
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteSave(save.id)}
+                            onClick={() => {
+                              const name = save.event_name || save.venue_name || 'this save';
+                              if (localStorage.getItem('lokeet_skip_delete_confirm') === 'true') {
+                                handleDeleteSave(save.id);
+                              } else {
+                                setPendingDeleteSave({ id: save.id, name });
+                              }
+                            }}
                             className="text-red-500 hover:text-red-700 transition"
                             title="Delete save"
                           >
@@ -937,7 +1150,7 @@ export default function Dashboard() {
               );
             })
           )}
-        </div>
+        </div>)}
       </main>
 
       {/* New Save Modal */}
@@ -969,138 +1182,12 @@ export default function Dashboard() {
 
       {/* Profile panel */}
       {showProfilePanel && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/20" onClick={() => setShowProfilePanel(false)} />
-          {/* Drawer */}
-          <div className="relative w-full max-w-sm bg-white h-full shadow-2xl flex flex-col overflow-y-auto">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold">Profile</h2>
-              <button onClick={() => setShowProfilePanel(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex-1 px-6 py-6">
-              {/* Avatar + name */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="relative flex-shrink-0">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold" style={{ backgroundColor: avatarColor }}>
-                    {(user?.display_name?.[0] || user?.email?.[0] || '?').toUpperCase()}
-                  </div>
-                  {isEditingProfile && (
-                    <button type="button" onClick={() => setShowColorPicker(p => !p)}
-                      className="absolute -bottom-1 -right-1 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow hover:bg-gray-50 transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                <div>
-                  {showColorPicker && isEditingProfile && (
-                    <div className="mb-2">
-                      <div className="flex items-center gap-2">
-                        {AVATAR_COLORS.map(color => (
-                          <button key={color} type="button" onClick={() => { setAvatarColor(color); localStorage.setItem('lokeet_avatar_color', color); setShowColorPicker(false); }}
-                            className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none flex-shrink-0"
-                            style={{ backgroundColor: color, boxShadow: avatarColor === color ? `0 0 0 2px white, 0 0 0 4px ${color}` : undefined }}
-                          />
-                        ))}
-                        {/* Rainbow "+" — toggles hex input */}
-                        <button type="button"
-                          onClick={() => setShowHexInput(p => !p)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-transform hover:scale-110 text-white text-sm font-bold"
-                          style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}
-                        >+</button>
-                      </div>
-                      {showHexInput && (
-                        <div className="mt-2 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400 font-mono">#</span>
-                            <input
-                              type="text"
-                              value={avatarColor.replace('#', '')}
-                              onChange={(e) => {
-                                const raw = e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6);
-                                const hex = `#${raw}`;
-                                setAvatarColor(hex);
-                                if (raw.length === 6) localStorage.setItem('lokeet_avatar_color', hex);
-                              }}
-                              maxLength={6}
-                              placeholder="42a746"
-                              className="w-24 px-2 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-[#42a746] focus:border-transparent font-mono uppercase"
-                              autoFocus
-                            />
-                            <button type="button" onClick={() => setShowGradientPicker(p => !p)}
-                              className="w-6 h-6 rounded-full border border-gray-200 flex-shrink-0 hover:scale-110 transition-transform"
-                              style={{ backgroundColor: avatarColor }}
-                            />
-                          </div>
-                          {showGradientPicker && (
-                            <GradientPicker
-                              color={avatarColor}
-                              onChange={(hex) => { setAvatarColor(hex); localStorage.setItem('lokeet_avatar_color', hex); }}
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <p className="font-bold text-gray-900">{user?.display_name || user?.email}</p>
-                  {user?.username
-                    ? <p className="text-sm text-gray-500">@{user.username}</p>
-                    : <p className="text-xs text-amber-600">No username set</p>
-                  }
-                </div>
-              </div>
-
-              {isEditingProfile ? (
-                <ProfileEditForm
-                  profile={user!}
-                  onSave={async (updates) => {
-                    const result = await api.updateProfile(updates);
-                    if (result.success) { setUser(result.user); setIsEditingProfile(false); }
-                  }}
-                  onCancel={() => { setIsEditingProfile(false); setShowColorPicker(false); setShowHexInput(false); setShowGradientPicker(false); }}
-                />
-              ) : (
-                <>
-                  <div className="space-y-0 mb-6 rounded-xl border border-gray-100 overflow-hidden">
-                    {[
-                      { label: 'Email', value: user?.email },
-                      { label: 'Display name', value: user?.display_name },
-                      { label: 'Username', value: user?.username ? `@${user.username}` : undefined },
-                      { label: 'Zip code', value: user?.zip_code },
-                      { label: 'Birthday', value: user?.birthday },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0">
-                        <span className="text-sm text-gray-500">{label}</span>
-                        <span className="text-sm font-medium text-gray-900">{value ?? <span className="text-gray-300 italic text-xs">not set</span>}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setIsEditingProfile(true)}
-                    className="w-full bg-white text-gray-900 font-semibold py-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors duration-300 border-2 border-gray-900"
-                  >
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full mt-3 text-center text-red-600 text-sm hover:underline"
-                  >
-                    Log Out
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+        <ProfilePanel
+          user={user}
+          onClose={() => setShowProfilePanel(false)}
+          onLogout={handleLogout}
+          onProfileUpdate={(u) => setUser(u)}
+        />
       )}
 
       {/* Footer */}
@@ -1109,6 +1196,14 @@ export default function Dashboard() {
           <p className="text-sm opacity-70">Made with ❤️ for Locals</p>
         </div>
       </footer>
+
+      {pendingDeleteSave && (
+        <DeleteConfirmPopup
+          itemName={pendingDeleteSave.name}
+          onConfirm={() => { handleDeleteSave(pendingDeleteSave.id); setPendingDeleteSave(null); }}
+          onCancel={() => setPendingDeleteSave(null)}
+        />
+      )}
 
       {/* Edit Save Modal */}
       {editingSave && (
@@ -1198,203 +1293,6 @@ function formatEventDateSummary(save: Save): string | null {
     label += ` + ${extras.length} more`;
   }
   return label;
-}
-
-// --- Color helpers ---
-function hexToHsv(hex: string): { h: number; s: number; v: number } {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-  let h = 0;
-  if (d) {
-    if (max === r) h = ((g - b) / d) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h = Math.round(h * 60);
-    if (h < 0) h += 360;
-  }
-  return { h, s: max ? Math.round((d / max) * 100) : 0, v: Math.round(max * 100) };
-}
-
-function hsvToHex(h: number, s: number, v: number): string {
-  s /= 100; v /= 100;
-  const i = Math.floor(h / 60) % 6;
-  const f = h / 60 - Math.floor(h / 60);
-  const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
-  const [r, g, b] = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i];
-  return '#' + [r, g, b].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
-}
-
-function GradientPicker({ color, onChange }: { color: string; onChange: (hex: string) => void }) {
-  const valid = /^#[0-9a-fA-F]{6}$/.test(color);
-  const init = valid ? hexToHsv(color) : { h: 133, s: 60, v: 65 };
-  const [h, setH] = useState(init.h);
-  const [s, setS] = useState(init.s);
-  const [v, setV] = useState(init.v);
-  const squareRef = useRef<HTMLDivElement>(null);
-  const hueRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!valid) return;
-    const { h: nh, s: ns, v: nv } = hexToHsv(color);
-    setH(nh); setS(ns); setV(nv);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [color]);
-
-  const emit = (nh: number, ns: number, nv: number) => onChange(hsvToHex(nh, ns, nv));
-
-  const onSquare = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = squareRef.current!.getBoundingClientRect();
-    const ns = Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 100);
-    const nv = Math.round((1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height))) * 100);
-    setS(ns); setV(nv); emit(h, ns, nv);
-  };
-
-  const onHue = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = hueRef.current!.getBoundingClientRect();
-    const nh = Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * 360);
-    setH(nh); emit(nh, s, v);
-  };
-
-  const hueColor = `hsl(${h},100%,50%)`;
-
-  return (
-    <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white p-3 space-y-2">
-      {/* Sat/Val square */}
-      <div ref={squareRef}
-        className="relative h-28 w-full rounded-lg cursor-crosshair select-none"
-        style={{ background: hueColor }}
-        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onSquare(e); }}
-        onPointerMove={(e) => { if (e.buttons) onSquare(e); }}
-      >
-        <div className="absolute inset-0 rounded-lg" style={{ background: 'linear-gradient(to right, #fff, transparent)' }} />
-        <div className="absolute inset-0 rounded-lg" style={{ background: 'linear-gradient(to bottom, transparent, #000)' }} />
-        <div className="absolute w-3 h-3 rounded-full border-2 border-white shadow pointer-events-none -translate-x-1/2 -translate-y-1/2"
-          style={{ left: `${s}%`, top: `${100 - v}%`, backgroundColor: hsvToHex(h, s, v) }} />
-      </div>
-      {/* Hue bar */}
-      <div ref={hueRef}
-        className="relative h-3 w-full rounded-full cursor-pointer select-none"
-        style={{ background: 'linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)' }}
-        onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); onHue(e); }}
-        onPointerMove={(e) => { if (e.buttons) onHue(e); }}
-      >
-        <div className="absolute w-3 h-3 rounded-full border-2 border-white shadow pointer-events-none -translate-x-1/2 -translate-y-0"
-          style={{ left: `${(h / 360) * 100}%`, top: 0, backgroundColor: hueColor }} />
-      </div>
-    </div>
-  );
-}
-
-const AVATAR_COLORS = [
-  '#42a746', '#3b82f6', '#8b5cf6', '#ec4899', '#f97316',
-];
-
-function ProfileEditForm({
-  profile,
-  onSave,
-  onCancel,
-}: {
-  profile: User;
-  onSave: (updates: Partial<User>) => Promise<void>;
-  onCancel: () => void;
-}) {
-  const [formData, setFormData] = useState({
-    display_name: profile.display_name || '',
-    username: profile.username || '',
-    zip_code: profile.zip_code || '',
-    birthday: profile.birthday || '',
-  });
-  const [checkingUsername, setCheckingUsername] = useState(false);
-  const [usernameAvailable, setUsernameAvailable] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  async function checkUsername(value: string) {
-    if (value === profile.username) { setUsernameAvailable(true); return; }
-    setCheckingUsername(true);
-    const available = await api.checkUsernameAvailability(value);
-    setUsernameAvailable(available);
-    setCheckingUsername(false);
-  }
-
-  const [saveError, setSaveError] = useState('');
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!usernameAvailable || saving) return;
-    setSaving(true);
-    setSaveError('');
-    try {
-      await onSave({ ...formData, email: profile.email });
-    } catch {
-      setSaveError('Something went wrong. Please try again.');
-    }
-    setSaving(false);
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Display Name</label>
-        <input type="text" value={formData.display_name}
-          onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#42a746] focus:border-transparent"
-          placeholder="Your Name"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Username</label>
-        <div className="flex items-center border rounded-lg focus-within:ring-2 focus-within:ring-[#42a746] overflow-hidden">
-          <span className="px-3 py-3 text-gray-400 bg-gray-50 border-r text-sm">@</span>
-          <input type="text" value={formData.username}
-            onChange={(e) => {
-              const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
-              setFormData({ ...formData, username: val });
-              if (val) checkUsername(val);
-            }}
-            className="flex-1 px-3 py-3 focus:outline-none text-sm"
-            placeholder="username"
-          />
-        </div>
-        {checkingUsername && <p className="text-xs text-gray-400 mt-1">Checking...</p>}
-        {!checkingUsername && formData.username && !usernameAvailable && (
-          <p className="text-xs text-red-600 mt-1">Username already taken</p>
-        )}
-        {!checkingUsername && formData.username && usernameAvailable && formData.username !== profile.username && (
-          <p className="text-xs text-[#42a746] mt-1">Username available</p>
-        )}
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Zip Code</label>
-        <input type="text" value={formData.zip_code}
-          onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
-          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#42a746] focus:border-transparent"
-          placeholder="33701"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Birthday</label>
-        <input type="date" value={formData.birthday}
-          onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-          className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#42a746] focus:border-transparent"
-        />
-      </div>
-      {saveError && (
-        <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">{saveError}</div>
-      )}
-      <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onCancel}
-          className="flex-1 py-3 border rounded-lg text-sm hover:bg-gray-50 transition-colors">
-          Cancel
-        </button>
-        <button type="submit" disabled={!usernameAvailable || saving}
-          className="flex-1 bg-white text-gray-900 font-semibold py-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors duration-300 border-2 border-gray-900 disabled:opacity-50">
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-    </form>
-  );
 }
 
 const DELETE_PREF_KEY = 'lokeet_skip_delete_confirm';

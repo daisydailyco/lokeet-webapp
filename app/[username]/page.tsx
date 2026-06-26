@@ -16,24 +16,28 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
-    const currentUser = api.getCurrentUser();
+    let ownProfile = false;
+    let loadedProfile: User | null = null;
 
-    // Check if this is the user's own profile
-    if (currentUser && currentUser.username === username) {
-      setIsOwnProfile(true);
-      const fullProfile = await api.getProfile();
-      if (fullProfile) {
-        setProfile(fullProfile);
-        const userSaves = await api.getSaves();
-        setSaves(userSaves);
+    if (api.isAuthenticated()) {
+      // Fetch live profile so we reliably detect own page even if cached data is stale
+      const myProfile = await api.getProfile();
+      if (myProfile?.username === username) {
+        ownProfile = true;
+        loadedProfile = myProfile;
+      } else {
+        loadedProfile = await api.getPublicProfile(username);
       }
     } else {
-      // Load public profile (TODO: implement backend endpoint)
-      // For now, redirect non-authenticated users
-      const publicProfile = await api.getPublicProfile(username);
-      if (publicProfile) {
-        setProfile(publicProfile);
-      }
+      loadedProfile = await api.getPublicProfile(username);
+    }
+
+    if (loadedProfile) setProfile(loadedProfile);
+
+    if (ownProfile) {
+      setIsOwnProfile(true);
+      const userSaves = await api.getSaves();
+      setSaves(userSaves);
     }
 
     setLoading(false);
@@ -105,7 +109,12 @@ export default function ProfilePage() {
             {/* Profile Info */}
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
-                <h1 className="text-3xl font-bold">@{username}</h1>
+                <div className="flex items-baseline gap-3">
+                  <h1 className="text-3xl font-bold">{profile.display_name || username}</h1>
+                  {profile.display_name && (
+                    <span className="text-base text-gray-500">@{username}</span>
+                  )}
+                </div>
                 {isOwnProfile && (
                   <button
                     onClick={() => setIsEditing(!isEditing)}
@@ -124,9 +133,6 @@ export default function ProfilePage() {
                 />
               ) : (
                 <>
-                  {profile.display_name && (
-                    <p className="text-xl mb-2">{profile.display_name}</p>
-                  )}
 
                   {profile.zip_code && (
                     <p className="text-gray-600 mb-2">📍 {profile.zip_code}</p>

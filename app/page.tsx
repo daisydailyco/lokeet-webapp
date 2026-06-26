@@ -26,7 +26,7 @@ export default function Home() {
           <div className="bg-white border-2 border-black rounded-3xl p-12 text-center shadow-lg">
             <h2 className="text-3xl font-bold mb-3">Start Creating Your List Now!</h2>
             <p className="text-base opacity-90 mb-6 max-w-2xl mx-auto">
-              Try Lokeet instantly - no login required. Log in to save your lists permanently.
+              Try Lokeet instantly. Log in to save your lists permanently.
             </p>
             <Link
               href="/login"
